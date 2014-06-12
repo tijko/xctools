@@ -1,0 +1,176 @@
+dnl
+dnl
+dnl configure.in.head:
+dnl
+dnl Copyright (c) 2009 James McKenzie <20@madingley.org>,
+dnl All rights reserved.
+dnl
+dnl $Id: configure.in,v 1.1 2009/07/31 11:58:28 jamesmck Exp $
+dnl
+dnl $Log: configure.in,v $
+dnl Revision 1.1  2009/07/31 11:58:28  jamesmck
+dnl *** empty log message ***
+dnl
+dnl
+dnl
+dnl
+AC_PREREQ(2.13)
+AC_INIT(src/pci-dm-helper.c)
+
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
+AC_PROG_AWK
+AC_CHECK_PROG(MD5SUM,md5sum,md5sum)
+AC_CHECK_PROG(GREP,grep,grep)
+
+AC_SYS_LARGEFILE
+
+APP_MAJOR_VERSION=`cat $srcdir/version-major`
+APP_MINOR_VERSION=`cat $srcdir/version-minor`
+APP_MICRO_VERSION=`cat $srcdir/version-micro`
+
+
+APP_VERSION=$APP_MAJOR_VERSION.$APP_MINOR_VERSION.$APP_MICRO_VERSION
+
+AC_SUBST(APP_MAJOR_VERSION)
+AC_SUBST(APP_MINOR_VERSION)
+AC_SUBST(APP_MICRO_VERSION)
+AC_SUBST(APP_VERSION)
+
+
+VERSION=$APP_VERSION
+PACKAGE=pci-dm-helper
+
+AM_INIT_AUTOMAKE($PACKAGE,$VERSION)
+
+PKG_CHECK_MODULES(PCI, libpci)
+AC_SUBST(PCI_CFLAGS)
+AC_SUBST(PCI_LIBS)
+PKG_CHECK_MODULES(LIBXCXENSTORE, libxcxenstore)
+AC_SUBST(LIBXCXENSTORE_CFLAGS)
+AC_SUBST(LIBXCXENSTORE_LIBS)
+
+AM_CONFIG_HEADER(src/config.h)
+
+# Checks for header files.
+AC_CHECK_HEADERS([malloc.h])
+AC_HEADER_STDC
+AC_FUNC_MALLOC
+
+AC_C_INLINE
+AC_C_CONST
+
+# Checks for libv4v
+AC_ARG_WITH([libv4v],
+            AC_HELP_STRING([--with-libv4v=PATH], [Path to prefix where libv4v is installed]),
+            [LIBV4V_PREFIX=$with_libv4v], [])
+
+case "x$LIBV4V_PREFIX" in
+        x|xno|xyes)
+                LIBV4V_INC=""
+                LIBV4V_LIB="-lv4v"
+                ;;
+        *)
+                LIBV4V_INC="-I${LIBV4V_PREFIX}/include"
+                LIBV4V_LIB="-L${LIBV4V_PREFIX}/lib -lv4v"
+                ;;
+esac
+
+AC_SUBST(LIBV4V_INC)
+AC_SUBST(LIBV4V_LIB)
+
+have_libv4v=true
+
+ORIG_LDFLAGS="${LDFLAGS}"
+ORIG_CPPFLAGS="${CPPFLAGS}"
+        LDFLAGS="${LDFLAGS} ${LIBV4V_LIB}"
+        CPPFLAGS="${CPPFLAGS} ${LIBV4V_INC}"
+        AC_CHECK_HEADERS([libv4v.h], [], [have_libv4v=false])
+        AC_CHECK_FUNC([v4v_socket], [], [have_libv4v=false])
+LDFLAGS="${ORIG_LDFLAGS}"
+CPPFLAGS="${ORIG_CPPFLAGS}"
+
+if test "x$have_libv4v" = "xfalse"; then
+        AC_MSG_ERROR([
+*** libv4v is required.                
+])
+fi
+
+# Check for libevent
+
+AC_ARG_WITH([libevent],
+            AC_HELP_STRING([--with-libevent=PATH], [Path to prefix where libevent (or libev) is installed]),
+            [LIBEVENT_PREFIX=$with_libevent], [])
+
+case "x$LIBEVENT_PREFIX" in
+        x|xno|xyes)
+                LIBEVENT_INC=""
+                LIBEVENT_LIB="-levent"
+                ;;
+        *)
+                LIBEVENT_INC="-I${LIBEVENT_PREFIX}/include"
+                LIBEVENT_LIB="-L${LIBEVENT_PREFIX}/lib -levent"
+                ;;
+esac
+
+AC_SUBST(LIBEVENT_INC)
+AC_SUBST(LIBEVENT_LIB)
+
+have_libevent=true
+
+ORIG_LIBS="${LIBS}"
+ORIG_CPPFLAGS="${CPPFLAGS}"
+        LIBS="${LIBS} ${LIBEVENT_LIB}"
+        CPPFLAGS="${CPPFLAGS} ${LIBEVENT_INC}"
+        AC_CHECK_HEADERS([event.h], [], [have_libevent=false])
+        AC_CHECK_FUNC([event_init], [], [have_libevent=false])
+LIBS="${ORIG_LIBS}"
+CPPFLAGS="${ORIG_CPPFLAGS}"
+
+if test "x$have_libevent" = "xfalse"; then
+        AC_MSG_ERROR([*** At least libev or libevent is required.])
+fi
+
+# libxc
+
+AC_ARG_WITH([libxc],
+            AC_HELP_STRING([--with-libxc=PATH], [Path to prefix where libc was installed.])
+            [LIBXC_PREFIX=$with_libxc], [])
+
+case "x$LIBXC_PREFIX" in
+        x|xno|xyes)
+                LIBXC_INC=""
+                LIBXC_LIB="-lxenctrl"
+                ;;
+        *)
+                LIBXC_INC="-I${LIBXC_PREFIX}/include"
+                LIBXC_LIB="-L${LIBXC_PREFIX}/lib -lxenctrl"
+                ;;
+esac
+
+AC_SUBST(LIBXC_INC)
+AC_SUBST(LIBXC_LIB)
+
+have_libxc=true
+
+ORIG_LIBS="${LIBS}"
+ORIG_CPPFLAGS="${CPPFLAGS}"
+	LIBS="${LIBS} ${LIBXC_LIB} ${LIBV4V_LIB}"
+	CPPFLAGS="${CPPFLAGS} ${LIBV4V_INC} ${LIBXC_INC}"
+	AC_CHECK_HEADERS([xenctrl.h], [], [have_libxc=false])
+	AC_CHECK_FUNC(xc_interface_open, [], [have_libxc=false])
+LIBS="${ORIG_LIBS}"
+CPPFLAGS="${ORIG_CPPFLAGS}"
+
+if test "x$have_libxc" = "xfalse"; then
+	AC_MSG_ERROR([where is libxc dude])
+fi
+
+AC_OUTPUT([Makefile
+	   src/Makefile])
+
+

@@ -1,0 +1,99 @@
+dnl
+dnl
+dnl configure.in.head:
+dnl
+dnl Copyright (c) 2009 James McKenzie <20@madingley.org>,
+dnl All rights reserved.
+dnl
+dnl $Id: configure.in,v 1.1 2009/07/31 11:58:28 jamesmck Exp $
+dnl
+dnl $Log: configure.in,v $
+dnl Revision 1.1  2009/07/31 11:58:28  jamesmck
+dnl *** empty log message ***
+dnl
+dnl
+dnl
+dnl
+AC_PREREQ(2.13)
+AC_INIT(src/atapi_pt_helper.c)
+
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
+AC_PROG_AWK
+AC_CHECK_PROG(MD5SUM,md5sum,md5sum)
+AC_CHECK_PROG(GREP,grep,grep)
+
+AC_SYS_LARGEFILE
+
+ATAPI_PT_MAJOR_VERSION=`cat $srcdir/version-major`
+ATAPI_PT_MINOR_VERSION=`cat $srcdir/version-minor`
+ATAPI_PT_MICRO_VERSION=`cat $srcdir/version-micro`
+
+
+ATAPI_PT_VERSION=$ATAPI_PT_MAJOR_VERSION.$ATAPI_PT_MINOR_VERSION.$ATAPI_PT_MICRO_VERSION
+
+AC_SUBST(ATAPI_PT_MAJOR_VERSION)
+AC_SUBST(ATAPI_PT_MINOR_VERSION)
+AC_SUBST(ATAPI_PT_MICRO_VERSION)
+AC_SUBST(ATAPI_PT_VERSION)
+
+
+VERSION=$ATAPI_PT_VERSION
+PACKAGE=atapi_pt_helper
+
+AM_INIT_AUTOMAKE($PACKAGE,$VERSION)
+
+AM_CONFIG_HEADER(src/config.h)
+
+# Checks for header files.
+AC_CHECK_HEADERS([malloc.h])
+AC_HEADER_STDC
+AC_FUNC_MALLOC
+
+AC_C_INLINE
+AC_C_CONST
+
+# Checks for libv4v
+AC_ARG_WITH([libv4v],
+            AC_HELP_STRING([--with-libv4v=PATH], [Path to prefix where libv4v is installed]),
+            [LIBV4V_PREFIX=$with_libv4v], [])
+
+case "x$LIBV4V_PREFIX" in
+        x|xno|xyes)
+                LIBV4V_INC=""
+                LIBV4V_LIB="-lv4v"
+                ;;
+        *)
+                LIBV4V_INC="-I${LIBV4V_PREFIX}/include"
+                LIBV4V_LIB="-L${LIBV4V_PREFIX}/lib -lv4v"
+                ;;
+esac
+
+AC_SUBST(LIBV4V_INC)
+AC_SUBST(LIBV4V_LIB)
+
+have_libv4v=true
+
+ORIG_LDFLAGS="${LDFLAGS}"
+ORIG_CPPFLAGS="${CPPFLAGS}"
+        LDFLAGS="${LDFLAGS} ${LIBV4V_LIB}"
+        CPPFLAGS="${CPPFLAGS} ${LIBV4V_INC}"
+        AC_CHECK_HEADERS([libv4v.h], [], [have_libv4v=false])
+        AC_CHECK_FUNC([v4v_socket], [], [have_libv4v=false])
+LDFLAGS="${ORIG_LDFLAGS}"
+CPPFLAGS="${ORIG_CPPFLAGS}"
+
+if test "x$have_libv4v" = "xfalse"; then
+        AC_MSG_ERROR([
+*** libv4v is required.                
+])
+fi
+
+AC_OUTPUT([Makefile
+	   src/Makefile])
+
+

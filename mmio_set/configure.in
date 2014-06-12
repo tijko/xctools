@@ -1,0 +1,66 @@
+dnl
+dnl
+dnl configure.in:
+dnl
+dnl Copyright (c) 2009 James McKenzie <20@madingley.org>,
+dnl All rights reserved.
+dnl
+dnl $Id:$
+dnl
+dnl $Log:$
+dnl
+dnl
+dnl
+AC_PREREQ(2.13)
+AC_INIT()
+
+AC_PROG_CC
+AM_PROG_CC_C_O
+AC_SYS_LARGEFILE
+
+AC_CONFIG_MACRO_DIR([m4])
+
+
+AM_INIT_AUTOMAKE(mmio_set,1.0.0)
+
+AM_PROG_LIBTOOL
+
+AC_CHECK_HEADERS(sys/mman.h stdio.h)
+
+AC_C_INLINE
+AC_C_CONST
+AC_HEADER_TIME
+AC_STRUCT_TM
+
+LIBPCIACCESS_CONFIG=no
+
+AC_ARG_WITH(libpciaccess,
+	AC_HELP_STRING([--with-libpciaccess=PATH],[Path to libpciaccess-config]),
+		LIBPCIACCESS_CONFIG=$with_libpciaccess,LIBPCIACCESS_CONFIG=no)
+
+case "x$LIBPCIACCESS_CONFIG" in
+	xno)
+		AC_PATH_PROG(LIBPCIACCESS_CONFIG, libpciaccess-config, no)
+		;;
+	x|xyes)
+		AC_PATH_PROG(LIBPCIACCESS_CONFIG, libpciaccess-config, no)
+		;;
+	*)
+		;;
+esac
+
+if ! test -x $LIBPCIACCESS_CONFIG; then
+	PKG_CHECK_MODULES([LIBPCIACCESS],[pciaccess]);
+	LIBPCIACCESS_INC="$LIBPCIACCESS_CFLAGS"
+	LIBPCIACCESS_LIB="$LIBPCIACCESS_LIBS"
+else
+	LIBPCIACCESS_INC=`$LIBPCIACCESS_CONFIG --cflags`
+	LIBPCIACCESS_LIB=`$LIBPCIACCESS_CONFIG --libs`
+fi
+
+AC_SUBST(LIBPCIACCESS_INC)
+AC_SUBST(LIBPCIACCESS_LIB)
+
+
+AC_OUTPUT([Makefile])
+

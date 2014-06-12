@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libdmbus
+Description: Library Surface Manager Plugin
+Version: @VERSION@
+Libs: -L${libdir} -ldmbus @LIBV4V_LIB@
+Cflags: -I${includedir} @LIBV4V_INC@

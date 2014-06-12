@@ -1,0 +1,13 @@
+Name:                fusechat
+Version:             1.0
+Description:         Chat with N-Fuse servers
+Author:              Tomasz Wroblewski
+Maintainer:          tomasz.wroblewski@citrix.com
+Build-Type:          Simple
+Cabal-Version:       >=1.2
+Executable fusechat
+  Main-is:           fusechat.hs
+  Build-Depends:     base, mtl, containers, bytestring,
+                     hxt, curl, text, utf8-string, hsyslog, xchutils, xch-rpc, xchdb
+  GHC-Options: -O2 -Werror -fwarn-incomplete-patterns -threaded
+

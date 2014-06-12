@@ -1,0 +1,90 @@
+dnl
+dnl
+dnl configure.in.head:
+dnl
+dnl Copyright (c) 2011 James McKenzie <20@madingley.org>,
+dnl All rights reserved.
+dnl
+dnl $Id:$
+dnl
+dnl $Log:$
+dnl
+dnl
+dnl
+AC_PREREQ(2.13)
+AC_INIT(src/horologist.c)
+
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
+AC_PROG_AWK
+AC_CHECK_PROG(MD5SUM,md5sum,md5sum)
+AC_CHECK_PROG(GREP,grep,grep)
+
+AC_SYS_LARGEFILE
+
+HOROLOGIST_MAJOR_VERSION=`cat $srcdir/version-major`
+HOROLOGIST_MINOR_VERSION=`cat $srcdir/version-minor`
+HOROLOGIST_MICRO_VERSION=`cat $srcdir/version-micro`
+
+
+HOROLOGIST_VERSION=$HOROLOGIST_MAJOR_VERSION.$HOROLOGIST_MINOR_VERSION.$HOROLOGIST_MICRO_VERSION
+
+AC_SUBST(HOROLOGIST_MAJOR_VERSION)
+AC_SUBST(HOROLOGIST_MINOR_VERSION)
+AC_SUBST(HOROLOGIST_MICRO_VERSION)
+AC_SUBST(HOROLOGIST_VERSION)
+
+
+VERSION=$HOROLOGIST_VERSION
+PACKAGE=horologist
+
+AM_INIT_AUTOMAKE($PACKAGE,$VERSION)
+
+
+AM_CONFIG_HEADER(src/config.h)
+
+# Checks for header files.
+AC_CHECK_HEADERS([malloc.h])
+AC_HEADER_STDC
+AC_FUNC_MALLOC
+
+AC_C_INLINE
+AC_C_CONST
+
+
+
+X11_CONFIG=no
+AC_ARG_WITH(x11,
+        AC_HELP_STRING([--with-x11=PATH],[Path to x11-config]),
+                X11_CONFIG=$with_x11,X11_CONFIG=no)
+
+case "x$X11_CONFIG" in
+        xno)
+		AC_PATH_PROG(X11_CONFIG, x11-config, no)
+        ;;
+        x|xyes)
+		AC_PATH_PROG(X11_CONFIG, x11-config, no)
+        ;;
+        *)
+        ;;
+esac
+
+if ! test -x $X11_CONFIG; then
+  PKG_CHECK_MODULES([X11],[x11]);
+  X11_INC="$X11_CFLAGS"
+  X11_LIB="$X11_LIBS"
+else
+  X11_INC=`$X11_CONFIG --cflags`
+  X11_LIB=`$X11_CONFIG --libs`
+fi
+AC_SUBST(X11_INC)
+AC_SUBST(X11_LIB)
+
+AC_OUTPUT([Makefile
+	   src/Makefile])
+
+

@@ -1,0 +1,91 @@
+dnl
+dnl
+dnl configure.in.head:
+dnl
+dnl Copyright (c) 2011 James McKenzie <20@madingley.org>,
+dnl All rights reserved.
+dnl
+dnl $Id:$
+dnl
+dnl $Log:$
+dnl
+dnl
+dnl
+AC_PREREQ(2.13)
+AC_INIT(src/inquart.c)
+
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
+AC_PROG_AWK
+AC_CHECK_PROG(MD5SUM,md5sum,md5sum)
+AC_CHECK_PROG(GREP,grep,grep)
+
+AC_SYS_LARGEFILE
+
+INQUART_MAJOR_VERSION=`cat $srcdir/version-major`
+INQUART_MINOR_VERSION=`cat $srcdir/version-minor`
+INQUART_MICRO_VERSION=`cat $srcdir/version-micro`
+
+
+INQUART_VERSION=$INQUART_MAJOR_VERSION.$INQUART_MINOR_VERSION.$INQUART_MICRO_VERSION
+
+AC_SUBST(INQUART_MAJOR_VERSION)
+AC_SUBST(INQUART_MINOR_VERSION)
+AC_SUBST(INQUART_MICRO_VERSION)
+AC_SUBST(INQUART_VERSION)
+
+
+VERSION=$INQUART_VERSION
+PACKAGE=inquart
+
+AM_INIT_AUTOMAKE($PACKAGE,$VERSION)
+
+
+AM_CONFIG_HEADER(src/config.h)
+
+# Checks for header files.
+AC_CHECK_HEADERS([malloc.h])
+AC_HEADER_STDC
+AC_FUNC_MALLOC
+
+AC_C_INLINE
+AC_C_CONST
+
+LIBPCIACCESS_CONFIG=no
+
+AC_ARG_WITH(libpciaccess,
+        AC_HELP_STRING([--with-libpciaccess=PATH],[Path to libpciaccess-config]),
+                LIBPCIACCESS_CONFIG=$with_libpciaccess,LIBPCIACCESS_CONFIG=no)
+
+case "x$LIBPCIACCESS_CONFIG" in
+        xno)
+                AC_PATH_PROG(LIBPCIACCESS_CONFIG, libpciaccess-config, no)
+                ;;
+        x|xyes)
+                AC_PATH_PROG(LIBPCIACCESS_CONFIG, libpciaccess-config, no)
+                ;;
+        *)
+                ;;
+esac
+
+if ! test -x $LIBPCIACCESS_CONFIG; then
+        PKG_CHECK_MODULES([LIBPCIACCESS],[pciaccess]);
+        LIBPCIACCESS_INC="$LIBPCIACCESS_CFLAGS"
+        LIBPCIACCESS_LIB="$LIBPCIACCESS_LIBS"
+else
+        LIBPCIACCESS_INC=`$LIBPCIACCESS_CONFIG --cflags`
+        LIBPCIACCESS_LIB=`$LIBPCIACCESS_CONFIG --libs`
+fi
+
+AC_SUBST(LIBPCIACCESS_INC)
+AC_SUBST(LIBPCIACCESS_LIB)
+
+
+AC_OUTPUT([Makefile
+	   src/Makefile])
+
+
