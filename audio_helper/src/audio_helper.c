@@ -1,8 +1,6 @@
 /*
  * audio_helper.c:
  *
- * Copyright (c) 2011 Stefano Panella <stefano.panella@citrix.com>,
- * All rights reserved.
  *
  */
 

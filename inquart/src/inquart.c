@@ -1,8 +1,6 @@
 /*
  * inquart.c:
  *
- * Copyright (c) 2011 James McKenzie <20@madingley.org>,
- * All rights reserved.
  *
  */
 

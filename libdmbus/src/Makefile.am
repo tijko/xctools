@@ -2,8 +2,6 @@
 #
 # Makefile.am:
 #
-# Copyright (c) 2010 Julian Pidancet <julian.pidancet@citrix.com>,
-# All rights reserved.
 #
 # $Id:$
 #

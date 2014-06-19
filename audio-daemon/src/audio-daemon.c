@@ -1,8 +1,6 @@
 /*
  * audio-daemon.c:
  *
- * Copyright (c) 2012 Stefano Panella <stefano.panella@citrix.com>,
- * All rights reserved.
  *
  */
 
