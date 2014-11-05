@@ -1,11 +1,5 @@
 /*
- * atapi_pt_helper.c:
- *
- *
- */
-
-/*
- * Copyright (c) 2012 Citrix Systems, Inc.
+ * Copyright (c) 2014 Citrix Systems, Inc.
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,395 +18,478 @@
 
 
 #include "project.h"
-#include <libv4v.h>
 
-#include <scsi/sg.h>
-#include <pthread.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <linux/bsg.h>
-
-//#define ATAPI_CDROM_DEBUG
-
-#ifdef ATAPI_CDROM_DEBUG
-# define SH_LOG(Args...) printf(Args)
-# define SH_HEX_DUMP(buf, len) sh_hex_dump(buf, len)
-#else
-# define SH_LOG(Args...)
-# define SH_HEX_DUMP(buf, len)
-#endif
-
-#define IDE_ATAPI_PT_SHM_NAME_TEMPLATE "/xen-atapi-pt-status-%04x:%04x"
-#define IDE_ATAPI_PT_EXCLUSIVE_CD_FILE_TEMPLATE "/var/lock/xen-cd-exclusive-%04x:%04x"
-
-#define ATAPI_PT_LOCK_STATE_UNLOCKED		0
-#define ATAPI_PT_LOCK_STATE_LOCKED_BY_ME	1
-#define ATAPI_PT_LOCK_STATE_LOCKED_BY_OTHER	2
+#define ATAPI_HELPER_DEBUG  0
+#define ATAPI_HELPER_TAG    "atapi_helper:"
+#define DPRINTF(fmt, ...)                                           \
+    do {                                                            \
+        if (ATAPI_HELPER_DEBUG)                                     \
+            fprintf(stderr, ATAPI_HELPER_TAG " %s:%d: " fmt "\n",   \
+                    __FILE__, __LINE__, ##__VA_ARGS__);             \
+    } while (0)
 
 #define V4V_TYPE 'W'
 #define V4VIOCSETRINGSIZE       _IOW (V4V_TYPE,  1, uint32_t)
 
 #define ATAPI_CDROM_PORT 5000
 
-#define V4V_ATAPI_PT_RING_SIZE (V4V_ROUNDUP((((4096)*64) - sizeof(v4v_ring_t)-V4V_ROUNDUP(1))))
-
-#define ATAPI_PT_OPEN                        0x00
-#define ATAPI_PT_CLOSE                       0x01
-#define ATAPI_PT_IOCTL_SG_IO                 0x03
-#define ATAPI_PT_IOCTL_SG_GET_RESERVED_SIZE  0x04
-#define ATAPI_PT_GET_PHYS_LOCK               0x05
-#define ATAPI_PT_GET_PHYS_LOCK_STATE         0x06
-#define ATAPI_PT_RELEASE_PHYS_LOCK           0x07
-#define ATAPI_PT_SET_GLOB_MEDIA_STATE        0x08
-#define ATAPI_PT_GET_GLOB_MEDIA_STATE        0x09
+#define V4V_ATAPI_PT_RING_SIZE \
+  (V4V_ROUNDUP((((4096)*64) - sizeof(v4v_ring_t)-V4V_ROUNDUP(1))))
 
 #define MAX_V4V_MSG_SIZE (V4V_ATAPI_PT_RING_SIZE)
 
+typedef enum v4vcmd
+{
+    ATAPI_PT_OPEN      = 0x00,
+    ATAPI_PT_CLOSE     = 0x01,
+    ATAPI_PT_IOCTL     = 0x02,
+    ATAPI_PT_SET_STATE = 0x03,
+    ATAPI_PT_GET_STATE = 0x04,
+
+    ATAPI_PT_NUMBER_OF_COMMAND
+} ptv4vcmd;
+
+enum block_pt_cmd {
+    BLOCK_PT_CMD_ERROR                   = 0x00,
+    BLOCK_PT_CMD_SET_MEDIA_STATE_UNKNOWN = 0x01,
+    BLOCK_PT_CMD_SET_MEDIA_PRESENT       = 0x02,
+    BLOCK_PT_CMD_SET_MEDIA_ABSENT        = 0x03,
+
+    BLOCK_PT_CMD_GET_LASTMEDIASTATE      = 0x04,
+    BLOCK_PT_CMD_GET_SHM_MEDIASTATE      = 0x05
+};
+
 typedef enum {
-	MEDIA_STATE_UNKNOWN = 0x0,
-	MEDIA_PRESENT = 0x1,
-	MEDIA_ABSENT = 0x2
+    MEDIA_STATE_UNKNOWN = 0x0,
+    MEDIA_PRESENT = 0x1,
+    MEDIA_ABSENT = 0x2
 } ATAPIPTMediaState;
 
-typedef struct ATAPIPTShm
-{
+typedef struct ATAPIPTShm {
     ATAPIPTMediaState    mediastate;
 } ATAPIPTShm;
 
-#define MAX_ATAPI_PT_DEVS 6
+#define MAX_ATAPI_PT_DEVICES 6
+typedef struct ATAPIPTDeviceState {
+    char filename[256];
+    int fd;
 
-struct atapi_pt_helper {
-	int atapi_pt_fd;
-	v4v_addr_t remote_addr;
-	v4v_addr_t local_addr;
-	uint8_t io_buf[MAX_V4V_MSG_SIZE];
-	int stubdom_id;
+    uint32_t max_atapi_pt_xfer_len;
+
+    ATAPIPTShm* volatile shm;
+    ATAPIPTMediaState lastmediastate;
+} ATAPIPTDeviceState;
+
+typedef struct ATAPIPTHelperState {
+    int v4vfd;
+    v4v_addr_t remote_addr;
+    v4v_addr_t local_addr;
+
+    int stubdom_id;
+
+    uint8_t device_number;
+    ATAPIPTDeviceState devices[MAX_ATAPI_PT_DEVICES];
+} ATAPIPTHelperState;
+
+static int helper_get_device_state(ATAPIPTHelperState* hs,
+                                   char const* name, size_t len,
+                                   ATAPIPTDeviceState** ds)
+{
+    int i, j;
+
+    if (!name || !ds) {
+        return -1;
+    }
+
+    for (i = 0; i < MAX_ATAPI_PT_DEVICES; i++) {
+        if (!strncmp(hs->devices[i].filename, name, len)) {
+            *ds = &hs->devices[i];
+            return i;
+        } else if (hs->devices[i].fd == -1) {
+            i = j;
+        }
+    }
+
+    if (j == MAX_ATAPI_PT_DEVICES) {
+        return -1;
+    }
+
+    *ds = &hs->devices[j];
+
+    memset((*ds)->filename, 0, sizeof ((*ds)->filename));
+    memcpy((*ds)->filename, name, len);
+    (*ds)->fd = -1;
+
+    return j;
+}
+
+static int initialize_helper_state(ATAPIPTHelperState* hs)
+{
+    uint32_t v4v_ring_size = V4V_ATAPI_PT_RING_SIZE;
+
+    hs->v4vfd = v4v_socket(SOCK_DGRAM);
+
+    if (hs->v4vfd == -1) {
+        DPRINTF("unable to create a v4vsocket");
+        return -1;
+    }
+
+    hs->local_addr.port = ATAPI_CDROM_PORT;
+    hs->local_addr.domain = V4V_DOMID_ANY;
+
+    hs->remote_addr.port = V4V_PORT_NONE;
+    hs->remote_addr.domain = hs->stubdom_id;
+
+    ioctl(hs->v4vfd, V4VIOCSETRINGSIZE, &v4v_ring_size);
+    if (v4v_bind(hs->v4vfd, &hs->local_addr, hs->stubdom_id) == -1) {
+        DPRINTF("unable to bind the v4vsocket");
+        v4v_close(hs->v4vfd);
+        return -1;
+    }
+
+    return 0;
+}
+
+static int atapi_pt_open(ATAPIPTHelperState* hs, uint8_t* buf, size_t len)
+{
+    ATAPIPTDeviceState* ds = NULL;
+    int device_id = -1;
+
+    device_id = helper_get_device_state(hs, &buf[1], len - 1, &ds);
+
+    if (ds->fd == -1)
+        ds->fd = open(ds->filename, O_RDWR | O_NONBLOCK);
+
+    if (device_id == -1 || ds->fd == -1) {
+        buf[1] = 'k';
+        buf[2] = 'o';
+        DPRINTF("device state not found for '%s'", &buf[1]);
+    } else {
+        buf[1] = 'o';
+        buf[2] = 'k';
+    }
+
+    buf[3] = device_id;
+
+    DPRINTF("open (%s): send message [%c%c-%d]",
+            ds->filename, buf[1], buf[2], buf[3]);
+    if (v4v_sendto(hs->v4vfd, buf, 4, 0, &hs->remote_addr) != 4) {
+       DPRINTF("unable to send a message to %s", ds->filename);
+       return -1;
+    }
+
+    return 0;
+}
+
+static int atapi_pt_close(ATAPIPTHelperState* hs, uint8_t* buf, size_t len)
+{
+    ATAPIPTDeviceState* ds = NULL;
+    int ret = -1;
+
+    if (buf[1] < MAX_ATAPI_PT_DEVICES) {
+        ds = &hs->devices[buf[1]];
+        if (ds->fd > -1) {
+            close(ds->fd);
+            ds->fd = -1;
+        }
+        ret = 0;
+        DPRINTF("device (%s) closed", ds->filename);
+    }
+
+    return ret;
+}
+
+static void dump_hex(uint8_t* p, size_t len)
+{
+  int i, j;
+
+  for (i = 0; i < len; i += 16) {
+    for (j = 0; (j < 16) && ((i + j) < len); j++) {
+      fprintf(stderr, "%02x ", p[i+j]);
+    }
+    for (; j < 16; j++) {
+      fprintf(stderr, "   ");
+    }
+    fprintf(stderr, " ");
+    for (j = 0; (j < 16) && ((i + j) < len); j++) {
+      fprintf(stderr, "%c", ((p[i+j] < ' ') || (p[i+j] > 0x7e)) ? '.' : p[i+j]);
+    }
+    fprintf(stderr, "\n");
+  }
+}
+
+static int atapi_pt_ioctl(ATAPIPTHelperState* hs, uint8_t* buf, size_t len)
+{
+    ATAPIPTDeviceState* ds;
+    unsigned long int req;
+    uint32_t reserved_size;
+    int ret;
+
+    struct sg_io_v4* cmd;
+    int is_dout;
+
+    if (!(buf[1] < MAX_ATAPI_PT_DEVICES)) {
+        return -1;
+    }
+
+    ds = &hs->devices[buf[1]];
+    if (ds->fd == -1) {
+        return -1;
+    }
+
+    req  = (buf[2] << 24) & 0xFF000000;
+    req |= (buf[3] << 16) & 0x00FF0000;
+    req |= (buf[4] <<  8) & 0x0000FF00;
+    req |= (buf[5] <<  0) & 0x000000FF;
+
+    switch (req) {
+    case SG_GET_RESERVED_SIZE:
+        ret = ioctl(ds->fd, req, &reserved_size);
+        if (ret == -1) {
+            DPRINTF("SG_IO error %s", strerror(errno));
+            buf[1] = 'k';
+            buf[2] = 'o';
+            len = 3;
+        } else {
+            buf[1] = 'o';
+            buf[2] = 'k';
+            memcpy(&buf[3], &reserved_size, sizeof(reserved_size));
+            DPRINTF("reserved_size = %u", reserved_size);
+            len = 7;
+        }
+        break;
+    case SG_IO:
+        //dump_hex(buf, len);
+        cmd = (struct sg_io_v4*)&buf[6];
+        is_dout = (cmd->dout_xfer_len > 0) ? 1 : 0;
+        cmd->request = &buf[6] + sizeof(struct sg_io_v4);
+        if (is_dout) {
+            cmd->dout_xferp = cmd->request + cmd->request_len;
+        }
+        cmd->response = &buf[6] + sizeof(struct sg_io_v4);
+        if (!is_dout) {
+            cmd->din_xferp = cmd->response + cmd->max_response_len;
+        }
+
+        ret = ioctl(ds->fd, req, cmd);
+        if (ret == -1) {
+            DPRINTF("SG_IO error %s", strerror(errno));
+            buf[1] = 'k';
+            buf[2] = 'o';
+        } else {
+            buf[1] = 'o';
+            buf[2] = 'k';
+        }
+
+        len = 6 + sizeof (struct sg_io_v4) + cmd->max_response_len;
+        if (!is_dout) {
+            len += cmd->din_xfer_len;
+        }
+        break;
+    default:
+        DPRINTF("IOCTL(0x%08x) not supported", req);
+        buf[1] = 'k';
+        buf[2] = 'o';
+        len = 3;
+        break;
+    }
+
+    if (v4v_sendto(hs->v4vfd, buf, len, 0, &hs->remote_addr) != len) {
+       DPRINTF("unable to send a message to %s", ds->filename);
+       return -1;
+    }
+
+    return 0;
+}
+
+static int atapi_pt_set_state(ATAPIPTHelperState* hs, uint8_t* buf, size_t len)
+{
+    ATAPIPTDeviceState* ds = NULL;
+    uint8_t cmd;
+
+    if (!(buf[1] < MAX_ATAPI_PT_DEVICES)) {
+        return -1;
+    }
+
+    ds = &hs->devices[buf[1]];
+    if (ds->fd == -1) {
+        return -1;
+    }
+    cmd = buf[2];
+    buf[1] = 'o';
+    buf[2] = 'k';
+    switch (cmd) {
+    case BLOCK_PT_CMD_SET_MEDIA_STATE_UNKNOWN:
+        ds->shm->mediastate = MEDIA_STATE_UNKNOWN;
+        break;
+    case BLOCK_PT_CMD_SET_MEDIA_PRESENT:
+        ds->shm->mediastate = MEDIA_PRESENT;
+        ds->lastmediastate = MEDIA_PRESENT;
+        break;
+    case BLOCK_PT_CMD_SET_MEDIA_ABSENT:
+        /* TODO: No media, remove exclusivity lock */
+        ds->shm->mediastate = MEDIA_ABSENT;
+        ds->lastmediastate = MEDIA_ABSENT;
+        break;
+    case BLOCK_PT_CMD_ERROR:
+    default:
+        buf[1] = 'k';
+        buf[2] = 'o';
+        break;
+    }
+
+    if (v4v_sendto(hs->v4vfd, buf, 3, 0, &hs->remote_addr) != 3) {
+       DPRINTF("unable to send a message to %s", ds->filename);
+       return -1;
+    }
+
+    return 0;
+}
+
+static int atapi_pt_get_state(ATAPIPTHelperState* hs, uint8_t* buf, size_t len)
+{
+    ATAPIPTDeviceState* ds = NULL;
+    uint8_t cmd;
+
+    if (!(buf[1] < MAX_ATAPI_PT_DEVICES)) {
+        return -1;
+    }
+
+    ds = &hs->devices[buf[1]];
+    if (ds->fd == -1) {
+        return -1;
+    }
+    cmd = buf[2];
+    buf[1] = 'o';
+    buf[2] = 'k';
+    switch (cmd) {
+    case BLOCK_PT_CMD_GET_LASTMEDIASTATE:
+        buf[3] = ds->lastmediastate;
+        break;
+    case BLOCK_PT_CMD_GET_SHM_MEDIASTATE:
+        buf[3] = ds->shm->mediastate;
+        break;
+    case BLOCK_PT_CMD_ERROR:
+    default:
+        buf[1] = 'k';
+        buf[2] = 'o';
+        break;
+    }
+
+    if (v4v_sendto(hs->v4vfd, buf, 3, 0, &hs->remote_addr) != 3) {
+       DPRINTF("unable to send a message to %s", ds->filename);
+       return -1;
+    }
+
+    return 0;
+}
+
+static const struct {
+    char const* name;
+    int (*cmd)(ATAPIPTHelperState* hs, uint8_t* buf, size_t len);
+} v4v_atapi_cmds[ATAPI_PT_NUMBER_OF_COMMAND] = {
+    [ATAPI_PT_OPEN] = {
+        .name = "ATAPI_PT_OPEN",
+        .cmd = atapi_pt_open
+    },
+    [ATAPI_PT_CLOSE] = {
+        .name = "ATAPI_PT_CLOSE",
+        .cmd = atapi_pt_close
+    },
+    [ATAPI_PT_IOCTL] = {
+        .name = "ATAPI_PT_IOCTL",
+        .cmd = atapi_pt_ioctl
+    },
+    [ATAPI_PT_SET_STATE] = {
+        .name = "ATAPI_PT_SET_STATE",
+        .cmd = atapi_pt_set_state
+    },
+    [ATAPI_PT_GET_STATE] = {
+        .name = "ATAPI_PT_GET_STATE",
+        .cmd = atapi_pt_get_state
+    }
 };
 
-struct atapi_pt_dev {
-	int fd;	
-	uint32_t max_atapi_pt_xfer_len;
-	int shmfd;
-	int lock_fd;
-	ATAPIPTShm * volatile shm;
-	char lock_file_name[256];
-	struct atapi_pt_helper * sh;
-};
-
-uint8_t n_registered_devs = 0;
-struct atapi_pt_dev *atapi_dev[MAX_ATAPI_PT_DEVS];
-
-static void sh_hex_dump(const void* address, uint32_t len)
+static void close_helper_state(ATAPIPTHelperState* hs)
 {
-	const unsigned char* p = address;
-	int i, j;
-	
-	for (i = 0; i < len; i += 16) {
-		for (j = 0; j < 16 && i + j < len; j++)
-			SH_LOG("%02x ", p[i + j]);
-		for (; j < 16; j++)
-			SH_LOG("   ");
-		SH_LOG(" ");
-		for (j = 0; j < 16 && i + j < len; j++)
-			SH_LOG("%c", (p[i + j] < ' ' || p[i + j] > 0x7e) ? '.' : p[i + j]);
-		SH_LOG("\n");
-	}
+    uint8_t buf[2];
+
+    if (hs->v4vfd > -1) {
+        v4v_close(hs->v4vfd);
+    }
+
+    for (buf[1] = 0; buf[1] < MAX_ATAPI_PT_DEVICES; buf[1]++) {
+        atapi_pt_close(hs, buf, 2);
+    }
+
+    memset(hs, 0, sizeof (ATAPIPTHelperState));
 }
 
-static void handle_atapi_pt_open_cmd(struct atapi_pt_helper *sh,
-				     uint8_t *buf, size_t len)
+static ATAPIPTHelperState* hs_g;
+
+static void signal_handler(int sig)
 {
-	struct stat st;
-	char shm_name[256];
-	char dev_name[256];
-	struct atapi_pt_dev *aptd;
+    DPRINTF("handle signal %d", sig);
 
-	aptd = malloc(sizeof(struct atapi_pt_dev));
-	if (aptd == NULL) {
-		SH_LOG("Error allocating the atapi_pt_dev\n");
-		exit(1);
-	}
-	SH_LOG("aptd = %p\n", aptd);
-
-	atapi_dev[n_registered_devs] = aptd;
-	aptd->sh = sh;
-	aptd->lock_fd=-1;
-
-	memcpy(dev_name, &buf[1], len - 1);
-
-	SH_LOG("opening dev: %s\n", dev_name);
-	aptd->fd = open(dev_name, O_RDWR, 0644);
-	SH_LOG("aptd->fd=%d\n", aptd->fd);
-
-	if (fstat(aptd->fd, &st)) {
-		fprintf(stderr, "Failed to fstat() the atapi-pt device (fd=%d): %s\n", aptd->fd,
-			strerror(errno));
-		exit(1);
-	}
-	snprintf(shm_name, sizeof(shm_name)-1, IDE_ATAPI_PT_SHM_NAME_TEMPLATE,
-		 major(st.st_rdev), minor(st.st_rdev));
-	shm_name[sizeof(shm_name)-1] = '\0';
-	SH_LOG("AAA %s\n", shm_name);
-	aptd->shmfd = shm_open(shm_name, O_CREAT | O_RDWR, 0666);
-	if (aptd->shmfd < 0) {
-		SH_LOG("Open ATAPI-PT SHM failed: %s\n", strerror(errno));
-		exit(1);
-	}
-	ftruncate(aptd->shmfd, sizeof(*(aptd->shm)));
-	aptd->shm = mmap(NULL, sizeof(*(aptd->shm)), PROT_READ|PROT_WRITE,
-			       MAP_SHARED, aptd->shmfd, 0);
-	if (aptd->shm == MAP_FAILED) {
-		fprintf(stderr, "Map ATAPI-PT SHM failed: %s\n", strerror(errno));
-		exit(1);
-	}
-
-	snprintf(aptd->lock_file_name, sizeof(shm_name)-1, IDE_ATAPI_PT_EXCLUSIVE_CD_FILE_TEMPLATE,
-		 major(st.st_rdev), minor(st.st_rdev));
-
-	if (ioctl(aptd->fd, SG_GET_RESERVED_SIZE, &aptd->max_atapi_pt_xfer_len)) {
-		fprintf(stderr, "ATAPI-PT get max xfer len failed: %s\n", strerror(errno));
-		exit(1);
-	}
-
-	buf[1] = (aptd->max_atapi_pt_xfer_len >> 24) & 0xFF;
-	buf[2] = (aptd->max_atapi_pt_xfer_len >> 16) & 0xFF;
-	buf[3] = (aptd->max_atapi_pt_xfer_len >> 8) & 0xFF;
-	buf[4] = (aptd->max_atapi_pt_xfer_len) >> 0 & 0xFF;
-
-	buf[5] = n_registered_devs;
-
-	v4v_sendto(sh->atapi_pt_fd, buf, 6, 0, &sh->remote_addr);
-
-	n_registered_devs++;
+    close_helper_state(hs_g);
+    exit(0);
 }
 
-static int handle_atapi_pt_ioctl_sg_io_cmd(struct atapi_pt_helper *sh,
-				    uint8_t *buf, size_t len)
+int main(int const argc, char const* const* argv)
 {
-	struct atapi_pt_dev *aptd = atapi_dev[buf[1]];
-	struct sg_io_v4 *cmd = (struct sg_io_v4 *)(buf + 2);
-	int is_dout, reply_len, ret;
+    int ret = 1;
+    ATAPIPTHelperState hs;
+    uint8_t io_buf[MAX_V4V_MSG_SIZE];
+    uint8_t cmdID;
+    int continue_listen = 1;
 
-	is_dout = (cmd->dout_xfer_len > 0) ? 1 : 0;
+    DPRINTF("START");
+    memset(&hs, 0, sizeof (ATAPIPTHelperState));
 
-	cmd->request = buf + 2 +  sizeof(struct sg_io_v4);
+    if (argc != 3) {
+        DPRINTF("wrong syntax: should be %s <target_id> <stubdom_id>", argv[0]);
+        goto main_exit;
+    }
 
-	if (is_dout) {
-		cmd->dout_xferp = cmd->request + cmd->request_len;
-	}
+    hs.stubdom_id = atoi(argv[2]);
 
-	cmd->response = buf + 2 +  sizeof(struct sg_io_v4);
+    if (!(hs.stubdom_id > 0)) {
+        DPRINTF("wrong stubdom ID (%d) should be greaten than 0", hs.stubdom_id);
+        goto main_exit;
+    }
 
-	if (!is_dout) {
-		cmd->din_xferp = cmd->response + cmd->max_response_len;
-	}
+    ret = initialize_helper_state(&hs);
+    if  (ret) {
+        continue_listen = 0;
+    }
 
-	SH_LOG("CMD=0x%02x len=%d\n", *(uint8_t *)cmd->request, len);
-	SH_HEX_DUMP(buf, len);
-	SH_LOG("is_OUT = %d\n", is_dout);
-	SH_LOG("cmd->request_len = %d\n", cmd->request_len);
-	SH_LOG("cmd->max_response_len = %d\n", cmd->max_response_len);
+    signal(SIGINT, signal_handler);
+    hs_g = &hs;
 
-	buf[1] = ioctl(aptd->fd, SG_IO, cmd);
+    while (continue_listen) {
+        DPRINTF("wait for command from stubdom (%d)", hs.stubdom_id);
+        memset(io_buf, 0, sizeof (io_buf));
+        ret = v4v_recvfrom(hs.v4vfd, io_buf, sizeof (io_buf),
+                           0, &hs.remote_addr);
 
-	SH_LOG("ioctl=%d\n", buf[1]);
+        cmdID = io_buf[0];
+        DPRINTF("receive request for command ID (%d)", cmdID);
+        if (cmdID < ATAPI_PT_NUMBER_OF_COMMAND) {
+            DPRINTF("  command: %s",
+                    v4v_atapi_cmds[cmdID].name);
+            ret = v4v_atapi_cmds[cmdID].cmd(&hs, io_buf, ret);
+            DPRINTF("  command %s return code %d",
+                    v4v_atapi_cmds[cmdID].name, ret);
+        } else {
+            ret = 1;
+            continue_listen = 0;
+            DPRINTF("Command not supported: 0x%02x", io_buf[0]);
+        }
+    }
 
-	reply_len = 2 + sizeof(struct sg_io_v4) + cmd->max_response_len;
-	if (!is_dout) {
-		reply_len += cmd->din_xfer_len;
-		SH_LOG("cmd->din_xfer_len=%d\n", cmd->din_xfer_len);
-	}
+    DPRINTF("Exit");
+    close_helper_state(&hs);
 
-	SH_LOG("reply_len = %d\n", reply_len);
-	SH_LOG("cmd->request_len = %d\n", cmd->request_len);
-	SH_LOG("cmd->max_response_len = %d\n", cmd->max_response_len);
-
-	ret = v4v_sendto(sh->atapi_pt_fd, buf, reply_len, 0, &sh->remote_addr);
-
-	SH_HEX_DUMP(buf, reply_len);
-	SH_LOG("v4v_sendto=%d\n\n\n", ret);
-
-	return ret;
+main_exit:
+    return ret;
 }
-
-static int get_lock_fd(char *buf)
-{
-	struct atapi_pt_dev *aptd = atapi_dev[buf[1]];
-
-	if (aptd->lock_fd)
-		close(aptd->lock_fd);
-
-	aptd->lock_fd = open( aptd->lock_file_name, O_RDWR | O_CREAT, 0666);
-
-	return aptd->lock_fd;
-}
-
-static int handle_atapi_pt_get_phys_lock_cmd(struct atapi_pt_helper *sh,
-					     uint8_t *buf, size_t len)
-{
-	struct flock lock = {0};
-	int lock_fd=get_lock_fd(buf);
-	int ret;
-
-	if (lock_fd<0) {
-		buf[1] = ATAPI_PT_LOCK_STATE_UNLOCKED;
-		goto send;
-	}
-
-	lock.l_type = F_WRLCK;
-	lock.l_whence = SEEK_SET;
-	lock.l_start = 0;
-	lock.l_len = 0;
-	
-	if (fcntl(lock_fd, F_SETLK, &lock)) {
-		buf[1] = ATAPI_PT_LOCK_STATE_LOCKED_BY_OTHER;
-		goto send;
-	}
-
-	buf[1] = ATAPI_PT_LOCK_STATE_LOCKED_BY_ME;
-send:	
-	ret = v4v_sendto(sh->atapi_pt_fd, buf, 2, 0, &sh->remote_addr);
-}
-
-static int handle_atapi_pt_get_phys_lock_state_cmd(struct atapi_pt_helper *sh,
-						   uint8_t *buf, size_t len)
-{
-	struct flock lock = {0};
-	int lock_fd=get_lock_fd(buf);
-	int ret;
-
-	if (lock_fd<0) {
-		buf[1] = ATAPI_PT_LOCK_STATE_UNLOCKED;
-		goto send;
-	}
-
-	lock.l_type = F_WRLCK;
-	lock.l_whence = SEEK_SET;
-	lock.l_start = 0;
-	lock.l_len = 0;
-	
-	fcntl(lock_fd, F_GETLK, &lock);
-	if (lock.l_type == F_UNLCK) {
-		buf[1] = ATAPI_PT_LOCK_STATE_UNLOCKED;
-		goto send;
-	}
-
-	buf[1] = ATAPI_PT_LOCK_STATE_LOCKED_BY_OTHER;
-send:	
-	ret = v4v_sendto(sh->atapi_pt_fd, buf, 2, 0, &sh->remote_addr);
-}
-
-static int handle_atapi_pt_release_phys_lock_cmd(struct atapi_pt_helper *sh,
-						 uint8_t *buf, size_t len)
-{
-	struct flock lock = {0};
-	int lock_fd=get_lock_fd(buf);
-	
-	if (lock_fd<0) return;
-	
-	lock.l_type = F_UNLCK;
-	lock.l_whence = SEEK_SET;
-	lock.l_start = 0;
-	lock.l_len = 0;
-	
-	fcntl(lock_fd, F_SETLK, &lock);
-}
-
-static int handle_atapi_pt_set_media_state_cmd(struct atapi_pt_helper *sh,
-					       uint8_t *buf, size_t len)
-{
-	struct atapi_pt_dev *aptd = atapi_dev[buf[1]];
-	aptd->shm->mediastate = buf[2];
-}
-
-static void handle_atapi_pt_get_media_state_cmd(struct atapi_pt_helper *sh,
-					       uint8_t *buf, size_t len)
-{
-	struct atapi_pt_dev *aptd = atapi_dev[buf[1]];
-
-	buf[1] = aptd->shm->mediastate;
-
-	v4v_sendto(sh->atapi_pt_fd, buf, 2, 0, &sh->remote_addr);
-}
-
-
-/* This helper needs the stubdom_id to be passed as a cmd-line parameter */
-int main (int argc, char *argv[])
-{
-	int ret;
-	struct atapi_pt_helper *sh = malloc(sizeof(struct atapi_pt_helper));
-	uint32_t v4v_ring_size = V4V_ATAPI_PT_RING_SIZE;
-
-	if (argc != 3) {
-		SH_LOG("wrong syntax: should be ./atapi_pt_helper <target_domid> <stubdom_id>\n");
-	}
-
-	sh->stubdom_id = atoi(argv[2]);
-	SH_LOG("stubdom_id = %d\n", sh->stubdom_id);
-	sh->atapi_pt_fd = v4v_socket(SOCK_DGRAM);
-	if (sh->atapi_pt_fd == -1) {
-		ret = -1;
-		return ret;
-	}
-	
-	if (sh->stubdom_id > 0) {
-		sh->local_addr.port = ATAPI_CDROM_PORT;
-		sh->local_addr.domain = V4V_DOMID_ANY;
-		
-		sh->remote_addr.port = V4V_PORT_NONE;
-		sh->remote_addr.domain = sh->stubdom_id;
-
-		ret = ioctl(sh->atapi_pt_fd, V4VIOCSETRINGSIZE, &v4v_ring_size);
-		SH_LOG("%s:%d ioctl=%d\n", __FUNCTION__, __LINE__, ret);
-		
-		ret = v4v_bind(sh->atapi_pt_fd, &sh->local_addr, sh->stubdom_id);
-		if (ret == -1) {
-			return ret;
-		}	
-				
-		while (1) {
-			ret = v4v_recvfrom(sh->atapi_pt_fd, sh->io_buf,
-					   MAX_V4V_MSG_SIZE, 0, &sh->remote_addr);
-			SH_LOG("recvfrom = %d, CMD=%d\n", ret, sh->io_buf[0]);
-
-			switch(sh->io_buf[0]) {
-			case ATAPI_PT_OPEN:
-				handle_atapi_pt_open_cmd(sh, sh->io_buf, ret);
-				break;
-			case ATAPI_PT_IOCTL_SG_IO:
-				handle_atapi_pt_ioctl_sg_io_cmd(sh, sh->io_buf, ret);
-				break;
-			case ATAPI_PT_GET_PHYS_LOCK:
-				handle_atapi_pt_get_phys_lock_cmd(sh, sh->io_buf, ret);
-				break;
-			case ATAPI_PT_GET_PHYS_LOCK_STATE:
-				handle_atapi_pt_get_phys_lock_state_cmd(sh, sh->io_buf, ret);
-				break;
-			case ATAPI_PT_RELEASE_PHYS_LOCK:
-				handle_atapi_pt_release_phys_lock_cmd(sh, sh->io_buf, ret);
-				break;
-			case ATAPI_PT_SET_GLOB_MEDIA_STATE:
-				handle_atapi_pt_set_media_state_cmd(sh, sh->io_buf, ret);
-				break;
-			case ATAPI_PT_GET_GLOB_MEDIA_STATE:
-				handle_atapi_pt_get_media_state_cmd(sh, sh->io_buf, ret);
-				break;
-			default:
-				SH_LOG("Unknown CMD=%d\n", sh->io_buf[0]);
-			}
-		}
-	} else {
-		SH_LOG("wrong stubdom_id: must be bigger than 0\n");
-	}
-
-	free(sh);
-
-	return 0;
-}
-
-
