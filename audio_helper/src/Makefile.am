@@ -41,7 +41,7 @@ noinst_HEADERS=project.h prototypes.h
 
 bin_PROGRAMS = audio_helper
 
-SRCS=audio_helper.c version.c
+SRCS=openxtaudio.c openxtv4v.c openxtdebug.c unittest.c version.c
 audio_helper_SOURCES = ${SRCS}
 audio_helper_LDADD = -lxenstore -lv4v -lrt -lasound -ldl -lm
 
