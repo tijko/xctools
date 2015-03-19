@@ -97,6 +97,7 @@ DEFINE_MESSAGE(21, dom0_input_event, uint16_t type,
                                      int32_t value)
 DEFINE_MESSAGE(24, input_config_reset, uint8_t slot)
 DEFINE_MESSAGE(25, input_config, InputConfig c)
+DEFINE_MESSAGE(26, input_wakeup)
 
 DEFINE_IN_RPC_NO_RETURN(switcher_abs)
 DEFINE_IN_RPC_NO_RETURN(switcher_pvm_domid)
@@ -106,6 +107,7 @@ DEFINE_IN_RPC_NO_RETURN(switcher_shutdown)
 DEFINE_OUT_RPC(dom0_input_event)
 DEFINE_OUT_RPC(input_config)
 DEFINE_OUT_RPC(input_config_reset)
+DEFINE_OUT_RPC(input_wakeup)
 
 # Common message
 DEFINE_MESSAGE(23, device_model_ready)
