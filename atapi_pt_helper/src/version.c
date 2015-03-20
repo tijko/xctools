@@ -22,21 +22,4 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
-static char rcsid[] = "$Id: version.c,v 1.1 2009/07/31 11:58:28 jamesmck Exp $";
-
-/*
- * $Log: version.c,v $
- * Revision 1.1  2009/07/31 11:58:28  jamesmck
- * *** empty log message ***
- *
- */
-
-
 #include "version.h"
-
-static char *
-get_version(void)
-{
-  return VERSION;
-}
