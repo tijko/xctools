@@ -13,7 +13,7 @@ dnl
 dnl
 dnl
 AC_PREREQ(2.13)
-AC_INIT(src/openxtaudio.c)
+AC_INIT(src/audio_helper.c)
 
 AC_PROG_CC
 AC_PROG_CPP
