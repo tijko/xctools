@@ -18,22 +18,21 @@
 
 #
 # Copyright (c) 2012 Citrix Systems, Inc.
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
-
 
 CPROTO=cproto
 
@@ -41,16 +40,15 @@ noinst_HEADERS=project.h prototypes.h
 
 bin_PROGRAMS = audio_helper
 
-SRCS=audio_helper.c version.c
+SRCS=main.c version.c openxtalsa.c openxtdebug.c openxtmixerctl.c openxtv4v.c openxtvmaudio.c unittest.c
 audio_helper_SOURCES = ${SRCS}
-audio_helper_LDADD = -lxenstore -lv4v -lrt -lasound -ldl -lm
+audio_helper_LDADD = -lv4v -lasound -lm
 
 AM_CFLAGS=-g
 
-audio_helper_LDFLAGS = 
+audio_helper_LDFLAGS =
 
 BUILT_SOURCES = version.h
-
 
 VFD=${srcdir}/..
 VF=${shell cat ${VFD}/version-files}
@@ -64,8 +62,6 @@ protos:
 	${CPROTO} -v ${INCLUDES} ${SRCS} > prototypes.tmp
 	mv -f prototypes.tmp prototypes.h
 
-
-
 version.h: $(VFD)/version-files $(VFD)/version-major \
 	$(VFD)/version-minor $(VFD)/version-micro \
 	$(VFD)/version-md5sums ${VFS} Makefile
@@ -76,4 +72,3 @@ version.h: $(VFD)/version-files $(VFD)/version-major \
 		echo "#define VERSION \"audio_helper Version ${VNUM}\"" > version.h; \
 		echo ${VNUM} > version-num; \
 	fi
-
