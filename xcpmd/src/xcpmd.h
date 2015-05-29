@@ -65,8 +65,13 @@ enum BATTERY_INFO_TYPE {
 };
 
 enum BATTERY_PRESENT {
-    NO,
-    YES
+    NO = 0,
+    YES = 1
+};
+
+enum BATTERY_UNIT {
+    mW = 0,
+    mA = 1
 };
 
 enum BATTERY_TECHNOLOGY {
@@ -89,6 +94,13 @@ enum BCL_CMD {
 
 struct battery_info {
     enum BATTERY_PRESENT    present;
+    unsigned long charge_full_design; /* mA */ 
+    unsigned long charge_full;        /* mA */
+    unsigned long energy_full_design; /* mW */
+    unsigned long energy_full;        /* mW */
+
+    /* _BIF */
+    enum BATTERY_UNIT       power_unit;
     unsigned long           design_capacity;
     unsigned long           last_full_capacity;
     enum BATTERY_TECHNOLOGY battery_technology;
@@ -101,17 +113,20 @@ struct battery_info {
     char                    serial_number[32];
     char                    battery_type[32];
     char                    oem_info[32];
-    unsigned long           design_energy;
-    unsigned long           last_full_energy;
 };
 
 struct battery_status {
     enum BATTERY_PRESENT    present;
+    unsigned long current_now; /* mAh */
+    unsigned long charge_now;  /* mA */
+    unsigned long power_now;   /* mWh */
+    unsigned long energy_now;  /* mW */
+
+    /* _BST */
     unsigned long           state;
     unsigned long           present_rate;
     unsigned long           remaining_capacity;
     unsigned long           present_voltage;
-    unsigned long           remaining_energy;
 };
 
 #ifdef XCPMD_DEBUG_DETAILS
@@ -124,8 +139,6 @@ struct battery_status {
 
 #ifdef RUN_IN_SIMULATE_MODE
     #define BATTERY_DIR_PATH                "/tmp/battery"
-    #define BATTERY_INFO_FILE_PATH          "/tmp/battery/%s/info"
-    #define BATTERY_STATE_FILE_PATH         "/tmp/battery/%s/state"
     #define THERMAL_TRIP_POINTS_FILE        "/tmp/thermal_zone/%s/trip_points"
     #define THERMAL_TEMPERATURE_FILE        "/tmp/thermal_zone/%s/temperature"
 #else
@@ -135,6 +148,7 @@ struct battery_status {
 #endif
 
 #define MAX_BATTERY_SUPPORTED               0x2
+#define MAX_BATTERY_SCANNED                 0x5
 #define AC_ADAPTER_DIR_PATH                 "/sys/class/power_supply/AC"
 #define AC_ADAPTER_STATE_FILE_PATH          AC_ADAPTER_DIR_PATH"/online"
 #define ACPID_SOCKET_PATH                   "/var/run/acpid.socket"

@@ -81,31 +81,17 @@ static void set_attribute_battery_info(char *attrib_name,
 	  info->present = YES;
     }
 
-    if ( !strcmp(attrib_name, "alarm") )
-    {
-        info->design_capacity_warning =
-            strtoull(attrib_value, NULL, 10) / 1000;
-        /* HACK: Making up a reasonable value for design_capacity_low */
-        info->design_capacity_low =
-            strtoull(attrib_value, NULL, 10) / 1000 / 9;
-        /* HACK2: and some granularity as we're here :) */
-        info->capacity_granularity_1 = 1;
-        info->capacity_granularity_2 = 1;
-
-        return;
-    }
-
     if ( !strcmp(attrib_name, "charge_full_design") )
-      info->design_capacity = strtoull(attrib_value, NULL, 10) / 1000;
+      info->charge_full_design = strtoull(attrib_value, NULL, 10) / 1000;
 
     if ( !strcmp(attrib_name, "charge_full") )
-      last_full_capacity += info->last_full_capacity = strtoull(attrib_value, NULL, 10) / 1000;
+      info->charge_full = strtoull(attrib_value, NULL, 10) / 1000;
 
     if ( !strcmp(attrib_name, "energy_full_design") )
-      info->design_energy = strtoull(attrib_value, NULL, 10) / 1000;
+      info->energy_full_design = strtoull(attrib_value, NULL, 10) / 1000;
 
     if ( !strcmp(attrib_name, "energy_full") )
-      info->last_full_energy = strtoull(attrib_value, NULL, 10) / 1000;
+      info->energy_full = strtoull(attrib_value, NULL, 10) / 1000;
 
     if ( !strcmp(attrib_name, "voltage_min_design") )
       info->design_voltage = strtoull(attrib_value, NULL, 10) / 1000;
@@ -136,18 +122,34 @@ static void set_attribute_battery_info(char *attrib_name,
 
 static void fix_battery_info(struct battery_info *info)
 {
-    int v;
+    /* In sysfs, the charge nodes are for batteries reporting in mA and
+     * the energy nodes are for mW (even though Watts are not a measurement
+     * of energy but power rather...sigh).
+     */
+    if (info->charge_full_design != 0)
+    {
+        info->power_unit = mA;
+        info->design_capacity = info->charge_full_design;
+        info->last_full_capacity = info->charge_full;
+    }
+    else
+    {
+        info->power_unit = mW;
+        info->design_capacity = info->energy_full_design;
+        info->last_full_capacity = info->energy_full;
+    }
 
-    if (info->design_capacity != 0    ||
-	info->last_full_capacity != 0)
-      return;
-
-    v = 12; /* We could use some voltage info from the battery but it's all misery */
-
-    info->design_capacity = info->design_energy / v;
-    info->last_full_capacity = info->last_full_energy / v;
-    info->design_capacity_warning = info->design_capacity_warning / v;
-    info->design_capacity_low = info->design_capacity_low / v;
+    /* Unlike the old procfs files, sysfs does not report some values like the
+     * warn and low levels. These values are generally ignored anyway. The
+     * various OS's decide what to do at different depletion levels through
+     * their own policies. These are just some approximate values to pass.
+     */
+    info->design_capacity_warning = info->last_full_capacity *
+        (BATTERY_WARNING_PERCENT / 100);
+    info->design_capacity_low = info->last_full_capacity *
+        (BATTERY_LOW_PERCENT / 100);
+    info->capacity_granularity_1 = 1;
+    info->capacity_granularity_2 = 1;
 
     last_full_capacity += info->last_full_capacity;
 }
@@ -158,9 +160,8 @@ static void set_attribute_battery_status(char *attrib_name,
 {
     if ( !strcmp(attrib_name, "status") )
     {
-        if ( strstr(attrib_value, "Charging/Discharging") )
-            status->state |= 0x3;
-        else if ( strstr(attrib_value, "Discharging") )
+        /* The spec says bit 0 and bit 1 are mutually exclusive */
+        if ( strstr(attrib_value, "Discharging") )
             status->state |= 0x1;
         else if ( strstr(attrib_value, "Charging") )
             status->state |= 0x2;
@@ -175,13 +176,16 @@ static void set_attribute_battery_status(char *attrib_name,
     }
 
     if ( !strcmp(attrib_name, "current_now") )
-      status->present_rate = strtoull(attrib_value, NULL, 10) / 1000;
+      status->current_now = strtoull(attrib_value, NULL, 10) / 1000;
 
     if ( !strcmp(attrib_name, "charge_now") )
-      status->remaining_capacity = strtoull(attrib_value, NULL, 10) / 1000;
+      status->charge_now = strtoull(attrib_value, NULL, 10) / 1000;
+
+    if ( !strcmp(attrib_name, "power_now") )
+      status->power_now = strtoull(attrib_value, NULL, 10) / 1000;
 
     if ( !strcmp(attrib_name, "energy_now") )
-      status->remaining_energy = strtoull(attrib_value, NULL, 10) / 1000;
+      status->energy_now = strtoull(attrib_value, NULL, 10) / 1000;
 
     if ( !strcmp(attrib_name, "voltage_now") )
       status->present_voltage = strtoull(attrib_value, NULL, 10) / 1000;
@@ -194,17 +198,20 @@ static void set_attribute_battery_status(char *attrib_name,
     }
 }
 
-static void fix_battery_status(struct battery_status *info)
+static void fix_battery_status(struct battery_status *status)
 {
-    int v;
-
-    if (info->remaining_capacity != 0)
-      return;
-
-    v = 12; /* We could use some voltage info from the battery but it's all misery */
-
-    info->remaining_capacity = info->remaining_energy / v;
-    info->present_rate = info->present_rate / v;
+    if (status->current_now != 0)
+    {
+        /* Rate in mAh, remaining in mA */
+        status->present_rate = status->current_now;
+        status->remaining_capacity = status->charge_now;
+    }
+    else
+    {
+        /* Rate in mWh, remaining in mW */
+        status->present_rate = status->power_now;
+        status->remaining_capacity = status->energy_now;
+    }
 }
 
 static int get_next_battery_info_or_status(DIR *battery_dir,
@@ -237,36 +244,37 @@ static int get_next_battery_info_or_status(DIR *battery_dir,
         return 0;
     }
     if (type == BIF)
-      memset(info_or_status, 0, sizeof(struct battery_info));
+        memset(info_or_status, 0, sizeof(struct battery_info));
     else
-      memset(info_or_status, 0, sizeof(struct battery_status));
+        memset(info_or_status, 0, sizeof(struct battery_status));
 
     while ((dir = readdir(d)) != NULL)
-      {
+    {
 	if (dir->d_type == DT_REG)
-	  {
+	{
 	    memset(filename, 0, sizeof(filename));
 	    sprintf(filename, "%s/%s", folder, dir->d_name);
 	    file = fopen(filename, "r");
 	    if (!file)
-	      continue;
+	        continue;
 	    memset(line_info, 0, sizeof (line_info));
 	    fgets(line_info, sizeof(line_info), file);
 	    fclose(file);
 	    start = line_info;
 	    while (*start == ' ')
-	      start++;
+	        start++;
+
 	    if (type == BIF)
-	      set_attribute_battery_info(dir->d_name, start, info_or_status);
+	        set_attribute_battery_info(dir->d_name, start, info_or_status);
 	    else
-	      set_attribute_battery_status(dir->d_name, start, info_or_status);
-	  }
-      }
+	        set_attribute_battery_status(dir->d_name, start, info_or_status);
+	}
+    }
 
     if (type == BIF)
-      fix_battery_info(info_or_status);
+        fix_battery_info(info_or_status);
     else
-      fix_battery_status(info_or_status);
+        fix_battery_status(info_or_status);
 
     if (d != NULL) {
         closedir(d);
@@ -288,7 +296,7 @@ static void write_battery_info_to_xenstore(struct battery_info *info, unsigned s
                             strlen(info->serial_number) +
                             strlen(info->battery_type) +
                             strlen(info->oem_info) + 4));
-    write_ulong_lsb_first(val+2, info->present);
+    write_ulong_lsb_first(val+2, info->power_unit);
     write_ulong_lsb_first(val+10, info->design_capacity);
     write_ulong_lsb_first(val+18, info->last_full_capacity);
     write_ulong_lsb_first(val+26, info->battery_technology);
@@ -314,9 +322,9 @@ static void write_battery_info_to_xenstore(struct battery_info *info, unsigned s
 int write_battery_info(int *total_count)
 {
     DIR *dir;
-    int present = 0, total = 0;
+    int present = 0, total = 0, batn = 0;
     struct battery_info info[MAX_BATTERY_SUPPORTED];
-    int i;
+    int i, rc;
 
     last_full_capacity = 0;
     xenstore_rm(XS_BIF);
@@ -330,29 +338,26 @@ int write_battery_info(int *total_count)
         return 0;
     }
 
-    for (i = 0; i < MAX_BATTERY_SUPPORTED; ++i)
+    for (i = 0; i < MAX_BATTERY_SCANNED; ++i)
     {
-        if (get_next_battery_info_or_status(dir, BIF, (void *)&info[present], i))
-	  {
-	    print_battery_info(&info[present]);
-	    total++;
+        rc = get_next_battery_info_or_status(dir, BIF, (void *)&info[batn], i);
+        if (!rc)
+            continue;
 
-	    if ( info[present].present == YES )
-	      {
-		write_battery_info_to_xenstore(&info[present], i);
-		present++;
-		xcpmd_log(LOG_INFO, "One time battery information written to xenstore\n");
-		if ( present >= MAX_BATTERY_SUPPORTED )
-		  break;
-	      }
-	  }
-	else
-	  {
-	    if (i == 0)
-	      xenstore_rm(XS_BIF);
-	    else
-	      xenstore_rm(XS_BIF1);
-	  }
+        print_battery_info(&info[batn]);
+        total++;
+
+        /* If there is a battery slob but no battery present, go on and reuse
+         * the current info struct slot.
+         */
+        if ( info[batn].present == NO )
+            continue;
+
+        write_battery_info_to_xenstore(&info[batn], batn);
+        batn++;
+        xcpmd_log(LOG_INFO, "One time battery information written to xenstore\n");
+        if ( batn >= MAX_BATTERY_SUPPORTED )
+            break;
     }
 
     closedir(dir);
@@ -362,7 +367,7 @@ int write_battery_info(int *total_count)
         *total_count = total;
 
     /* returns count of slots with batteries present */
-    return present;
+    return batn;
 }
 
 void
@@ -473,9 +478,9 @@ static void write_battery_status_to_xenstore(struct battery_status *status)
 static int get_battery_status(struct battery_status *status)
 {
     DIR *dir;
-    int present = 0;
+    int batn = 0;
     struct battery_status *current = status;
-    int i;
+    int i, rc;
 
     dir = opendir(BATTERY_DIR_PATH);
     if ( !dir )
@@ -485,26 +490,27 @@ static int get_battery_status(struct battery_status *status)
         return 0;
     }
 
-    for (i = 0; i < MAX_BATTERY_SUPPORTED; ++i)
+    for (i = 0; i < MAX_BATTERY_SCANNED; ++i)
     {
-        if (get_next_battery_info_or_status(dir, BST, (void *)current, i))
-	  {
-	    print_battery_status(current);
+        rc = get_next_battery_info_or_status(dir, BST, (void *)current, i);
+        if (!rc)
+            continue;
 
-	    if ( current->present == YES )
-	      {
-		present++;
-		if ( present >= MAX_BATTERY_SUPPORTED )
-		  break;
-	      }
-	  }
-	current++;
+        print_battery_status(current);
+
+        if ( current->present == NO )
+            continue;
+
+        batn++;
+        if ( batn >= MAX_BATTERY_SUPPORTED )
+            break;
+        current++;
     }
 
     closedir(dir);
 
     /* returns count of slots with batteries present */
-    return present;
+    return batn;
 }
 
 static void update_battery_status(void)
