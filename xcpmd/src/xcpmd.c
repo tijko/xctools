@@ -200,7 +200,12 @@ static void set_attribute_battery_status(char *attrib_name,
 
 static void fix_battery_status(struct battery_status *status)
 {
-    if (status->current_now != 0)
+    /* This check handles both cases for mA batteries: if are not charging
+     * (current_now == 0) but have capacity or they battery is totally dead
+     * (charge_now == 0) but it is charging. If both are zero, they will
+     * both be zero in the end.
+     */
+    if (status->charge_now != 0 || status->current_now != 0)
     {
         /* Rate in mAh, remaining in mA */
         status->present_rate = status->current_now;
