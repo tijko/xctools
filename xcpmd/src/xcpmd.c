@@ -51,6 +51,10 @@ static enum BATTERY_LEVEL current_battery_level = NORMAL;
 static int monitoring_battery_level = 0;
 static int battery_level_under_threshold = 0;
 
+/* Copy of the last infos and statuses for the dbus server */
+struct battery_info   last_info[2];
+struct battery_status last_status[2];
+
 FILE *get_ac_adpater_state_file(void)
 {
     FILE *file;
@@ -367,6 +371,8 @@ int write_battery_info(int *total_count)
 
     closedir(dir);
 
+    memcpy(last_info, info, sizeof(struct battery_info) * 2);
+
     /* optionally returns total battery slot count, not just ones with batteries present */
     if ( total_count )
         *total_count = total;
@@ -513,6 +519,8 @@ static int get_battery_status(struct battery_status *status)
     }
 
     closedir(dir);
+
+    memcpy(last_status, status, sizeof(struct battery_status) * 2);
 
     /* returns count of slots with batteries present */
     return batn;

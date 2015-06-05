@@ -12,12 +12,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -27,6 +27,165 @@
 #include "xcpmd.h"
 
 xcdbus_conn_t *xcdbus_conn = NULL;
+
+extern struct battery_info   last_info[2];
+extern struct battery_status last_status[2];
+
+/* The following methods are for the UIVM battery "applet" */
+
+gboolean xcpmd_battery_time_to_empty(XcpmdObject *this, guint IN_bat_n, guint *OUT_time_to_empty, GError **error)
+{
+    int juice_left;
+    int hourly_discharge_rate;
+
+    if (IN_bat_n != 0 && IN_bat_n != 1) {
+	g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
+	return FALSE;
+    }
+
+    /* If the battery is not present, return 0 */
+    if (last_status[IN_bat_n].present != YES) {
+	*OUT_time_to_empty = 0;
+	return TRUE;
+    }
+
+    /* If the battery is not currently discharging, return 0 */
+    if (!(last_status[IN_bat_n].state & 0x1)) {
+	*OUT_time_to_empty = 0;
+	return TRUE;
+    }
+
+    juice_left = last_status[IN_bat_n].remaining_capacity;
+    hourly_discharge_rate = last_status[IN_bat_n].present_rate;
+
+    /* Let's not divide by 0 */
+    if (hourly_discharge_rate == 0) {
+	*OUT_time_to_empty = 0;
+	return TRUE;
+    }
+
+    *OUT_time_to_empty = juice_left * 3600 / hourly_discharge_rate;
+
+    return TRUE;
+}
+
+gboolean xcpmd_battery_time_to_full(XcpmdObject *this, guint IN_bat_n, guint *OUT_time_to_full, GError **error)
+{
+    int juice_left;
+    int hourly_charge_rate;
+    int juice_when_full;
+
+    if (IN_bat_n != 0 && IN_bat_n != 1) {
+	g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
+	return FALSE;
+    }
+
+    /* If the battery is not present, return 0 */
+    if (last_status[IN_bat_n].present != YES) {
+	*OUT_time_to_full = 0;
+	return TRUE;
+    }
+
+    /* If the battery is not currently charging, return 0 */
+    if (!(last_status[IN_bat_n].state & 0x2)) {
+	*OUT_time_to_full = 0;
+	return TRUE;
+    }
+
+    juice_left = last_status[IN_bat_n].remaining_capacity;
+    hourly_charge_rate = last_status[IN_bat_n].present_rate;
+    juice_when_full = last_info[IN_bat_n].last_full_capacity;
+
+    /* If there's no last_full_capacity, try design_capacity */
+    if (juice_when_full == 0)
+	juice_when_full = last_info[IN_bat_n].design_capacity;
+
+    /* Let's not divide by 0 */
+    if (hourly_charge_rate == 0) {
+	*OUT_time_to_full = 0;
+	return TRUE;
+    }
+
+    *OUT_time_to_full = (juice_when_full - juice_left) * 3600 / hourly_charge_rate;
+
+    return TRUE;
+}
+
+gboolean xcpmd_battery_percentage(XcpmdObject *this, guint IN_bat_n, guint *OUT_percentage, GError **error)
+{
+    int juice_left;
+    int juice_when_full;
+
+    if (IN_bat_n != 0 && IN_bat_n != 1) {
+	g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
+	return FALSE;
+    }
+
+    /* If the battery is not present, fail */
+    if (last_status[IN_bat_n].present != YES) {
+	g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No battery in slot: %d", IN_bat_n);
+	return FALSE;
+    }
+
+    juice_left = last_status[IN_bat_n].remaining_capacity;
+    juice_when_full = last_info[IN_bat_n].last_full_capacity;
+
+    /* If there's no last_full_capacity, try design_capacity */
+    if (juice_when_full == 0)
+	juice_when_full = last_info[IN_bat_n].design_capacity;
+
+    /* Let's not divide by 0 */
+    if (juice_when_full == 0) {
+	g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "Unhappy battery: %d", IN_bat_n);
+	return FALSE;
+    }
+
+    *OUT_percentage = juice_left * 100 / juice_when_full;
+
+    return TRUE;
+}
+
+gboolean xcpmd_battery_is_present(XcpmdObject *this, guint IN_bat_n, gboolean *OUT_is_present, GError **error)
+{
+    if (IN_bat_n != 0 && IN_bat_n != 1) {
+	g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
+	return FALSE;
+    }
+
+    if (last_status[IN_bat_n].present == YES) {
+	*OUT_is_present = TRUE;
+    } else {
+	*OUT_is_present = FALSE;
+    }
+
+    return TRUE;
+}
+
+gboolean xcpmd_battery_state(XcpmdObject *this, guint IN_bat_n, guint *OUT_state, GError **error)
+{
+    /* 0: Unknown */
+    /* 1: Charging */
+    /* 2: Discharging */
+    /* 3: Empty */
+    /* 4: Fully charged */
+    /* 5: Pending charge */
+    /* 6: Pending discharge */
+    if (IN_bat_n != 0 && IN_bat_n != 1) {
+	g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
+	return FALSE;
+    }
+
+    if (last_status[IN_bat_n].state & 0x1)
+	*OUT_state = 2;
+    else if (last_status[IN_bat_n].state & 0x2)
+	*OUT_state = 1;
+    else
+	*OUT_state = 0;
+
+    return TRUE;
+}
+
+/* End of UIVM battery methods */
 
 gboolean xcpmd_get_ac_adapter_state(XcpmdObject * this, guint *ac_ret, GError **error)
 {
