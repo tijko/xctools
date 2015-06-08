@@ -28,8 +28,8 @@
 
 xcdbus_conn_t *xcdbus_conn = NULL;
 
-extern struct battery_info   last_info[2];
-extern struct battery_status last_status[2];
+extern struct battery_info   last_info[MAX_BATTERY_SUPPORTED];
+extern struct battery_status last_status[MAX_BATTERY_SUPPORTED];
 
 /* The following methods are for the UIVM battery "applet" */
 
@@ -38,7 +38,7 @@ gboolean xcpmd_battery_time_to_empty(XcpmdObject *this, guint IN_bat_n, guint *O
     int juice_left;
     int hourly_discharge_rate;
 
-    if (IN_bat_n != 0 && IN_bat_n != 1) {
+    if (IN_bat_n >= MAX_BATTERY_SUPPORTED) {
 	g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
 	return FALSE;
     }
@@ -75,7 +75,7 @@ gboolean xcpmd_battery_time_to_full(XcpmdObject *this, guint IN_bat_n, guint *OU
     int hourly_charge_rate;
     int juice_when_full;
 
-    if (IN_bat_n != 0 && IN_bat_n != 1) {
+    if (IN_bat_n >= MAX_BATTERY_SUPPORTED) {
 	g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
 	return FALSE;
     }
@@ -116,7 +116,7 @@ gboolean xcpmd_battery_percentage(XcpmdObject *this, guint IN_bat_n, guint *OUT_
     int juice_left;
     int juice_when_full;
 
-    if (IN_bat_n != 0 && IN_bat_n != 1) {
+    if (IN_bat_n >= MAX_BATTERY_SUPPORTED) {
 	g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
 	return FALSE;
     }
@@ -147,7 +147,7 @@ gboolean xcpmd_battery_percentage(XcpmdObject *this, guint IN_bat_n, guint *OUT_
 
 gboolean xcpmd_battery_is_present(XcpmdObject *this, guint IN_bat_n, gboolean *OUT_is_present, GError **error)
 {
-    if (IN_bat_n != 0 && IN_bat_n != 1) {
+    if (IN_bat_n >= MAX_BATTERY_SUPPORTED) {
 	g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
 	return FALSE;
     }
@@ -170,7 +170,7 @@ gboolean xcpmd_battery_state(XcpmdObject *this, guint IN_bat_n, guint *OUT_state
     /* 4: Fully charged */
     /* 5: Pending charge */
     /* 6: Pending discharge */
-    if (IN_bat_n != 0 && IN_bat_n != 1) {
+    if (IN_bat_n >= MAX_BATTERY_SUPPORTED) {
 	g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
 	return FALSE;
     }

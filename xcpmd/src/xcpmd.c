@@ -371,7 +371,7 @@ int write_battery_info(int *total_count)
 
     closedir(dir);
 
-    memcpy(last_info, info, sizeof(struct battery_info) * 2);
+    memcpy(last_info, info, sizeof(struct battery_info) * MAX_BATTERY_SUPPORTED);
 
     /* optionally returns total battery slot count, not just ones with batteries present */
     if ( total_count )
@@ -520,7 +520,7 @@ static int get_battery_status(struct battery_status *status)
 
     closedir(dir);
 
-    memcpy(last_status, status, sizeof(struct battery_status) * 2);
+    memcpy(last_status, status, sizeof(struct battery_status) * MAX_BATTERY_SUPPORTED);
 
     /* returns count of slots with batteries present */
     return batn;
