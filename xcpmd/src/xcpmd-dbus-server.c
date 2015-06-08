@@ -170,6 +170,12 @@ gboolean xcpmd_battery_state(XcpmdObject *this, guint IN_bat_n, guint *OUT_state
     /* 4: Fully charged */
     /* 5: Pending charge */
     /* 6: Pending discharge */
+
+    int juice_left;
+    int juice_when_full;
+    int percent;
+    unsigned int i;
+
     if (IN_bat_n >= MAX_BATTERY_SUPPORTED) {
 	g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
 	return FALSE;
@@ -179,8 +185,38 @@ gboolean xcpmd_battery_state(XcpmdObject *this, guint IN_bat_n, guint *OUT_state
 	*OUT_state = 2;
     else if (last_status[IN_bat_n].state & 0x2)
 	*OUT_state = 1;
-    else
-	*OUT_state = 0;
+    else {
+	/* We're not charging nor discharging... */
+	juice_left = last_status[IN_bat_n].remaining_capacity;
+	juice_when_full = last_info[IN_bat_n].last_full_capacity;
+	percent = juice_left * 100 / juice_when_full;
+	/* Are we full or empty? */
+	if (percent > 90)
+	    *OUT_state = 4;
+	else if (percent < 10)
+	    *OUT_state = 3;
+	else {
+	    /* Is anybody else (dis)charging? */
+	    for (i = 0; i < MAX_BATTERY_SUPPORTED; ++i) {
+		if (i != IN_bat_n &&
+		    last_status[i].present == YES &&
+		    (last_status[i].state & 0x1 || last_status[i].state & 0x2)) {
+		    break;
+		}
+	    }
+	    if (i < MAX_BATTERY_SUPPORTED) {
+		/* Yes! */
+		/* If the other battery is charging, we're pending charge */
+		if (last_status[i].state & 0x2)
+		    *OUT_state = 5;
+		/* If the other battery is discharging, we're pending discharge */
+		else if (last_status[i].state & 0x1)
+		    *OUT_state = 6;
+	    } else
+		/* We tried everything, the state is unknown... */
+		*OUT_state = 0;
+	}
+    }
 
     return TRUE;
 }
