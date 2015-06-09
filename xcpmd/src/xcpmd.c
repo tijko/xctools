@@ -52,8 +52,8 @@ static int monitoring_battery_level = 0;
 static int battery_level_under_threshold = 0;
 
 /* Copy of the last infos and statuses for the dbus server */
-struct battery_info   last_info[2];
-struct battery_status last_status[2];
+struct battery_info   last_info[MAX_BATTERY_SUPPORTED];
+struct battery_status last_status[MAX_BATTERY_SUPPORTED];
 
 FILE *get_ac_adpater_state_file(void)
 {
