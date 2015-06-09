@@ -1,0 +1,9 @@
+*~
+*.o
+config.h
+config.h.in
+rpcgen/
+stamp-h1
+version-num
+version.h
+xcpmd
