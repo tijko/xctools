@@ -336,8 +336,6 @@ int write_battery_info(int *total_count)
     int i, rc;
 
     last_full_capacity = 0;
-    xenstore_rm(XS_BIF);
-    xenstore_rm(XS_BIF1);
 
     dir = opendir(BATTERY_DIR_PATH);
     if ( !dir )
@@ -368,6 +366,14 @@ int write_battery_info(int *total_count)
         if ( batn >= MAX_BATTERY_SUPPORTED )
             break;
     }
+
+    /* Cleanup unused battery slots after the update */
+    switch (batn) {
+        case 0:
+            xenstore_rm(XS_BIF);
+        case 1:
+            xenstore_rm(XS_BIF1);
+    };
 
     closedir(dir);
 
@@ -526,9 +532,12 @@ static int get_battery_status(struct battery_status *status)
     return batn;
 }
 
-static void update_battery_status(void)
+static void update_batteries(void)
 {
     struct battery_status status[MAX_BATTERY_SUPPORTED];
+
+    /* TODO the battery status is not updated when the ACPI event fires so
+     * we get stale or missing BSTx nodes in xenstore for a period. */
 
     if ( pm_specs & PM_SPEC_NO_BATTERIES )
         return;
@@ -699,7 +708,7 @@ xcpmd_process_input(int input_value)
 static void
 refresh_battery_status_cb(const char *path, void *opaque)
 {
-    update_battery_status();
+    update_batteries();
 }
 
 static void
@@ -766,7 +775,7 @@ wrapper_refresh_battery_event(int fd, short evemt, void *opaque)
     struct timeval tv;
     memset(&tv, 0, sizeof(tv));
 
-    update_battery_status();
+    update_batteries();
 
     tv.tv_sec = 60;
     evtimer_add(&refresh_battery_event, &tv);
