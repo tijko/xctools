@@ -178,36 +178,6 @@ fi
 AC_SUBST(LIBXCDBUS_INC)
 AC_SUBST(LIBXCDBUS_LIB)
 
-dnl --xenacpi--
-
-LIBXENACPI_CONFIG=no
-AC_ARG_WITH(libxenacpi,
-        AC_HELP_STRING([--with-libxenacpi=PATH],[Path to libxenacpi-config]),
-                LIBXENACPI_CONFIG=$with_libxenacpi,LIBXENACPI_CONFIG=no)
-
-case "x$LIBXENACPI_CONFIG" in
-        xno)
-		AC_PATH_PROG(LIBXENACPI_CONFIG, libxenacpi-config, no)
-        ;;
-        x|xyes)
-		AC_PATH_PROG(LIBXENACPI_CONFIG, libxenacpi-config, no)
-        ;;
-        *)
-        ;;
-esac
-
-if ! test -x $LIBXENACPI_CONFIG; then
-  PKG_CHECK_MODULES([LIBXENACPI], [libxenacpi])
-  LIBXENACPI_INC="$LIBXENACPI_CFLAGS"
-  LIBXENACPI_LIB="$LIBXENACPI_LIBS"
-else
- LIBXENACPI_INC=`$LIBXENACPI_CONFIG --cflags`
- LIBXENACPI_LIB=`$LIBXENACPI_CONFIG --libs`
-fi
-
-AC_SUBST(LIBXENACPI_INC)
-AC_SUBST(LIBXENACPI_LIB)
-
 dnl --dbus_glib--
 
 DBUS_GLIB_1_CONFIG=no

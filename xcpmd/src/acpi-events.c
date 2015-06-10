@@ -87,69 +87,19 @@ static void handle_sbtn_pressed_event(void)
     notify_com_citrix_xenclient_xcpmd_sleep_button_pressed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
 }
 
-void
-handle_oem_event(const char *bus_id, uint32_t ev)
-{
-    struct wmi_platform_device *wpd;
-    char oemwmi_event[XS_FORMAT_PATH_LEN + 1];
-    int len;
-
-    wpd = check_wmi_platform_device(bus_id);
-    xcpmd_log(LOG_INFO, "Received OEM event: %x for WMI device: %s\n",
-              ev, wpd->name);
-
-    /* Combine the WMMID with the event notification ID */
-    ev = (0xFFFF0000 & (wpd->wmiid << 16)) | (0x00FF & ev);
-
-    len = snprintf(oemwmi_event, XS_FORMAT_PATH_LEN, "%8.8x", ev);
-    if (!xenstore_write(oemwmi_event, XENACPI_XS_OEM_WMI_NOTIFY_PATH))
-    {
-        xcpmd_log(LOG_ERR, "%s failed to write WMI event to xenstore path: %s\n",
-                  __FUNCTION__, XENACPI_XS_OEM_WMI_NOTIFY_PATH);
-    }
-
-    xenstore_write("1", XENACPI_XS_OEM_EVENT_PATH);
-    notify_com_citrix_xenclient_xcpmd_oem_event_triggered(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
-}
-
 static void handle_bcl_event(enum BCL_CMD cmd)
 {
-    int bcl_disable = 0;
     int ret, err;
-
-    /* if a PVM is running with Intel GPU pt, brightness adjusting will be disabled in the
-       backend. This includes disabling both _BCL operations in the ACPI driver and
-       software assistance. */
-    if ( (pm_specs & PM_SPEC_INTEL_GPU) && (test_gpu_delegated()) &&
-         ((pm_quirks & PM_QUIRK_SW_ASSIST_BCL_IGFX_PT) == 0) )
-        bcl_disable = 1;
-
-    xcpmd_log(LOG_INFO, "Brightness %s event; disable flag: %d\n", cmd==1 ? "UP" : "DOWN", bcl_disable);
-
-    if ( bcl_disable )
-    {
-        ret = xenacpi_vid_brightness_switch(1, &err);
-        if ( ret == -1 )
-            xcpmd_log(LOG_ERR, "BCL disable on event failed - %d\n", err);
-    }
-    else
-    {
-        ret = xenacpi_vid_brightness_switch(0, &err);
-        if ( ret == -1 )
-            xcpmd_log(LOG_ERR, "BCL enable on event failed - %d\n", err);
-    }
 
     if ( cmd == BCL_UP )
     {
         xenstore_write("1", XS_BCL_CMD);
-        if ( !bcl_disable )
-            adjust_brightness(1, 0);
+	adjust_brightness(1, 0);
     }
     else if ( cmd == BCL_DOWN )
     {
         xenstore_write("2", XS_BCL_CMD);
-        if ( !bcl_disable )
-            adjust_brightness(0, 0);
+	adjust_brightness(0, 0);
     }
 
     xenstore_write("1", XS_BCL_EVENT_PATH);
@@ -158,7 +108,6 @@ static void handle_bcl_event(enum BCL_CMD cmd)
 
 static void process_acpi_message(char *acpi_buffer, ssize_t len)
 {
-    struct wmi_platform_device *wpd;
     /* todo this code may be unsafe; account for the actual length read? */
 
     if ( (strstr(acpi_buffer, "PBTN")) ||
@@ -263,11 +212,6 @@ int acpi_events_initialize(void)
 {
     int ret, i, err;
     struct sockaddr_un addr;
-
-    /* start platform with bcl enabled (should be by default) */
-    ret = xenacpi_vid_brightness_switch(0, &err);
-    if ( ret == -1 )
-        xcpmd_log(LOG_ERR, "BCL initial enable failed - %d\n", err);
 
     acpi_events_fd = socket(PF_UNIX, SOCK_STREAM, 0);
     if ( acpi_events_fd == -1 )

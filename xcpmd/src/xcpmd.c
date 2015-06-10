@@ -718,25 +718,6 @@ refresh_thermal_info_cb(const char *path, void *opaque)
 }
 
 
-static bool pm_monitor_initialize(void)
-{
-    bool ret = false;
-
-    ret = xenstore_watch(refresh_battery_status_cb, NULL, "/pm/events/refreshbatterystatus") &&
-        xenstore_watch(refresh_thermal_info_cb, NULL, "/pm/events/refreshthermalinfo");
-
-    xcpmd_log(LOG_INFO, "PM monitor initialized.\n");
-
-    return ret;
-}
-
-static void pm_monitor_cleanup(void)
-{
-    xcpmd_log(LOG_INFO, "PM monitor cleanup\n");
-    xenstore_watch(NULL, NULL, "/pm/events/refreshbatterystatus");
-    xenstore_watch(NULL, NULL, "/pm/events/refreshthermalinfo");
-}
-
 void monitor_battery_level(int enable)
 {
     /* Never turn on the battery monitor on systems with no batteries */
@@ -758,18 +739,6 @@ void monitor_battery_level(int enable)
 }
 
 static void
-wrapper_misc_event(int fd, short event, void *opaque)
-{
-    struct timeval tv;
-    memset(&tv, 0, sizeof(tv));
-
-    check_hp_hotkey_switch();
-
-    tv.tv_sec = 1;
-    evtimer_add(&misc_event, &tv);
-}
-
-static void
 wrapper_refresh_battery_event(int fd, short evemt, void *opaque)
 {
     struct timeval tv;
@@ -777,7 +746,7 @@ wrapper_refresh_battery_event(int fd, short evemt, void *opaque)
 
     update_batteries();
 
-    tv.tv_sec = 60;
+    tv.tv_sec = 4;
     evtimer_add(&refresh_battery_event, &tv);
 }
 
@@ -834,21 +803,11 @@ int main(int argc, char *argv[])
         goto xcpmd_err;
     }
 
-    if (!pm_monitor_initialize())
-    {
-        xcpmd_log(LOG_ERR, "Failed to initialize PM monitor\n");
-        goto xcpmd_err;
-    }
-
     if (netlink_init() != 0)
     {
         xcpmd_log(LOG_ERR, "Failed to initialize netlink\n");
         goto xcpmd_err;
     }
-
-    /* XXX: Watch input queue and HP hotkey switch status */
-    event_set(&misc_event, -1, EV_TIMEOUT | EV_PERSIST, wrapper_misc_event, NULL);
-    wrapper_misc_event(0, 0, NULL);
 
     /* XXX: Setup a watch rather than something based on a timer */
     event_set(&refresh_battery_event, -1, EV_TIMEOUT | EV_PERSIST, wrapper_refresh_battery_event, NULL);
@@ -862,7 +821,6 @@ int main(int argc, char *argv[])
 xcpmd_err:
     ret = -1;
 xcpmd_out:
-    pm_monitor_cleanup();
     acpi_events_cleanup();
     xcpmd_dbus_cleanup();
     netlink_cleanup();

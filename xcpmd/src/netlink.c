@@ -74,9 +74,7 @@ netlink_cb(struct nl_msg *msg, void *arg)
 
     event =(struct acpi_genl_event *) nla_data(attrs[ACPI_GENL_ATTR_EVENT]);
 
-    if (strcmp(event->device_class, ACPI_WMI_CLASS) == 0)
-        handle_oem_event(event->bus_id, event->type);
-    else if (strcmp(event->device_class, ACPI_AC_CLASS) == 0)
+    if (strcmp(event->device_class, ACPI_AC_CLASS) == 0)
         handle_ac_adapter_event(event->type, event->data);
     else if (strcmp(event->device_class, ACPI_BATTERY_CLASS) == 0)
         handle_battery_event(event->type);

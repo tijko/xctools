@@ -181,13 +181,13 @@ struct battery_status {
 #define BATTERY_CRITICAL_PERCENT  2
 
 #ifndef RUN_STANDALONE
-# ifdef DEBUG
+# ifdef XCPMD_DEBUG
     #define xcpmd_log(priority, format, p...) syslog(priority, format, ##p)
 # else
     #define xcpmd_log(priority, format, p...) priority == LOG_INFO ? : syslog(priority, format, ##p)
 # endif
 #else
-# ifdef DEBUG
+# ifdef XCPMD_DEBUG
     #define xcpmd_log(priority, format, p...) printf(format, ##p)
 # else
     #define xcpmd_log(priority, format, p...) priority == LOG_INFO ? : printf(format, ##p)
@@ -200,7 +200,6 @@ struct battery_status {
 #define PM_QUIRK_SW_ASSIST_BCL_IGFX_PT      0x0000002 /* platform needs SW assistance with brightness adjustments with Intel GPU pass-through */
 #define PM_QUIRK_SW_ASSIST_BCL_HP_SB        0x0000004 /* set of HP SB platforms need SW assistance due to BIOS not switching to OpRegion use */
 #define PM_QUIRK_HP_HOTKEY_INPUT            0x0010000 /* HP platforms generate keyboard input for hotkeys */
-#define PM_QUIRK_HP_HOTKEY_SWITCH           0x0020000 /* HP platforms switch the hotkey mapping via SW and WMI, flag allows XCPMD switching control */
 
 extern uint32_t pm_quirks;
 
@@ -210,23 +209,6 @@ extern uint32_t pm_quirks;
 #define PM_SPEC_NO_BATTERIES                0x0000004 /* platform has no batteries or battery slots (e.g. a Desktop system) */
 
 extern uint32_t pm_specs;
-
-enum HP_HOTKEY_CMD {
-    HP_HOTKEY_NONE,  /* no HP hotkey switch pending */
-    HP_HOTKEY_SET,   /* switch pending, set HP hotkey mapping to QLB value (0x6E) */
-    HP_HOTKEY_RESET  /* switch pending, reset HP hotkey mapping to boot time value (0x00) */
-};
-
-extern enum HP_HOTKEY_CMD hp_hotkey_cmd;
-
-struct wmi_platform_device {
-    char name[XENAML_NAME_SIZE + 1];
-    uint32_t wmiid;
-    char bus_name[XENACPI_WMI_NAME_SIZE];
-};
-
-#define SSDT_WMI_EXTERNAL_FILE              "ssdt_wmi.aml"
-#define SSDT_WMI_EXTERNAL_PATH              "/var/oem"
 
 #define XCPMD_PID_FILE                      "/var/run/xcpmd.pid"
 
