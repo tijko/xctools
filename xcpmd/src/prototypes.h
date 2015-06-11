@@ -36,13 +36,8 @@ void acpi_events_cleanup(void);
 /* platform.c */
 uint32_t pm_quirks;
 uint32_t pm_specs;
-enum HP_HOTKEY_CMD hp_hotkey_cmd;
 void initialize_platform_info(void);
-void check_hp_hotkey_switch(void);
-struct wmi_platform_device *check_wmi_platform_device(const char *busid);
 /* version.c */
-/* wmi-ssdt.c */
-uint8_t *create_wmi_ssdt(uint32_t *length_out, int *err_out);
 /* rpcgen/xcpmd_server_obj.c */
 void dbus_glib_marshal_xcpmd_BOOLEAN__POINTER_POINTER(GClosure *closure, GValue *return_value, guint n_param_values, const GValue *param_values, gpointer invocation_hint, gpointer marshal_data);
 void dbus_glib_marshal_xcpmd_BOOLEAN__INT_POINTER(GClosure *closure, GValue *return_value, guint n_param_values, const GValue *param_values, gpointer invocation_hint, gpointer marshal_data);

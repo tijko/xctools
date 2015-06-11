@@ -266,8 +266,8 @@ gboolean xcpmd_indicate_input(XcpmdObject *this, gint input_value, GError **erro
 
 gboolean xcpmd_hotkey_switch(XcpmdObject *this, const gboolean reset, GError **error)
 {
-    /* Set a flag and synchronize the switch work with the main select loop. */
-    hp_hotkey_cmd = (reset ? HP_HOTKEY_RESET : HP_HOTKEY_SET);
+    /* That's not used anymore.
+       TODO: remove from idl and whatever calls it */
     return TRUE;
 }
 

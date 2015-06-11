@@ -24,9 +24,6 @@
 #ifndef ACPI_EVENTS_H_
 #define ACPI_EVENTS_H_
 
-/* From drivers/acpi/xen-wmi.c */
-#define ACPI_WMI_CLASS                  "wmi"
-
 /* From drivers/acpi/ac.c */
 #define ACPI_AC_CLASS                   "ac_adapter"
 #define ACPI_AC_NOTIFY_STATUS           0x80
