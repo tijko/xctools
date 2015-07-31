@@ -80,7 +80,6 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <xcdbus.h>
-#include <xenacpi.h>
 #include <xcxenstore.h>
 
 #include <xenstore.h>
