@@ -27,8 +27,8 @@
 
 /* #define RUN_STANDALONE */
 /* #define RUN_IN_SIMULATE_MODE */
-/* #define XCPMD_DEBUG */
-/* #define XCPMD_DEBUG_DETAILS */
+//#define XCPMD_DEBUG
+//#define XCPMD_DEBUG_DETAILS
 
 #if __WORDSIZE == 64
 #define UINT_FMT "%lx"
@@ -40,6 +40,7 @@
 #define SURFMAN_PATH    "/"
 #define XCPMD_SERVICE   "com.citrix.xenclient.xcpmd"
 #define XCPMD_PATH      "/"
+
 
 #define PCI_INVALID_VALUE 0xffffffff
 #define EFI_LINE_SIZE     64
@@ -54,7 +55,6 @@
 #define XCPMD_INPUT_BRIGHTNESSDOWN 3
 
 /* Shared library handles opened up front */
-extern xc_interface *xch;
 extern xcdbus_conn_t *xcdbus_conn;
 
 xcdbus_conn_t *xcpmd_get_xcdbus_conn(void);
@@ -89,7 +89,27 @@ enum BATTERY_LEVEL {
 enum BCL_CMD {
     BCL_NONE,
     BCL_UP,
-    BCL_DOWN
+    BCL_DOWN,
+    BCL_CYCLE
+};
+
+enum AC_ADAPTER {
+    ON_AC,
+    ON_BATT,
+    AC_UNKNOWN,
+    NO_AC
+};
+
+enum LID_STATE {
+    LID_OPEN,
+    LID_CLOSED,
+    LID_UNKNOWN,
+    NO_LID
+};
+
+enum TABLET_STATE {
+    NORMAL_MODE,
+    TABLET_MODE
 };
 
 struct battery_info {
@@ -151,9 +171,24 @@ struct battery_status {
 #define MAX_BATTERY_SCANNED                 0x5
 #define AC_ADAPTER_DIR_PATH                 "/sys/class/power_supply/AC"
 #define AC_ADAPTER_STATE_FILE_PATH          AC_ADAPTER_DIR_PATH"/online"
+#define LID_DIR_PATH                        "/proc/acpi/button/lid/LID"
+#define LID_STATE_FILE_PATH                 LID_DIR_PATH"/state"
 #define ACPID_SOCKET_PATH                   "/var/run/acpid.socket"
 
 #define XS_FORMAT_PATH_LEN                  128
+
+//More generalized structure for multi-battery systems
+#define XS_BATTERY_PATH                     "/pm/bat" //%i
+#define XS_BIF_LEAF                         "bif"
+#define XS_BST_LEAF                         "bst"
+#define XS_BATTERY_PRESENT_LEAF             "present"
+#define XS_BATTERY_LEVEL_LEAF               "current_level"
+
+#define XS_BATTERY_EVENT_PATH               "/pm/events/bat" //%i
+#define XS_BATTERY_INFO_EVENT_LEAF          "info_changed"
+#define XS_BATTERY_STATUS_EVENT_LEAF        "status_changed"
+
+
 
 #define XS_BATTERY_PRESENT                  "/pm/battery_present"
 #define XS_BIF                              "/pm/bif"
@@ -171,8 +206,10 @@ struct battery_status {
 #define XS_PM_EVENTS_TOKEN                  "xcpmd_token"
 
 #define XS_BATTERY_STATUS_CHANGE_EVENT_PATH "/pm/events/batterystatuschanged"
-#define XS_PBTN_EVENT_PATH                  "/pm/events/powerbuttonpressed"
-#define XS_SBTN_EVENT_PATH                  "/pm/events/sleepbuttonpressed"
+#define XS_PWRBTN_EVENT_PATH                "/pm/events/powerbuttonpressed"
+#define XS_SLPBTN_EVENT_PATH                "/pm/events/sleepbuttonpressed"
+#define XS_SUSPBTN_EVENT_PATH               "/pm/events/suspendbuttonpressed"
+#define XS_LID_EVENT_PATH                   "/pm/events/lidevent"
 #define XS_BCL_EVENT_PATH                   "/pm/events/bclevent"
 #define XS_XCMPD_SHUTDOWN_EVENT_PATH        "/pm/events/shutdownxcpmd"
 
@@ -207,6 +244,7 @@ extern uint32_t pm_quirks;
 #define PM_SPEC_INTEL_GPU                   0x0000001 /* platform has an Intel GPU */
 #define PM_SPEC_DIRECT_IO                   0x0000002 /* platform has direct IO hardware support like VTd */
 #define PM_SPEC_NO_BATTERIES                0x0000004 /* platform has no batteries or battery slots (e.g. a Desktop system) */
+#define PM_SPEC_NO_LID                      0x0000008 // platform has no lid switch
 
 extern uint32_t pm_specs;
 
