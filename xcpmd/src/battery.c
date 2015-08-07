@@ -16,12 +16,55 @@ static void set_battery_status_attribute(char * attrib_name, char * attrib_value
 static void set_battery_info_attribute(char *attrib_name, char *attrib_value, struct battery_info *info);
 
 
+//Get the overall warning level of all batteries in the system.
+int get_current_battery_level(void) {
+
+    int percentage;
+
+    percentage = get_overall_battery_percentage();
+
+    if (percentage <= BATTERY_CRITICAL_PERCENT)
+        return CRITICAL;
+    else if (percentage <= BATTERY_LOW_PERCENT)
+        return LOW;
+    else if (percentage <= BATTERY_WARNING_PERCENT)
+        return WARNING;
+    else
+        return NORMAL;
+}
+
+//Get the overall battery percentage of the system.
+//May return weird values if one battery is mA and the other is mW.
+int get_overall_battery_percentage(void) {
+
+    int i;
+    unsigned long capacity_left, capacity_total;
+
+    capacity_left = capacity_total = 0;
+
+    for (i=0; i < MAX_BATTERY_SUPPORTED; ++i) {
+        if (last_status[i].present == YES) {
+            capacity_left += last_status[i].remaining_capacity;
+            capacity_total += last_info[i].last_full_capacity;
+        }
+    }
+    
+    return (int) ((100 * capacity_left) / capacity_total);
+}
+
+
 //Get the specified battery's current charge in percent.
 int get_battery_percentage(int battery_index) {
 
     int percentage;
     struct battery_status * status;
     struct battery_info * info;
+
+    if (battery_index > MAX_BATTERY_SUPPORTED)
+        return 0;
+
+    if (last_status[battery_index].present == NO)
+        return 0;
 
     status = &last_status[battery_index];
     info = &last_info[battery_index];
@@ -378,7 +421,7 @@ void write_battery_status_to_xenstore(int battery_index) {
 
     struct battery_status * status;
     char bst[35], xenstore_path[128];
-    int num_batteries;
+    int num_batteries, current_battery_level;
 
     if (battery_index > MAX_BATTERY_SUPPORTED)
         return;
@@ -407,7 +450,6 @@ void write_battery_status_to_xenstore(int battery_index) {
         return;
     }
 
-
     //Build the BST structure.
     memset(bst, 0, 35);
     snprintf(bst, 3, "%02x", 16);
@@ -415,7 +457,6 @@ void write_battery_status_to_xenstore(int battery_index) {
     write_ulong_lsb_first(bst+10, status->present_rate);
     write_ulong_lsb_first(bst+18, status->remaining_capacity);
     write_ulong_lsb_first(bst+26, status->present_voltage);
-
 
     //Ensure the directory exists before trying to write the leaves
     make_xenstore_battery_dir(battery_index);
@@ -433,8 +474,15 @@ void write_battery_status_to_xenstore(int battery_index) {
     else
         xenstore_write(bst, XS_BST1);
 
+    current_battery_level = get_current_battery_level();
+    if (current_battery_level == NORMAL || get_ac_adapter_status() == ON_AC)
+        xenstore_rm(XS_CURRENT_BATTERY_LEVEL);
+    else {
+        xenstore_write_int(current_battery_level, XS_CURRENT_BATTERY_LEVEL);
+        notify_com_citrix_xenclient_xcpmd_battery_level_notification(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+        xcpmd_log(LOG_ALERT, "Battery level below normal - %d!\n", current_battery_level);
+    }
 
-    //write_current_battery_level_to_xenstore();
 #ifdef XCPMD_DEBUG
     //xcpmd_log(LOG_DEBUG, "~Updated battery information in xenstore\n");
 #endif
@@ -452,9 +500,14 @@ void update_batteries(void) {
     if (get_num_batteries() == 0 )
         return;
 
+    //Two loops prevents the system from shutting down immediately after startup
+    //if BAT0 is depleted and BAT1 isn't.
     for (i=0; i < MAX_BATTERY_SUPPORTED; ++i) {
         update_battery_status(i);
         update_battery_info(i);
+    }
+
+    for (i=0; i < MAX_BATTERY_SUPPORTED; ++i) {
         write_battery_status_to_xenstore(i);
         write_battery_info_to_xenstore(i);
     }
@@ -548,7 +601,6 @@ static void cleanup_removed_battery(int battery_index) {
         xenstore_write("0", XS_BATTERY_PRESENT);
     else
         xenstore_write("1", XS_BATTERY_PRESENT);
-
 
 }
 

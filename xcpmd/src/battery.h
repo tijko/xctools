@@ -18,6 +18,9 @@ int update_battery_status(int battery_index);
 int update_battery_info(int battery_index);
 void write_battery_status_to_xenstore(int battery_index);
 void write_battery_info_to_xenstore(int battery_index);
+int get_overall_battery_percentage(void);
+int get_current_battery_level(void);
+
 
 
 #endif
