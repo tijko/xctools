@@ -242,8 +242,10 @@ static void initialize_state(void) {
     int lid_status = get_lid_status();
     int tablet_status = get_tablet_status();
 
+    xcpmd_log(LOG_DEBUG, "Lid is %s and system is on %s\n", lid_status == LID_OPEN ? "open" : "closed", ac_adapter_status == ON_AC ? "ac" : "battery");
+
     xenstore_write_int((ac_adapter_status == ON_AC) ? 1 : 0, XS_AC_ADAPTER_STATE_PATH);
-    xenstore_write_int((lid_status == LID_CLOSED) ? 0 : 1, XS_AC_ADAPTER_STATE_PATH);
+    xenstore_write_int((lid_status == LID_CLOSED) ? 0 : 1, XS_LID_STATE_PATH);
 
     update_batteries();
 }
