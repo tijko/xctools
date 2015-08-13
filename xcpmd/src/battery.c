@@ -8,6 +8,8 @@
 struct battery_info   last_info[MAX_BATTERY_SUPPORTED];
 struct battery_status last_status[MAX_BATTERY_SUPPORTED];
 
+//Event struct for libevent
+struct event refresh_battery_event;
 
 static bool battery_slot_is_present(int battery_index);
 static void cleanup_removed_battery(int battery_index);
@@ -492,13 +494,20 @@ void write_battery_status_to_xenstore(int battery_index) {
 //Updates status and info of all batteries locally and in the xenstore.
 void update_batteries(void) {
 
+    struct battery_status old_status[MAX_BATTERY_SUPPORTED];
+    struct battery_info old_info[MAX_BATTERY_SUPPORTED];
+    char path[256];
     unsigned int i;
 
     if ( pm_specs & PM_SPEC_NO_BATTERIES )
         return;
 
-    if (get_num_batteries() == 0 )
+    if (get_num_batteries() == 0)
         return;
+
+    //Keep a copy of what the battery status/info used to be.
+    memcpy(old_status, last_status, sizeof(last_status));
+    memcpy(old_info, last_info, sizeof(last_info));
 
     //Two loops prevents the system from shutting down immediately after startup
     //if BAT0 is depleted and BAT1 isn't.
@@ -507,9 +516,31 @@ void update_batteries(void) {
         update_battery_info(i);
     }
 
+    //Write back to the xenstore and only send notifications if things have changed.
     for (i=0; i < MAX_BATTERY_SUPPORTED; ++i) {
+
         write_battery_status_to_xenstore(i);
         write_battery_info_to_xenstore(i);
+
+        if (!memcmp(&old_info[i], &last_info[i], sizeof(struct battery_info))) {
+            sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_INFO_EVENT_LEAF);
+            xenstore_write("1", path);
+        }
+
+        if (!memcmp(&old_status[i], &last_status[i], sizeof(struct battery_status))) {
+            sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_STATUS_EVENT_LEAF);
+            xenstore_write("1", path);
+        }
+    }
+
+    if (!memcmp(old_info, last_info, sizeof(last_info)))
+        notify_com_citrix_xenclient_xcpmd_battery_info_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+
+    if (!memcmp(old_status, last_status, sizeof(last_status))) {
+        //Here for compatibility--should eventually be removed
+        xenstore_write("1", XS_BATTERY_STATUS_CHANGE_EVENT_PATH);
+
+        notify_com_citrix_xenclient_xcpmd_battery_status_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
     }
 }
 
@@ -625,3 +656,15 @@ static bool battery_slot_is_present(int battery_index) {
     return true;
 }
 
+
+//Updates battery info/status and schedules itself to run again in 4 seconds.
+void wrapper_refresh_battery_event(int fd, short event, void *opaque) {
+
+    struct timeval tv;
+    memset(&tv, 0, sizeof(tv));
+
+    update_batteries();
+
+    tv.tv_sec = 4;
+    evtimer_add(&refresh_battery_event, &tv);
+}

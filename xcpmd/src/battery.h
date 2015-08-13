@@ -9,6 +9,7 @@
 extern struct battery_info   last_info[MAX_BATTERY_SUPPORTED];
 extern struct battery_status last_status[MAX_BATTERY_SUPPORTED];
 
+extern struct event refresh_battery_event;
 
 int get_battery_percentage(int battery_index);
 int get_num_batteries_present(void);
@@ -20,6 +21,7 @@ void write_battery_status_to_xenstore(int battery_index);
 void write_battery_info_to_xenstore(int battery_index);
 int get_overall_battery_percentage(void);
 int get_current_battery_level(void);
+void wrapper_refresh_battery_event(int fd, short event, void *opaque);
 
 
 

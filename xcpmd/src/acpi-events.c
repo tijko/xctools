@@ -172,6 +172,7 @@ static void handle_sleep_button_event(void) {
     notify_com_citrix_xenclient_xcpmd_sleep_button_pressed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
 }
 
+
 static void handle_suspend_button_event(void) {
 
     xcpmd_log(LOG_INFO, "Suspend button pressed event\n");
@@ -199,6 +200,7 @@ static void handle_bcl_event(enum BCL_CMD cmd) {
 
     notify_com_citrix_xenclient_xcpmd_bcl_key_pressed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
 }
+
 
 static void handle_ac_adapter_event(uint32_t data) {
 
@@ -287,6 +289,9 @@ static void process_acpi_message(char *acpi_buffer, ssize_t len) {
     //Handle events by device class, with most common events first.
     if (!strcmp(class, ACPI_BATTERY_CLASS)) {
 
+        //Since notifications are not reliable on some platforms, rely on polling for now.
+
+        /*
         if (tokens[1] == NULL) {
             xcpmd_log(LOG_DEBUG, "Battery event with null device\n");
             return;
@@ -320,6 +325,9 @@ static void process_acpi_message(char *acpi_buffer, ssize_t len) {
             default:
                 xcpmd_log(LOG_DEBUG, "Received unhandled battery notify type: %x\n", type);
         }
+        */
+
+        return;
 
     }
     else if (!strcmp(class, ACPI_AC_CLASS)) {
@@ -509,6 +517,14 @@ int acpi_events_initialize(void) {
     //Register event on acpi socket.
     event_set(&acpi_event, acpi_events_fd, EV_READ | EV_PERSIST, wrapper_acpi_event, NULL);
     event_add(&acpi_event, NULL);
+
+    //Set up battery polling.
+    //Ideally, we'd use battery status notifications, but several platforms emit
+    //notifications before data is ready on a hardware level. If a quirk is added
+    //to the battery driver for these platforms, we can move to an event-driven 
+    //model.
+    event_set(&refresh_battery_event, -1, EV_TIMEOUT | EV_PERSIST, wrapper_refresh_battery_event, NULL);
+    wrapper_refresh_battery_event(0, 0, NULL);
 
     //Initialize state info.
     initialize_state();
