@@ -522,21 +522,21 @@ void update_batteries(void) {
         write_battery_status_to_xenstore(i);
         write_battery_info_to_xenstore(i);
 
-        if (!memcmp(&old_info[i], &last_info[i], sizeof(struct battery_info))) {
+        if (memcmp(&old_info[i], &last_info[i], sizeof(struct battery_info))) {
             sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_INFO_EVENT_LEAF);
             xenstore_write("1", path);
         }
 
-        if (!memcmp(&old_status[i], &last_status[i], sizeof(struct battery_status))) {
+        if (memcmp(&old_status[i], &last_status[i], sizeof(struct battery_status))) {
             sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_STATUS_EVENT_LEAF);
             xenstore_write("1", path);
         }
     }
 
-    if (!memcmp(old_info, last_info, sizeof(last_info)))
+    if (memcmp(old_info, last_info, sizeof(last_info)))
         notify_com_citrix_xenclient_xcpmd_battery_info_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
 
-    if (!memcmp(old_status, last_status, sizeof(last_status))) {
+    if (memcmp(old_status, last_status, sizeof(last_status))) {
         //Here for compatibility--should eventually be removed
         xenstore_write("1", XS_BATTERY_STATUS_CHANGE_EVENT_PATH);
 
