@@ -33,6 +33,24 @@ extern struct battery_status last_status[MAX_BATTERY_SUPPORTED];
 
 /* The following methods are for the UIVM battery "applet" */
 
+gboolean xcpmd_batteries_present(XcpmdObject *this, GArray* *OUT_batteries, GError **error)
+{
+    int i;
+    GArray * batteries;
+    
+    batteries = g_array_new(true, false, sizeof(int));
+
+    for (i=0; i < MAX_BATTERY_SUPPORTED; ++i) {
+        if (last_status[i].present == YES) {
+            g_array_append_val(batteries, i);
+        }
+    }
+
+    *OUT_batteries = batteries;
+    return TRUE;
+}
+
+
 gboolean xcpmd_battery_time_to_empty(XcpmdObject *this, guint IN_bat_n, guint *OUT_time_to_empty, GError **error)
 {
     int juice_left;
