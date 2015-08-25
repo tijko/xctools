@@ -219,8 +219,16 @@ int update_battery_status(int battery_index) {
 
     battery_dir = get_battery_dir(battery_index);
     if (!battery_dir) {
-        xcpmd_log(LOG_ERR, "opendir in update_battery_status for directory %s/BAT%d failed with error %d\n", BATTERY_DIR_PATH, battery_index, errno);
-        return 0;
+        //Battery directory does not exist--this normally occurs when a battery slot is removed
+        if (errno == ENOENT) {
+            status.present = NO;
+            memcpy(&last_status[battery_index], &status, sizeof(struct battery_status));
+            return 1;
+        }
+        else {
+            xcpmd_log(LOG_ERR, "opendir in update_battery_status for directory %s/BAT%d failed with error %d\n", BATTERY_DIR_PATH, battery_index, errno);
+            return 0;
+        }
     }
 
     //Loop over the files in the directory.
@@ -645,10 +653,10 @@ static bool battery_slot_is_present(int battery_index) {
     sprintf(path, "%s/BAT%d", BATTERY_DIR_PATH, battery_index);
     dir = opendir(path);
     if (!dir) {
-        if (errno == ENOENT)
-            xcpmd_log(LOG_DEBUG, "Opendir in battery_slot_is_present() failed for directory %s with error ENOENT\n", path);
-        else
-            xcpmd_log(LOG_ERR, "opendir in battery_slot_is_present() failed for directory %s with error %d\n", path, errno);
+        //if (errno == ENOENT)
+        //    xcpmd_log(LOG_DEBUG, "Opendir in battery_slot_is_present() failed for directory %s with error ENOENT\n", path);
+        //else
+        //    xcpmd_log(LOG_ERR, "opendir in battery_slot_is_present() failed for directory %s with error %d\n", path, errno);
         return false;
     }
     closedir(dir);
