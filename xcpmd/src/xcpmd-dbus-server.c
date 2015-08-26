@@ -25,22 +25,20 @@
 
 #include "project.h"
 #include "xcpmd.h"
+#include "battery.h"
 
 xcdbus_conn_t *xcdbus_conn = NULL;
-
-extern struct battery_info   last_info[MAX_BATTERY_SUPPORTED];
-extern struct battery_status last_status[MAX_BATTERY_SUPPORTED];
 
 /* The following methods are for the UIVM battery "applet" */
 
 gboolean xcpmd_batteries_present(XcpmdObject *this, GArray* *OUT_batteries, GError **error)
 {
-    int i;
+    unsigned int i;
     GArray * batteries;
     
     batteries = g_array_new(true, false, sizeof(int));
 
-    for (i=0; i < MAX_BATTERY_SUPPORTED; ++i) {
+    for (i=0; i < num_battery_structs_allocd; ++i) {
         if (last_status[i].present == YES) {
             g_array_append_val(batteries, i);
         }
@@ -56,7 +54,7 @@ gboolean xcpmd_battery_time_to_empty(XcpmdObject *this, guint IN_bat_n, guint *O
     int juice_left;
     int hourly_discharge_rate;
 
-    if (IN_bat_n >= MAX_BATTERY_SUPPORTED) {
+    if (IN_bat_n >= num_battery_structs_allocd) {
         g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
         return FALSE;
     }
@@ -93,7 +91,7 @@ gboolean xcpmd_battery_time_to_full(XcpmdObject *this, guint IN_bat_n, guint *OU
     int hourly_charge_rate;
     int juice_when_full;
 
-    if (IN_bat_n >= MAX_BATTERY_SUPPORTED) {
+    if (IN_bat_n >= num_battery_structs_allocd) {
         g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
         return FALSE;
     }
@@ -134,7 +132,7 @@ gboolean xcpmd_battery_percentage(XcpmdObject *this, guint IN_bat_n, guint *OUT_
     int juice_left;
     int juice_when_full;
 
-    if (IN_bat_n >= MAX_BATTERY_SUPPORTED) {
+    if (battery_slot_exists(IN_bat_n) != YES) {
         g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
         return FALSE;
     }
@@ -165,7 +163,7 @@ gboolean xcpmd_battery_percentage(XcpmdObject *this, guint IN_bat_n, guint *OUT_
 
 gboolean xcpmd_battery_is_present(XcpmdObject *this, guint IN_bat_n, gboolean *OUT_is_present, GError **error)
 {
-    if (IN_bat_n >= MAX_BATTERY_SUPPORTED) {
+    if (battery_slot_exists(IN_bat_n) != YES) {
         g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
         return FALSE;
     }
@@ -194,7 +192,7 @@ gboolean xcpmd_battery_state(XcpmdObject *this, guint IN_bat_n, guint *OUT_state
     int percent;
     unsigned int i;
 
-    if (IN_bat_n >= MAX_BATTERY_SUPPORTED) {
+    if (battery_slot_exists(IN_bat_n) != YES) {
         g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
         return FALSE;
     }
@@ -215,14 +213,14 @@ gboolean xcpmd_battery_state(XcpmdObject *this, guint IN_bat_n, guint *OUT_state
             *OUT_state = 3;
         else {
             /* Is anybody else (dis)charging? */
-            for (i = 0; i < MAX_BATTERY_SUPPORTED; ++i) {
+            for (i = 0; i < num_battery_structs_allocd; ++i) {
                 if (i != IN_bat_n &&
                     last_status[i].present == YES &&
                     (last_status[i].state & 0x1 || last_status[i].state & 0x2)) {
                     break;
                 }
             }
-            if (i < MAX_BATTERY_SUPPORTED) {
+            if (i < num_battery_structs_allocd) {
                 /* Yes! */
                 /* If the other battery is charging, we're pending charge */
                 if (last_status[i].state & 0x2)

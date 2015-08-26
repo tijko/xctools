@@ -5,18 +5,20 @@
 
 
 //Battery info for consumption by dbus and others
-struct battery_info   last_info[MAX_BATTERY_SUPPORTED];
-struct battery_status last_status[MAX_BATTERY_SUPPORTED];
+struct battery_info * last_info;
+struct battery_status * last_status;
+unsigned int num_battery_structs_allocd = 0;
 
 //Event struct for libevent
 struct event refresh_battery_event;
 
-static bool battery_slot_is_present(int battery_index);
-static void cleanup_removed_battery(int battery_index);
-static DIR * get_battery_dir(int battery_index);
+//static bool battery_slot_is_present(int battery_index);
+static void cleanup_removed_battery(unsigned int battery_index);
+static DIR * get_battery_dir(unsigned int battery_index);
 static void set_battery_status_attribute(char * attrib_name, char * attrib_value, struct battery_status * status);
 static void set_battery_info_attribute(char *attrib_name, char *attrib_value, struct battery_info *info);
-
+static int get_max_battery_index(void);
+static int battery_is_present(unsigned int battery_index);
 
 //Get the overall warning level of all batteries in the system.
 int get_current_battery_level(void) {
@@ -39,33 +41,33 @@ int get_current_battery_level(void) {
 //May return weird values if one battery is mA and the other is mW.
 int get_overall_battery_percentage(void) {
 
-    int i;
+    unsigned int i;
     unsigned long capacity_left, capacity_total;
 
     capacity_left = capacity_total = 0;
 
-    for (i=0; i < MAX_BATTERY_SUPPORTED; ++i) {
+    for (i=0; i < num_battery_structs_allocd; ++i) {
         if (last_status[i].present == YES) {
             capacity_left += last_status[i].remaining_capacity;
             capacity_total += last_info[i].last_full_capacity;
         }
     }
-    
+
     return (int) ((100 * capacity_left) / capacity_total);
 }
 
 
 //Get the specified battery's current charge in percent.
-int get_battery_percentage(int battery_index) {
+int get_battery_percentage(unsigned int battery_index) {
 
-    int percentage;
+    unsigned int percentage;
     struct battery_status * status;
     struct battery_info * info;
 
-    if (battery_index > MAX_BATTERY_SUPPORTED)
+    if (battery_index >= num_battery_structs_allocd)
         return 0;
 
-    if (last_status[battery_index].present == NO)
+    if (battery_is_present(battery_index) == NO)
         return 0;
 
     status = &last_status[battery_index];
@@ -82,7 +84,7 @@ int get_battery_percentage(int battery_index) {
 
 
 //Creates a xenstore battery dir with the specified index if it doesn't already exist.
-static void make_xenstore_battery_dir(int battery_index) {
+static void make_xenstore_battery_dir(unsigned int battery_index) {
 
     char xenstore_path[256];
     char ** dir_entries;
@@ -109,7 +111,7 @@ static void make_xenstore_battery_dir(int battery_index) {
 
 
 //Returns the directory of a battery at a particular index.
-static DIR * get_battery_dir(int battery_index) {
+static DIR * get_battery_dir(unsigned int battery_index) {
 
     DIR *dir = NULL;
     char path[256];
@@ -120,6 +122,23 @@ static DIR * get_battery_dir(int battery_index) {
     return dir;
 }
 
+
+//Returns YES if this battery slot exists and a battery is present in it.
+static int battery_is_present(unsigned int battery_index) {
+
+    if (battery_index >= num_battery_structs_allocd) {
+        return NO;
+    }
+
+    if ((battery_slot_exists(battery_index) == YES) &&
+       (battery_index < num_battery_structs_allocd) &&
+       (last_status[battery_index].present == YES)) {
+        return YES;
+    }
+    else {
+        return NO;
+    }
+}
 
 //Given an attribute name and value, sets the appropriate member of a battery_status struct.
 static void set_battery_status_attribute(char * attrib_name, char * attrib_value, struct battery_status * status) {
@@ -201,7 +220,7 @@ static void set_battery_info_attribute(char *attrib_name, char *attrib_value, st
 
 
 //Gets a battery's status from the sysfs and stores it in last_status.
-int update_battery_status(int battery_index) {
+int update_battery_status(unsigned int battery_index) {
 
     int i, rc;
     DIR *battery_dir;
@@ -214,15 +233,21 @@ int update_battery_status(int battery_index) {
     struct battery_status status;
     memset(&status, 0, sizeof(struct battery_status));
 
-    if (battery_index >= MAX_BATTERY_SUPPORTED)
+    if (battery_index >= num_battery_structs_allocd)
         return -1;
+
+    if (battery_slot_exists(battery_index) == NO) {
+        status.present = NO;
+        memcpy(&last_status[battery_index], &status, sizeof(struct battery_status));
+        return 1;
+    }
 
     battery_dir = get_battery_dir(battery_index);
     if (!battery_dir) {
         //Battery directory does not exist--this normally occurs when a battery slot is removed
         if (errno == ENOENT) {
             status.present = NO;
-            memcpy(&last_status[battery_index], &status, sizeof(struct battery_status));
+            //memcpy(&last_status[battery_index], &status, sizeof(struct battery_status));
             return 1;
         }
         else {
@@ -256,7 +281,6 @@ int update_battery_status(int battery_index) {
 
             //Set the attribute represented by this file.
             set_battery_status_attribute(dp->d_name, ptr, &status);
-
         }
     }
 
@@ -283,7 +307,7 @@ int update_battery_status(int battery_index) {
 
 
 //Gets a battery's info from the sysfs and stores it in last_info.
-int update_battery_info(int battery_index) {
+int update_battery_info(unsigned int battery_index) {
 
     int i, rc;
     DIR *battery_dir;
@@ -296,13 +320,13 @@ int update_battery_info(int battery_index) {
     struct battery_info info;
     memset(&info, 0, sizeof(struct battery_info));
 
-    if (battery_index >= MAX_BATTERY_SUPPORTED)
+    if (battery_index >= num_battery_structs_allocd)
         return 0;
 
-    if (!battery_slot_is_present(battery_index)) {
+    if (battery_slot_exists(battery_index) == NO) {
+        memcpy(&last_info[battery_index], &info, sizeof(struct battery_info));
         return 0;
     }
-
 
     battery_dir = get_battery_dir(battery_index);
     if (!battery_dir) {
@@ -371,9 +395,9 @@ int update_battery_info(int battery_index) {
 
 
 //Exactly what it says on the tin.
-void write_battery_info_to_xenstore(int battery_index) {
+void write_battery_info_to_xenstore(unsigned int battery_index) {
 
-    if (!battery_slot_is_present(battery_index)) {
+    if (battery_slot_exists(battery_index) == NO || battery_index >= num_battery_structs_allocd) {
         xcpmd_log(LOG_INFO, "Detected removal of battery slot %d in info.\n", battery_index);
         cleanup_removed_battery(battery_index);
         return;
@@ -427,24 +451,23 @@ void write_battery_info_to_xenstore(int battery_index) {
 
 
 //Exactly what it says on the tin.
-void write_battery_status_to_xenstore(int battery_index) {
+void write_battery_status_to_xenstore(unsigned int battery_index) {
 
     struct battery_status * status;
     char bst[35], xenstore_path[128];
     int num_batteries, current_battery_level;
 
-    if (battery_index > MAX_BATTERY_SUPPORTED)
-        return;
-
-    num_batteries = get_num_batteries();
-    if (num_batteries == 0)
-        xenstore_write("0", XS_BATTERY_PRESENT);
-    else
-        xenstore_write("1", XS_BATTERY_PRESENT);
-
-    if (!battery_slot_is_present(battery_index)) {
+    if (battery_index >= num_battery_structs_allocd) {
         cleanup_removed_battery(battery_index);
+    }
+
+    num_batteries = get_num_batteries_present();
+    if (num_batteries == 0) {
+        xenstore_write("0", XS_BATTERY_PRESENT);
         return;
+    }
+    else {
+        xenstore_write("1", XS_BATTERY_PRESENT);
     }
 
     status = &last_status[battery_index];
@@ -502,54 +525,118 @@ void write_battery_status_to_xenstore(int battery_index) {
 //Updates status and info of all batteries locally and in the xenstore.
 void update_batteries(void) {
 
-    struct battery_status old_status[MAX_BATTERY_SUPPORTED];
-    struct battery_info old_info[MAX_BATTERY_SUPPORTED];
+    DIR *batteries_dir;
+    struct dirent * dp;
+    struct battery_status *old_status = NULL;
+    struct battery_info *old_info = NULL;
     char path[256];
-    unsigned int i;
+    unsigned int old_num_batteries = 0;
+    unsigned int num_batteries = 0;
+    unsigned int i, new_array_size, old_array_size, num_batteries_to_update;
 
     if ( pm_specs & PM_SPEC_NO_BATTERIES )
         return;
 
-    if (get_num_batteries() == 0)
+    //Check to see if we can touch the battery dir before allocating memory.
+    batteries_dir = opendir(BATTERY_DIR_PATH);
+    if (!batteries_dir) {
+        xcpmd_log(LOG_ERR, "Directory open failed for %s with error %d\n", BATTERY_DIR_PATH, errno);
         return;
+    }
 
     //Keep a copy of what the battery status/info used to be.
-    memcpy(old_status, last_status, sizeof(last_status));
-    memcpy(old_info, last_info, sizeof(last_info));
+    old_status = (struct battery_status *)malloc(num_battery_structs_allocd * sizeof(struct battery_status));
+    old_info = (struct battery_info *)malloc(num_battery_structs_allocd * sizeof(struct battery_info));
+    memcpy(old_status, last_status, num_battery_structs_allocd * sizeof(struct battery_status));
+    memcpy(old_info, last_info, num_battery_structs_allocd * sizeof(struct battery_info));
+    old_array_size = num_battery_structs_allocd;
 
-    //Two loops prevents the system from shutting down immediately after startup
-    //if BAT0 is depleted and BAT1 isn't.
-    for (i=0; i < MAX_BATTERY_SUPPORTED; ++i) {
+
+    //Resize the arrays if necessary.
+    new_array_size = (unsigned int)(get_max_battery_index() + 1);
+    if (new_array_size != old_array_size) {
+        if (new_array_size == 0) {
+            xcpmd_log(LOG_INFO, "All batteries removed.\n");
+            free(last_info);
+            free(last_status);
+        }
+        else {
+            last_info = (struct battery_info *)realloc(last_info, new_array_size * sizeof(struct battery_info));
+            last_status = (struct battery_status *)realloc(last_status, new_array_size * sizeof(struct battery_status));
+            memset(last_info, 0, new_array_size * sizeof(struct battery_info));
+            memset(last_status, 0, new_array_size * sizeof(struct battery_status));
+            num_battery_structs_allocd = new_array_size;
+        }
+    }
+
+    num_batteries_to_update = (new_array_size > old_array_size) ? new_array_size : old_array_size;
+
+    //Updating all status/info before writing to the xenstore prevents bad
+    //calculations of aggregate data (e.g., warning level).
+    for (i=0; i < num_batteries_to_update; ++i) {
         update_battery_status(i);
         update_battery_info(i);
     }
 
     //Write back to the xenstore and only send notifications if things have changed.
-    for (i=0; i < MAX_BATTERY_SUPPORTED; ++i) {
+    for (i=0; i < num_batteries_to_update; ++i) {
 
         write_battery_status_to_xenstore(i);
         write_battery_info_to_xenstore(i);
 
-        if (memcmp(&old_info[i], &last_info[i], sizeof(struct battery_info))) {
+        if (i < old_array_size && i < new_array_size) {
+            if (memcmp(&old_info[i], &last_info[i], sizeof(struct battery_info))) {
+                sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_INFO_EVENT_LEAF);
+                xenstore_write("1", path);
+            }
+
+            if (memcmp(&old_status[i], &last_status[i], sizeof(struct battery_status))) {
+                sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_STATUS_EVENT_LEAF);
+                xenstore_write("1", path);
+            }
+
+            if (old_status[i].present == YES)
+                ++old_num_batteries;
+
+            if (last_status[i].present == YES)
+                ++num_batteries;
+        }
+        else if (new_array_size > old_array_size) {
+            //a battery has been added
             sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_INFO_EVENT_LEAF);
             xenstore_write("1", path);
-        }
-
-        if (memcmp(&old_status[i], &last_status[i], sizeof(struct battery_status))) {
             sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_STATUS_EVENT_LEAF);
             xenstore_write("1", path);
+
+            if (last_status[i].present == YES)
+                ++num_batteries;
+        }
+        else if (new_array_size < old_array_size) {
+            //a battery has been removed
+            sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_INFO_EVENT_LEAF);
+            xenstore_write("1", path);
+            sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_STATUS_EVENT_LEAF);
+            xenstore_write("1", path);
+
+            if (old_status[i].present == YES)
+                ++old_num_batteries;
         }
     }
 
-    if (memcmp(old_info, last_info, sizeof(last_info)))
+    if ((old_array_size != new_array_size) || (memcmp(old_info, last_info, new_array_size * sizeof(struct battery_info))))
         notify_com_citrix_xenclient_xcpmd_battery_info_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
 
-    if (memcmp(old_status, last_status, sizeof(last_status))) {
+    if ((old_array_size != new_array_size) || (memcmp(old_status, last_status, new_array_size * sizeof(struct battery_status)))) {
         //Here for compatibility--should eventually be removed
         xenstore_write("1", XS_BATTERY_STATUS_CHANGE_EVENT_PATH);
-
         notify_com_citrix_xenclient_xcpmd_battery_status_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
     }
+
+    if (old_num_batteries != num_batteries)
+        notify_com_citrix_xenclient_xcpmd_num_batteries_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+
+    free(old_info);
+    free(old_status);
 }
 
 
@@ -577,6 +664,34 @@ int get_num_batteries(void) {
     return count;
 }
 
+
+//Finds the maximum battery index that exists in the sysfs.
+static int get_max_battery_index(void) {
+
+    int max_index, index;
+    DIR * dir;
+    struct dirent * dp;
+
+    dir = opendir(BATTERY_DIR_PATH);
+    if (!dir) {
+        xcpmd_log(LOG_ERR, "opendir in get_max_battery_index failed for directory %s with error %d\n", BATTERY_DIR_PATH, errno);
+        return -1;
+    }
+
+    max_index = -1;
+    while ((dp = readdir(dir)) != NULL) {
+        if (!strncmp(dp->d_name, "BAT", 3)) {
+            index = get_terminal_number(dp->d_name);
+            if (index > -1 && index > max_index) {
+                max_index = index;
+            }
+        }
+    }
+
+    closedir(dir);
+
+    return max_index;
+}
 
 //Counts the number of batteries present in the sysfs.
 int get_num_batteries_present(void) {
@@ -620,7 +735,7 @@ int get_num_batteries_present(void) {
 
 
 //Remove a battery's entries from the xenstore.
-static void cleanup_removed_battery(int battery_index) {
+static void cleanup_removed_battery(unsigned int battery_index) {
 
     char path[256];
 
@@ -644,8 +759,8 @@ static void cleanup_removed_battery(int battery_index) {
 }
 
 
-//Checks the sysfs to see if a battery slot is present at the specified index.
-static bool battery_slot_is_present(int battery_index) {
+//Checks the sysfs to see if a battery slot exists in the sysfs at the specified index.
+int battery_slot_exists(unsigned int battery_index) {
 
     DIR * dir;
     char path[256];
@@ -653,15 +768,11 @@ static bool battery_slot_is_present(int battery_index) {
     sprintf(path, "%s/BAT%d", BATTERY_DIR_PATH, battery_index);
     dir = opendir(path);
     if (!dir) {
-        //if (errno == ENOENT)
-        //    xcpmd_log(LOG_DEBUG, "Opendir in battery_slot_is_present() failed for directory %s with error ENOENT\n", path);
-        //else
-        //    xcpmd_log(LOG_ERR, "opendir in battery_slot_is_present() failed for directory %s with error %d\n", path, errno);
-        return false;
+        return NO;
     }
     closedir(dir);
 
-    return true;
+    return YES;
 }
 
 

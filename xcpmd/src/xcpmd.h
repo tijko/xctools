@@ -167,8 +167,8 @@ struct battery_status {
     #define THERMAL_TEMPERATURE_FILE        "/proc/acpi/thermal_zone/%s/temperature"
 #endif
 
-#define MAX_BATTERY_SUPPORTED               0x2
-#define MAX_BATTERY_SCANNED                 0x5
+//#define MAX_BATTERY_SUPPORTED               0x2
+//#define MAX_BATTERY_SCANNED                 0x5
 #define AC_ADAPTER_DIR_PATH                 "/sys/class/power_supply/AC"
 #define AC_ADAPTER_STATE_FILE_PATH          AC_ADAPTER_DIR_PATH"/online"
 #define LID_DIR_PATH                        "/proc/acpi/button/lid/LID"
