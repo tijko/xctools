@@ -525,8 +525,6 @@ void write_battery_status_to_xenstore(unsigned int battery_index) {
 //Updates status and info of all batteries locally and in the xenstore.
 void update_batteries(void) {
 
-    DIR *batteries_dir;
-    struct dirent * dp;
     struct battery_status *old_status = NULL;
     struct battery_info *old_info = NULL;
     char path[256];
@@ -536,13 +534,6 @@ void update_batteries(void) {
 
     if ( pm_specs & PM_SPEC_NO_BATTERIES )
         return;
-
-    //Check to see if we can touch the battery dir before allocating memory.
-    batteries_dir = opendir(BATTERY_DIR_PATH);
-    if (!batteries_dir) {
-        xcpmd_log(LOG_ERR, "Directory open failed for %s with error %d\n", BATTERY_DIR_PATH, errno);
-        return;
-    }
 
     //Keep a copy of what the battery status/info used to be.
     old_status = (struct battery_status *)malloc(num_battery_structs_allocd * sizeof(struct battery_status));
