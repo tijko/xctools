@@ -531,6 +531,7 @@ void update_batteries(void) {
     unsigned int old_num_batteries = 0;
     unsigned int num_batteries = 0;
     unsigned int i, new_array_size, old_array_size, num_batteries_to_update;
+    bool present_batteries_changed = false;
 
     if ( pm_specs & PM_SPEC_NO_BATTERIES )
         return;
@@ -591,6 +592,10 @@ void update_batteries(void) {
 
             if (last_status[i].present == YES)
                 ++num_batteries;
+
+            if (old_status[i].present != last_status[i].present)
+                present_batteries_changed = true;
+
         }
         else if (new_array_size > old_array_size) {
             //a battery has been added
@@ -601,6 +606,15 @@ void update_batteries(void) {
 
             if (last_status[i].present == YES)
                 ++num_batteries;
+
+            if (i < old_array_size) {
+                if (old_status[i].present != last_status[i].present)
+                    present_batteries_changed = true;
+            }
+            else {
+                if (last_status[i].present == YES)
+                    present_batteries_changed = true;
+            }
         }
         else if (new_array_size < old_array_size) {
             //a battery has been removed
@@ -611,6 +625,15 @@ void update_batteries(void) {
 
             if (old_status[i].present == YES)
                 ++old_num_batteries;
+
+            if (i < new_array_size) {
+                if (old_status[i].present != last_status[i].present)
+                    present_batteries_changed = true;
+            }
+            else {
+                if (old_status[i].present == YES)
+                    present_batteries_changed = true;
+            }
         }
     }
 
@@ -623,7 +646,7 @@ void update_batteries(void) {
         notify_com_citrix_xenclient_xcpmd_battery_status_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
     }
 
-    if (old_num_batteries != num_batteries)
+    if (present_batteries_changed)
         notify_com_citrix_xenclient_xcpmd_num_batteries_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
 
     free(old_info);
