@@ -191,6 +191,8 @@ static void handle_bcl_event(enum BCL_CMD cmd) {
         adjust_brightness(0, 0);
     }
     else if (cmd == BCL_CYCLE) {
+        //Qemu doesn't currently support this key, but these can be uncommented
+        //should this ever be implemented.
         //xenstore_write("3", XS_BCL_CMD);
         //xenstore_write("1", XS_BCL_EVENT_PATH);
     }
