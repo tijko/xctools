@@ -247,7 +247,7 @@ int update_battery_status(unsigned int battery_index) {
         //Battery directory does not exist--this normally occurs when a battery slot is removed
         if (errno == ENOENT) {
             status.present = NO;
-            //memcpy(&last_status[battery_index], &status, sizeof(struct battery_status));
+            memcpy(&last_status[battery_index], &status, sizeof(struct battery_status));
             return 1;
         }
         else {
@@ -301,7 +301,9 @@ int update_battery_status(unsigned int battery_index) {
 
     closedir(battery_dir);
     memcpy(&last_status[battery_index], &status, sizeof(struct battery_status));
-    //print_battery_status();
+#ifdef XCPMD_DEBUG
+    print_battery_status();
+#endif
     return 1;
 }
 
@@ -517,7 +519,7 @@ void write_battery_status_to_xenstore(unsigned int battery_index) {
     }
 
 #ifdef XCPMD_DEBUG
-    //xcpmd_log(LOG_DEBUG, "~Updated battery information in xenstore\n");
+    xcpmd_log(LOG_DEBUG, "~Updated battery information in xenstore\n");
 #endif
 }
 

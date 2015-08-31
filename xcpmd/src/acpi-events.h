@@ -50,7 +50,6 @@
 #define ACPI_PROCESSOR_NOTIFY_POWER         0x81
 #define ACPI_PROCESSOR_NOTIFY_THROTTLING    0x82
 #define ACPI_PROCESSOR_FILE_PERFORMANCE     "performance"
-#define ACPI_PROCESSOR_NOTIFY_PERFORMANCE   0x80
 
 // From drivers/acpi/acpi_pad.c
 #define ACPI_PROCESSOR_AGGREGATOR_CLASS     "acpi_pad"
@@ -112,7 +111,7 @@
 #define ACPI_SBS_BLOCK_MAX              32
 
 // From drivers/acpi/scan.c
-#define ACPI_BUS_CLASS                   "system_bus"
+#define ACPI_BUS_CLASS                  "system_bus"
 #define ACPI_BUS_HID                    "LNXSYBUS"
 
 // From drivers/acpi/power.c

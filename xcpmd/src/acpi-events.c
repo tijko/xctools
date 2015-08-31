@@ -110,9 +110,6 @@ static void handle_battery_info_event(int battery_index) {
     update_battery_info(battery_index);
     write_battery_info_to_xenstore(battery_index);
 
-    //sprintf(path, "%s%i/%s", XS_BATTERY_PATH, battery_index, XS_BATTERY_PRESENT_LEAF);
-    //xenstore_write((last_info[battery_index].present == YES) ? "1" : "0", path);
-
     sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, battery_index, XS_BATTERY_INFO_EVENT_LEAF);
     xenstore_write("1", path);
 
@@ -411,8 +408,6 @@ static void process_acpi_message(char *acpi_buffer, ssize_t len) {
             handle_tablet_mode_event(data);
         }
     }
-    //else
-    //    xcpmd_log(LOG_DEBUG, "Unhandled ACPI class: %s\n", class);
 }
 
 
@@ -439,7 +434,7 @@ static void acpi_events_read(void) {
         process_acpi_message(acpi_buffer, len);
 #ifdef XCPMD_DEBUG
         acpi_buffer[len] = '\0';
-        //xcpmd_log(LOG_DEBUG, "~ACPI-event: %s\n", acpi_buffer);
+        xcpmd_log(LOG_DEBUG, "~ACPI-event: %s\n", acpi_buffer);
 #endif
     }
 }
