@@ -110,7 +110,7 @@ static void handle_battery_info_event(int battery_index) {
     update_battery_info(battery_index);
     write_battery_info_to_xenstore(battery_index);
 
-    sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, battery_index, XS_BATTERY_INFO_EVENT_LEAF);
+    snprintf(path, 255, "%s%i/%s", XS_BATTERY_EVENT_PATH, battery_index, XS_BATTERY_INFO_EVENT_LEAF);
     xenstore_write("1", path);
 
     notify_com_citrix_xenclient_xcpmd_battery_info_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
@@ -126,7 +126,7 @@ static void handle_battery_status_event(int battery_index) {
     update_battery_status(battery_index);
     write_battery_status_to_xenstore(battery_index);
 
-    sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, battery_index, XS_BATTERY_STATUS_EVENT_LEAF);
+    snprintf(path, 255, "%s%i/%s", XS_BATTERY_EVENT_PATH, battery_index, XS_BATTERY_STATUS_EVENT_LEAF);
     xenstore_write("1", path);
 
     //Here for compatibility--should eventually be removed

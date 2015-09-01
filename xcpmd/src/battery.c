@@ -92,7 +92,7 @@ static void make_xenstore_battery_dir(unsigned int battery_index) {
     bool flag;
 
     dir_entries = xenstore_ls(&num_entries, "/pm");
-    sprintf(xenstore_path, "%s%i", XS_BATTERY_PATH, battery_index);
+    snprintf(xenstore_path, 255, "%s%i", XS_BATTERY_PATH, battery_index);
 
     flag = false;
     for (i = 0; i < num_entries; ++i) {
@@ -116,7 +116,7 @@ static DIR * get_battery_dir(unsigned int battery_index) {
     DIR *dir = NULL;
     char path[256];
 
-    sprintf(path, "%s/BAT%i", BATTERY_DIR_PATH, battery_index);
+    snprintf(path, 255, "%s/BAT%i", BATTERY_DIR_PATH, battery_index);
     dir = opendir(path);
 
     return dir;
@@ -263,7 +263,7 @@ int update_battery_status(unsigned int battery_index) {
         if (dp->d_type == DT_REG) {
 
             memset(filename, 0, sizeof(filename));
-            sprintf(filename, "%s/BAT%i/%s", BATTERY_DIR_PATH, battery_index, dp->d_name);
+            snprintf(filename, 255, "%s/BAT%i/%s", BATTERY_DIR_PATH, battery_index, dp->d_name);
 
             file = fopen(filename, "r");
             if (file == NULL)
@@ -343,7 +343,7 @@ int update_battery_info(unsigned int battery_index) {
         if (dp->d_type == DT_REG) {
 
             memset(filename, 0, sizeof(filename));
-            sprintf(filename, "%s/BAT%i/%s", BATTERY_DIR_PATH, battery_index, dp->d_name);
+            snprintf(filename, 255, "%s/BAT%i/%s", BATTERY_DIR_PATH, battery_index, dp->d_name);
 
             file = fopen(filename, "r");
             if (file == NULL)
@@ -440,7 +440,7 @@ void write_battery_info_to_xenstore(unsigned int battery_index) {
     make_xenstore_battery_dir(battery_index);
 
     //Now write the leaves.
-    sprintf(xenstore_path, "%s%i/%s", XS_BATTERY_PATH, battery_index, XS_BIF_LEAF);
+    snprintf(xenstore_path, 255, "%s%i/%s", XS_BATTERY_PATH, battery_index, XS_BIF_LEAF);
     xenstore_write(bif, xenstore_path);
 
 
@@ -477,10 +477,10 @@ void write_battery_status_to_xenstore(unsigned int battery_index) {
     //Delete the BST and reset the "present" flag if the battery is not currently present.
     if (status->present != YES) {
 
-        sprintf(xenstore_path, "%s%i/%s", XS_BATTERY_PATH, battery_index, XS_BST_LEAF);
+        snprintf(xenstore_path, 255, "%s%i/%s", XS_BATTERY_PATH, battery_index, XS_BST_LEAF);
         xenstore_rm(xenstore_path);
 
-        sprintf(xenstore_path, "%s%i/%s", XS_BATTERY_PATH, battery_index, XS_BATTERY_PRESENT_LEAF);
+        snprintf(xenstore_path, 255, "%s%i/%s", XS_BATTERY_PATH, battery_index, XS_BATTERY_PRESENT_LEAF);
         xenstore_write("0", xenstore_path);
         return;
     }
@@ -497,10 +497,10 @@ void write_battery_status_to_xenstore(unsigned int battery_index) {
     make_xenstore_battery_dir(battery_index);
 
     //Now write the leaves.
-    sprintf(xenstore_path, XS_BATTERY_PATH "%i/" XS_BST_LEAF, battery_index);
+    snprintf(xenstore_path, 255, XS_BATTERY_PATH "%i/" XS_BST_LEAF, battery_index);
     xenstore_write(bst, xenstore_path);
 
-    sprintf(xenstore_path, "%s%i/%s", XS_BATTERY_PATH, battery_index, XS_BATTERY_PRESENT_LEAF);
+    snprintf(xenstore_path, 255, "%s%i/%s", XS_BATTERY_PATH, battery_index, XS_BATTERY_PRESENT_LEAF);
     xenstore_write("1", xenstore_path);
 
     //Here for compatibility--will be removed eventually
@@ -580,12 +580,12 @@ void update_batteries(void) {
 
         if (i < old_array_size && i < new_array_size) {
             if (memcmp(&old_info[i], &last_info[i], sizeof(struct battery_info))) {
-                sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_INFO_EVENT_LEAF);
+                snprintf(path, 255, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_INFO_EVENT_LEAF);
                 xenstore_write("1", path);
             }
 
             if (memcmp(&old_status[i], &last_status[i], sizeof(struct battery_status))) {
-                sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_STATUS_EVENT_LEAF);
+                snprintf(path, 255, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_STATUS_EVENT_LEAF);
                 xenstore_write("1", path);
             }
 
@@ -601,9 +601,9 @@ void update_batteries(void) {
         }
         else if (new_array_size > old_array_size) {
             //a battery has been added
-            sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_INFO_EVENT_LEAF);
+            snprintf(path, 255, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_INFO_EVENT_LEAF);
             xenstore_write("1", path);
-            sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_STATUS_EVENT_LEAF);
+            snprintf(path, 255, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_STATUS_EVENT_LEAF);
             xenstore_write("1", path);
 
             if (last_status[i].present == YES)
@@ -620,9 +620,9 @@ void update_batteries(void) {
         }
         else if (new_array_size < old_array_size) {
             //a battery has been removed
-            sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_INFO_EVENT_LEAF);
+            snprintf(path, 255, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_INFO_EVENT_LEAF);
             xenstore_write("1", path);
-            sprintf(path, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_STATUS_EVENT_LEAF);
+            snprintf(path, 255, "%s%i/%s", XS_BATTERY_EVENT_PATH, i, XS_BATTERY_STATUS_EVENT_LEAF);
             xenstore_write("1", path);
 
             if (old_status[i].present == YES)
@@ -730,7 +730,7 @@ int get_num_batteries_present(void) {
     while ((dp = readdir(dir)) != NULL) {
 
         if (!strncmp(dp->d_name, "BAT", 3)) {
-            sprintf(filename, "%s/%s/present", BATTERY_DIR_PATH, dp->d_name);
+            snprintf(filename, 255, "%s/%s/present", BATTERY_DIR_PATH, dp->d_name);
             file = fopen(filename, "r");
             if (file == NULL)
                 continue;
@@ -755,7 +755,7 @@ static void cleanup_removed_battery(unsigned int battery_index) {
 
     char path[256];
 
-    sprintf(path, "%s%d", XS_BATTERY_PATH, battery_index);
+    snprintf(path, 255, "%s%d", XS_BATTERY_PATH, battery_index);
     xenstore_rm(path);
 
     if (battery_index > 0) {
@@ -781,7 +781,7 @@ int battery_slot_exists(unsigned int battery_index) {
     DIR * dir;
     char path[256];
 
-    sprintf(path, "%s/BAT%d", BATTERY_DIR_PATH, battery_index);
+    snprintf(path, 255, "%s/BAT%d", BATTERY_DIR_PATH, battery_index);
     dir = opendir(path);
     if (!dir) {
         return NO;
