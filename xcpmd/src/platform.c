@@ -28,6 +28,7 @@
 #include <pci/pci.h>
 #include "project.h"
 #include "xcpmd.h"
+#include "battery.h"
 
 /* Manufacturers */
 #define MANUFACTURER_HP          "hewlett-packard"
@@ -37,7 +38,7 @@
 #define MANUFACTURER_LENOVO      "lenovo"
 #define MANUFACTURER_FUJITSU     "fujitsu"
 #define MANUFACTURER_FUJTSU      "fujtsu"
-#define MANUFACTURER_APPLE      "Apple Inc."
+#define MANUFACTURER_APPLE       "Apple Inc."
 
 /* Dell 5X20 series */
 #define DELL_E5220               "E5220"
@@ -112,36 +113,36 @@ struct smbios_locator {
 };
 
 struct smbios_header {
-	uint8_t type;
-	uint8_t length;
-	uint16_t handle;
+    uint8_t type;
+    uint8_t length;
+    uint16_t handle;
 } __attribute__ ((packed));
 
 struct smbios_bios_info {
-	struct smbios_header header;
-	uint8_t vendor_str;
-	uint8_t version_str;
-	uint16_t starting_address_segment;
-	uint8_t release_date_str;
-	uint8_t rom_size;
-	uint8_t characteristics[8];
-	uint8_t characteristics_extension_bytes[2];
-	uint8_t major_release;
-	uint8_t minor_release;
-	uint8_t embedded_controller_major;
-	uint8_t embedded_controller_minor;
+    struct smbios_header header;
+    uint8_t vendor_str;
+    uint8_t version_str;
+    uint16_t starting_address_segment;
+    uint8_t release_date_str;
+    uint8_t rom_size;
+    uint8_t characteristics[8];
+    uint8_t characteristics_extension_bytes[2];
+    uint8_t major_release;
+    uint8_t minor_release;
+    uint8_t embedded_controller_major;
+    uint8_t embedded_controller_minor;
 } __attribute__ ((packed));
 
 struct smbios_system_info {
-	struct smbios_header header;
-	uint8_t manufacturer_str;
-	uint8_t product_name_str;
-	uint8_t version_str;
-	uint8_t serial_number_str;
-	uint8_t uuid[16];
-	uint8_t wake_up_type;
-	uint8_t sku_str;
-	uint8_t family_str;
+    struct smbios_header header;
+    uint8_t manufacturer_str;
+    uint8_t product_name_str;
+    uint8_t version_str;
+    uint8_t serial_number_str;
+    uint8_t uuid[16];
+    uint8_t wake_up_type;
+    uint8_t sku_str;
+    uint8_t family_str;
 } __attribute__ ((packed));
 
 static int smbios_entry_point(struct smbios_locator *locator, uint8_t *entry_point, int is_eps)
@@ -442,7 +443,7 @@ void initialize_platform_info(void)
 {
     uint32_t pci_val;
     uint16_t pci_vendor_id, pci_dev_id, pci_class_id;
-    int battery_present, battery_total;
+    int batteries_present, battery_total, lid_status;
 
     if ( !pci_lib_init() )
     {
@@ -475,29 +476,34 @@ void initialize_platform_info(void)
     else
         xcpmd_log(LOG_INFO, "Platform specs - no device at 00:02.0\n");
 
-    if ( test_has_directio() == 1 )
-        pm_specs |= PM_SPEC_DIRECT_IO;
 
-    /* Open the battery files if they are present and setup the xenstore
-     * battery information. Set the spec flag if there are no batteries.
-     * Note that a laptop with no batteries connected still reports all its
-     * battery slots but a desktop system will have an empty battery list.
+    /* Open the battery files if they are present and set the spec flag if
+     * there are no batteries. Note that a laptop with no batteries connected
+     * still reports all its battery slots but a desktop system will have an
+     * empty battery list. At least some convertible tablets, however, will not
+     * report the battery in the keyboard when disconnected.
+     * (tested on HP Pro x2 612)
      */
-    battery_present = write_battery_info(&battery_total);
+    battery_total = get_num_batteries();
+    xcpmd_log(LOG_DEBUG, "Found %d batteries.\n", battery_total);
 
-    if ( battery_total > 0 )
-    {
-        xenstore_write(battery_present ? "1" : "0", XS_BATTERY_PRESENT);
-
-        xcpmd_log(LOG_INFO, "Battery information - total battery slots: %d  batteries present: %d\n",
-            battery_total, battery_present);
-    }
-    else
-    {
+    if (battery_total <= 0) {
         xcpmd_log(LOG_INFO, "No batteries or battery slots on platform.\n");
         pm_specs |= PM_SPEC_NO_BATTERIES;
     }
+    else {
+        batteries_present = get_num_batteries_present();
+        xcpmd_log(LOG_INFO, "Battery information - total battery slots: %d  batteries present: %d\n", battery_total, batteries_present);
+        //Xenstore init has moved to acpi-events.c
+    }
 
+    //Establishes whether this platform has a lid.
+    lid_status = get_lid_status();
+
+    if (lid_status == NO_LID) {
+        xcpmd_log(LOG_INFO, "No lid on platform.\n");
+        pm_specs |= PM_SPEC_NO_LID;
+    }
 
     xcpmd_log(LOG_INFO, "Platform quirks: %8.8x specs: %8.8x\n", pm_quirks, pm_specs);
 

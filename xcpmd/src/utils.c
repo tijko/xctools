@@ -59,6 +59,74 @@ int strnicmp(const char *s1, const char *s2, size_t len)
     return (int)c1 - (int)c2;
 }
 
+//Extracts a number from the end of a string, e.g. BAT1 returns 1.
+//Returns -1 on failure.
+int get_terminal_number(char * str) {
+
+    char * ptr;
+    int ret;
+
+    if (str == NULL)
+        return -1;
+
+    //Find the end of the string and walk backwards until you see a non-digit.
+    ptr = strchr(str, '\0');
+
+    ptr -= sizeof(char);
+    if (ptr < str || *ptr < '0' || *ptr > '9')
+        return -1;
+
+    while (*ptr >= '0' && *ptr <= '9' && ptr >= str) {
+        ptr -= sizeof(char);
+    }
+
+    //Move forward to the digit we just walked off of.
+    ptr += sizeof(char);
+    sscanf(ptr, "%d", &ret);
+
+    return ret;
+}
+
+
+//Splits a string at a delimiter, similar to strtok().
+//Unlike strtok(), returns empty strings for consecutive delimiters (like Ruby's String.split).
+//To receive a complete set of tokens, call once with a string, then with NULL
+//until a null pointer is returned.
+char * strsplit(char * str, char delim) {
+    static char * last_found;
+    static char * str_end;
+    char * token_end;
+    char * search;
+
+    //Check if this is the first call to this function.
+    if (str != NULL) {
+        str_end = strchr(str, '\0');
+        search = str;
+    }
+    else {
+        //Return a null pointer if we've reached the end of the string.
+        if (last_found == str_end)
+            return NULL;
+
+        //Otherwise, start searching from the next character in the string.
+        search = last_found + sizeof(char);
+    }
+
+    //Find the next delimiter and replace it with null.
+    token_end = strchr(search, delim);
+    if (token_end == NULL)
+        token_end = str_end;
+    else
+        *token_end = '\0';
+
+    //Save the location of the delimiter most recently found.
+    last_found = token_end;
+
+    //Then return the pointer to the beginning of the token.
+    return search;
+}
+
+
 void write_ulong_lsb_first(char *temp_val, unsigned long val)
 {
     snprintf(temp_val, 9, "%02x%02x%02x%02x", (unsigned int)val & 0xff,
@@ -84,33 +152,6 @@ int file_set_nonblocking(int fd)
     return fcntl(fd, F_SETFL, arg);
 }
 
-static int has_hvm_directio = -1;
-
-int test_has_directio(void)
-{
-#define MAX_CPU_ID 255
-    xc_physinfo_t info;
-    xc_cpu_to_node_t map[MAX_CPU_ID + 1];
-
-    if ( has_hvm_directio != -1 )
-        return has_hvm_directio;
-
-    if ( xc_physinfo(xch, &info) != 0 )
-        return -1;
-
-    has_hvm_directio = (info.capabilities & XEN_SYSCTL_PHYSCAP_hvm_directio) ? 1 : 0;
-    return has_hvm_directio;
-}
-
-int test_gpu_delegated(void)
-{
-    uint32_t bdf = 0x1000; /* BDF(0,2,0) */
-
-    if ( test_has_directio() != 1 )
-        return 0;
-
-    return xc_test_assign_device(xch, 0, bdf);
-}
 
 int find_efi_entry_location(const char *efi_entry, uint32_t length, size_t *location)
 {
@@ -277,8 +318,7 @@ void daemonize(void)
 
 #ifdef XCPMD_DEBUG_DETAILS
 
-void print_battery_info(struct battery_info *info)
-{
+void print_battery_info(struct battery_info *info) {
     xcpmd_log(LOG_DEBUG, "present:                %d\n", info->present);
     xcpmd_log(LOG_DEBUG, "design capacity:        %d\n", (int) info->design_capacity);
     xcpmd_log(LOG_DEBUG, "last full capacity:     %d\n", (int) info->last_full_capacity);
@@ -294,13 +334,11 @@ void print_battery_info(struct battery_info *info)
     xcpmd_log(LOG_DEBUG, "OEM info:               %s\n", info->oem_info);
 }
 
-void print_battery_status(struct battery_status *status)
-{
+void print_battery_status(struct battery_status *status) {
     xcpmd_log(LOG_DEBUG, "present:                     %d\n", status->present);
     xcpmd_log(LOG_DEBUG, "Battery state                %d\n", (int) status->state);
     xcpmd_log(LOG_DEBUG, "Battery present rate         %d\n", (int) status->present_rate);
-    xcpmd_log(LOG_DEBUG, "Battery remining capacity    %d\n",
-            (int) status->remaining_capacity);
+    xcpmd_log(LOG_DEBUG, "Battery remining capacity    %d\n", (int) status->remaining_capacity);
     xcpmd_log(LOG_DEBUG, "Battery present voltage      %d\n", (int) status->present_voltage);
 }
 

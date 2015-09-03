@@ -30,133 +30,403 @@
 #include "project.h"
 #include "xcpmd.h"
 #include "acpi-events.h"
+#include "battery.h"
 
 static int acpi_events_fd = -1;
 static struct event acpi_event;
 
-static void write_state_info_in_xenstore(FILE *file, char *xenstore_path,
-             char *search_str, char *default_value, char *alternate_value)
-{
-    char file_data[1024];
 
-    if ( file == NULL )
-        return;
+void adjust_brightness(int increase, int force) {
 
-    xenstore_write(default_value, xenstore_path);
-
-    memset(file_data, 0, 1024);
-    fgets(file_data, 1024, file);
-    if (strstr(file_data, search_str))
-        xenstore_write(alternate_value, xenstore_path);
+    if ( force || (pm_quirks & PM_QUIRK_SW_ASSIST_BCL) || (pm_quirks & PM_QUIRK_HP_HOTKEY_INPUT)) {
+        if (increase)
+            com_citrix_xenclient_surfman_increase_brightness_(xcdbus_conn, SURFMAN_SERVICE, SURFMAN_PATH);
+        else
+            com_citrix_xenclient_surfman_decrease_brightness_(xcdbus_conn, SURFMAN_SERVICE, SURFMAN_PATH);
+    }
 }
 
-void initialize_system_state_info(void)
-{
+
+int get_ac_adapter_status(void) {
+
+    char data[128];
     FILE *file;
+    file = fopen(AC_ADAPTER_STATE_FILE_PATH, "r");
 
-    file = get_ac_adpater_state_file();
-    write_state_info_in_xenstore(file,
-                                XS_AC_ADAPTER_STATE_PATH, "0", "1", "0");
-    if ( file != NULL )
-        fclose(file);
+    //If the file doesn't exist, we're not a laptop.
+    if (file == NULL && errno == ENOENT)
+        return NO_AC;
+    else if (file == NULL)
+        return AC_UNKNOWN;
+
+    fgets(data, sizeof(data), file);
+    fclose(file);
+
+    if (strstr(data, "1"))
+        return ON_AC;
+    else
+        return ON_BATT;
 }
 
-static void handle_battery_info_change_event(void)
-{
-    xcpmd_log(LOG_INFO, "Battery info change event\n");
 
-    if (write_battery_info(NULL) > 0)
-        xenstore_write("1", XS_BATTERY_PRESENT);
+int get_lid_status(void) {
+
+    char data[128];
+    FILE * file;
+    file = fopen(LID_STATE_FILE_PATH, "r");
+
+    //If the file doesn't exist, we're not a laptop.
+    if (file == NULL && errno == ENOENT)
+        return NO_LID;
+    else if (file == NULL)
+        return LID_UNKNOWN;
+
+    fgets(data, sizeof(data), file);
+    fclose(file);
+
+    if (strstr(data, "open"))
+        return LID_OPEN;
+    else if (strstr(data, "closed"))
+        return LID_CLOSED;
     else
-        xenstore_write("0", XS_BATTERY_PRESENT);
+        return LID_UNKNOWN;
+}
+
+
+int get_tablet_status(void) {
+
+    //For now, this is a stub.
+    return NORMAL_MODE;
+
+}
+
+
+static void handle_battery_info_event(int battery_index) {
+
+    char path[256];
+
+    //xcpmd_log(LOG_DEBUG, "Info change event on battery %d\n", battery_index);
+
+    update_battery_info(battery_index);
+    write_battery_info_to_xenstore(battery_index);
+
+    snprintf(path, 255, "%s%i/%s", XS_BATTERY_EVENT_PATH, battery_index, XS_BATTERY_INFO_EVENT_LEAF);
+    xenstore_write("1", path);
 
     notify_com_citrix_xenclient_xcpmd_battery_info_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
 }
 
-static void handle_pbtn_pressed_event(void)
-{
+
+static void handle_battery_status_event(int battery_index) {
+
+    char path[256];
+
+    //xcpmd_log(LOG_DEBUG, "Status change event on battery %d\n", battery_index);
+
+    update_battery_status(battery_index);
+    write_battery_status_to_xenstore(battery_index);
+
+    snprintf(path, 255, "%s%i/%s", XS_BATTERY_EVENT_PATH, battery_index, XS_BATTERY_STATUS_EVENT_LEAF);
+    xenstore_write("1", path);
+
+    //Here for compatibility--should eventually be removed
+    xenstore_write("1", XS_BATTERY_STATUS_CHANGE_EVENT_PATH);
+
+    notify_com_citrix_xenclient_xcpmd_battery_status_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+}
+
+
+static void handle_lid_event(int status) {
+
+    int lid_status;
+
+    xcpmd_log(LOG_INFO, "Lid change event\n");
+
+    //We may have to check the sysfs if the ACPI string didn't tell us the status.
+    if (status == LID_UNKNOWN)
+        lid_status = get_lid_status();
+    else
+        lid_status = status;
+
+    xenstore_write(lid_status == LID_OPEN ? "open" : "closed", XS_LID_STATE_PATH);
+    xenstore_write("1", XS_LID_EVENT_PATH);
+    //notify_com_citrix_xenclient_xcpmd_lid_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+}
+
+
+static void handle_power_button_event(void) {
+
     xcpmd_log(LOG_INFO, "Power button pressed event\n");
-    xenstore_write("1", XS_PBTN_EVENT_PATH);
+    xenstore_write("1", XS_PWRBTN_EVENT_PATH);
     notify_com_citrix_xenclient_xcpmd_power_button_pressed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
 }
 
-static void handle_sbtn_pressed_event(void)
-{
+
+static void handle_sleep_button_event(void) {
+
     xcpmd_log(LOG_INFO, "Sleep button pressed event\n");
-    xenstore_write("1", XS_SBTN_EVENT_PATH);
+    xenstore_write("1", XS_SLPBTN_EVENT_PATH);
     notify_com_citrix_xenclient_xcpmd_sleep_button_pressed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
 }
 
-static void handle_bcl_event(enum BCL_CMD cmd)
-{
-    int ret, err;
 
-    if ( cmd == BCL_UP )
-    {
+static void handle_suspend_button_event(void) {
+
+    xcpmd_log(LOG_INFO, "Suspend button pressed event\n");
+    xenstore_write("1", XS_SUSPBTN_EVENT_PATH);
+    //notify_com_citrix_xenclient_xcpmd_suspend_button_pressed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+}
+
+
+static void handle_bcl_event(enum BCL_CMD cmd) {
+
+    if (cmd == BCL_UP) {
         xenstore_write("1", XS_BCL_CMD);
-	adjust_brightness(1, 0);
+        xenstore_write("1", XS_BCL_EVENT_PATH);
+        adjust_brightness(1, 0);
     }
-    else if ( cmd == BCL_DOWN )
-    {
+    else if (cmd == BCL_DOWN) {
         xenstore_write("2", XS_BCL_CMD);
-	adjust_brightness(0, 0);
+        xenstore_write("1", XS_BCL_EVENT_PATH);
+        adjust_brightness(0, 0);
+    }
+    else if (cmd == BCL_CYCLE) {
+        //Qemu doesn't currently support this key, but these can be uncommented
+        //should this ever be implemented.
+        //xenstore_write("3", XS_BCL_CMD);
+        //xenstore_write("1", XS_BCL_EVENT_PATH);
     }
 
-    xenstore_write("1", XS_BCL_EVENT_PATH);
     notify_com_citrix_xenclient_xcpmd_bcl_key_pressed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
 }
 
-static void process_acpi_message(char *acpi_buffer, ssize_t len)
-{
-    /* todo this code may be unsafe; account for the actual length read? */
 
-    if ( (strstr(acpi_buffer, "PBTN")) ||
-         (strstr(acpi_buffer, "PWRF")) )
-    {
-        handle_pbtn_pressed_event();
+static void handle_ac_adapter_event(uint32_t data) {
+
+    xenstore_write_int(data, XS_AC_ADAPTER_STATE_PATH);
+    notify_com_citrix_xenclient_xcpmd_ac_adapter_state_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+
+    switch(data) {
+        case ACPI_AC_STATUS_OFFLINE:
+            xcpmd_log(LOG_DEBUG, "AC adapter state change event: on battery");
+            break;
+        case ACPI_AC_STATUS_ONLINE:
+            xcpmd_log(LOG_DEBUG, "AC adapter state change event: on AC");
+            break;
+        case ACPI_AC_STATUS_UNKNOWN:
+        default:
+            xcpmd_log(LOG_DEBUG, "AC adapter state change event: unknown state");
+    }
+}
+
+
+static void handle_video_event(void) {
+
+    //For now, this is a stub.
+    //xcpmd_log(LOG_DEBUG, "Uncategorized ACPI video event\n");
+    return;
+}
+
+
+static void handle_tablet_mode_event(uint32_t data) {
+
+    //Until this can be tested on a convertible device, this is a stub.
+    xcpmd_log(LOG_DEBUG, "Tablet mode change event data: %d\n", data);
+    return;
+}
+
+
+//Writes the AC adapter state, lid state, and battery information to xenstore.
+static void initialize_state(void) {
+
+    int ac_adapter_status = get_ac_adapter_status();
+    int lid_status = get_lid_status();
+    int tablet_status = get_tablet_status();
+
+    xcpmd_log(LOG_DEBUG, "Lid is %s and system is on %s\n", lid_status == LID_OPEN ? "open" : "closed", ac_adapter_status == ON_AC ? "ac" : "battery");
+
+    xenstore_write_int((ac_adapter_status == ON_AC) ? 1 : 0, XS_AC_ADAPTER_STATE_PATH);
+    xenstore_write_int((lid_status == LID_CLOSED) ? 0 : 1, XS_LID_STATE_PATH);
+
+    update_batteries();
+}
+
+
+//Calls the appropriate handler for ACPI events.
+static void process_acpi_message(char *acpi_buffer, ssize_t len) {
+
+    unsigned int i;
+    int device_num;
+    char *class, *subclass, *device;
+    uint32_t type, data;
+    char * token;
+    char buffer[len + 1];
+    char * tokens[16]; //We really shouldn't need this many, but let's be safe.
+
+    //Make a null-terminated copy of acpi_buffer that we can modify with strsplit().
+    strncpy(buffer, acpi_buffer, len);
+    buffer[len] = '\0';
+
+    //Tokenize the string.
+    token = strsplit(buffer, ' ');
+    for (i = 0; i < 16; ++i) {
+        tokens[i] = token;
+        token = strsplit(NULL, ' ');
+    }
+
+    //Start parsing those tokens.
+    class = tokens[0];
+    if (class == NULL) {
+        xcpmd_log(LOG_DEBUG, "Received null ACPI message\n");
         return;
     }
 
-    if ( (strstr(acpi_buffer, "SBTN")) ||
-         (strstr(acpi_buffer, "SLPB")) ) /* On Lenovos */
-    {
-        handle_sbtn_pressed_event();
-        return;
-    }
+    //Get the subclass, if there is one.
+    class = strsplit(class, '/');
+    subclass = strsplit(NULL, '/');
 
-    if ( strstr(acpi_buffer, "video") )
-    {
-        /* Special HP case, check the device the notification is for */
-        if ( (pm_quirks & PM_QUIRK_SW_ASSIST_BCL_HP_SB) &&
-             (strstr(acpi_buffer, "DD02") == NULL) )
+    //Handle events by device class, with most common events first.
+    if (!strcmp(class, ACPI_BATTERY_CLASS)) {
+
+        //Since notifications are not reliable on some platforms, rely on polling for now.
+
+        /*
+        if (tokens[1] == NULL) {
+            xcpmd_log(LOG_DEBUG, "Battery event with null device\n");
             return;
+        }
+        if (tokens[2] == NULL) {
+            xcpmd_log(LOG_DEBUG, "Battery event with null type\n");
+            return;
+        }
 
-        if ( strstr(acpi_buffer, "00000086") )
-        {
+        device_num = get_terminal_number(tokens[1]);
+        if (device_num < 0) {
+            xcpmd_log(LOG_DEBUG, "Couldn't find number at end of %s\n", tokens[1]);
+            return;
+        } else if (device_num > (MAX_BATTERY_SUPPORTED - 1)) {
+            xcpmd_log(LOG_DEBUG, "Received battery numbering past MAX_BATTERY_SUPPORTED: %s\n", tokens[1]);
+            return;
+        }
+
+        if (sscanf(tokens[2], "%x", &type) != 1) {
+            xcpmd_log(LOG_DEBUG, "ACPI type field doesn't look like a hex integer: %s\n", tokens[2]);
+            return;
+        }
+
+        switch(type) {
+            case ACPI_BATTERY_NOTIFY_INFO:
+                handle_battery_info_event(device_num);
+                break;
+            case ACPI_BATTERY_NOTIFY_STATUS:
+                handle_battery_status_event(device_num);
+                break;
+            default:
+                xcpmd_log(LOG_DEBUG, "Received unhandled battery notify type: %x\n", type);
+        }
+        */
+
+        return;
+
+    }
+    else if (!strcmp(class, ACPI_AC_CLASS)) {
+
+        if (tokens[2] == NULL || tokens[3] == NULL) {
+            xcpmd_log(LOG_DEBUG, "Received AC event with null type or data\n");
+            return;
+        }
+
+        if (sscanf(tokens[2], "%x", &type) != 1) {
+            xcpmd_log(LOG_DEBUG, "ACPI type field doesn't look like a hex integer: %s\n", tokens[2]);
+            return;
+        }
+        if (sscanf(tokens[3], "%x", &data) != 1) {
+            xcpmd_log(LOG_DEBUG, "ACPI data field doesn't look like a hex integer: %s\n", tokens[3]);
+            return;
+        }
+
+        if (type == ACPI_AC_NOTIFY_STATUS)
+            handle_ac_adapter_event(data);
+
+    }
+    else if (!strcmp(class, ACPI_BUTTON_CLASS)) {
+
+        if (subclass == NULL) {
+            xcpmd_log(LOG_DEBUG, "Button event with null subclass\n");
+            return;
+        }
+
+
+        if (!strcmp(subclass, ACPI_BUTTON_SUBCLASS_LID)) {
+
+            if (tokens[2] == NULL)
+                data = LID_UNKNOWN;
+            else if (!strcmp(tokens[2], "open"))
+                data = LID_OPEN;
+            else if (!strcmp(tokens[2], "close"))
+                data = LID_CLOSED;
+            else
+                data = LID_UNKNOWN;
+
+            handle_lid_event(data);
+        }
+        else if (!strcmp(subclass, ACPI_BUTTON_SUBCLASS_POWER)) {
+            handle_power_button_event();
+        }
+        else if (!strcmp(subclass, ACPI_BUTTON_SUBCLASS_SLEEP)) {
+            handle_sleep_button_event();
+        }
+        else if (!strcmp(subclass, ACPI_BUTTON_SUBCLASS_SUSPEND)) {
+            handle_suspend_button_event();
+        }
+        else
+            xcpmd_log(LOG_DEBUG, "Received unknown button subclass: %s\n", subclass);
+    }
+    else if (!strcmp(class, ACPI_VIDEO_CLASS)) {
+
+        if (subclass == NULL) {
+            handle_video_event();
+        }
+        else if (!strcmp(subclass, ACPI_VIDEO_SUBCLASS_BRTUP)) {
             handle_bcl_event(BCL_UP);
         }
-        else if ( strstr(acpi_buffer, "00000087") )
-        {
+        else if (!strcmp(subclass, ACPI_VIDEO_SUBCLASS_BRTDN)) {
             handle_bcl_event(BCL_DOWN);
+        }
+        else if (!strcmp(subclass, ACPI_VIDEO_SUBCLASS_BRTCYCLE)) {
+            handle_bcl_event(BCL_CYCLE);
+        }
+        else if (!strcmp(subclass, ACPI_VIDEO_SUBCLASS_TABLETMODE)) {
+
+            if (tokens[3] == NULL) {
+                xcpmd_log(LOG_DEBUG, "Tablet mode event with null data field\n");
+                return;
+            }
+            if (sscanf(tokens[3], "%x", &data) != 1) {
+                xcpmd_log(LOG_DEBUG, "Tablet mode data field doesn't look like a hex integer: %s\n", tokens[3]);
+                return;
+            }
+
+            handle_tablet_mode_event(data);
         }
     }
 }
 
-void acpi_events_read(void)
-{
+
+static void acpi_events_read(void) {
+
     char acpi_buffer[1024];
     ssize_t len;
 
-    while ( 1 )
-    {
+    while ( 1 ) {
+
         memset(acpi_buffer, 0, sizeof(acpi_buffer));
         len = recv(acpi_events_fd, acpi_buffer, sizeof(acpi_buffer), 0);
 
         if ( len == 0 )
             break;
 
-        if ( len == -1 )
-        {
+        if ( len == -1 ) {
             if ( errno != EAGAIN )
                 xcpmd_log(LOG_ERR, "Error returned while reading ACPI event - %d\n", errno);
             /* else nothing to read */
@@ -171,59 +441,51 @@ void acpi_events_read(void)
     }
 }
 
-static void
-wrapper_acpi_event(int fd, short event, void *opaque)
-{
+
+static void wrapper_acpi_event(int fd, short event, void *opaque) {
     acpi_events_read();
 }
 
 
-void
-handle_ac_adapter_event(uint32_t type, uint32_t data)
-{
-    if (type != ACPI_AC_NOTIFY_STATUS)
-        return;
+int xcpmd_process_input(int input_value) {
 
-    xcpmd_log(LOG_INFO, "AC adapter state change event\n");
-    xenstore_write_int(data, XS_AC_ADAPTER_STATE_PATH);
-    notify_com_citrix_xenclient_xcpmd_ac_adapter_state_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
-}
-
-
-void
-handle_battery_event(uint32_t type)
-{
-    switch (type)
-    {
-        case ACPI_BATTERY_NOTIFY_STATUS: /* status change */
-            xenstore_write("1", XS_BATTERY_STATUS_CHANGE_EVENT_PATH);
-            notify_com_citrix_xenclient_xcpmd_battery_status_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+    switch (input_value) {
+        case XCPMD_INPUT_SLEEP:
+            handle_sleep_button_event();
             break;
-        case ACPI_BATTERY_NOTIFY_INFO: /* add/remove */
-            handle_battery_info_change_event();
+        case XCPMD_INPUT_BRIGHTNESSUP:
+        case XCPMD_INPUT_BRIGHTNESSDOWN:
+            /* Only HP laptops use input events for brightness */
+            if (pm_quirks & PM_QUIRK_HP_HOTKEY_INPUT)
+                handle_bcl_event(input_value == XCPMD_INPUT_BRIGHTNESSUP ? BCL_UP : BCL_DOWN);
             break;
         default:
-            xcpmd_log(LOG_WARNING, "Unknown battery event code %d\n", type);
-    }
+            xcpmd_log(LOG_WARNING, "Input invalid value %d\n", input_value);
+            break;
+    };
+
+#ifdef XCPMD_DEBUG
+    xcpmd_log(LOG_DEBUG, "Input value %d processed\n", input_value);
+#endif
+
+    return 0;
 }
 
 
-int acpi_events_initialize(void)
-{
+int acpi_events_initialize(void) {
+
     int ret, i, err;
     struct sockaddr_un addr;
 
     acpi_events_fd = socket(PF_UNIX, SOCK_STREAM, 0);
-    if ( acpi_events_fd == -1 )
-    {
+    if ( acpi_events_fd == -1 ) {
         xcpmd_log(LOG_ERR, "Socket function failed with error - %d\n", errno);
         acpi_events_cleanup();
         return -1;
     }
 
     ret = file_set_nonblocking(acpi_events_fd);
-    if ( ret == -1 )
-    {
+    if ( ret == -1 ) {
         xcpmd_log(LOG_ERR, "Set non-blocking failed with error - %d\n", errno);
         acpi_events_cleanup();
         return -1;
@@ -233,43 +495,49 @@ int acpi_events_initialize(void)
     strncpy(addr.sun_path, ACPID_SOCKET_PATH, strlen(ACPID_SOCKET_PATH));
     addr.sun_path[strlen(ACPID_SOCKET_PATH)] = '\0';
 
-    for ( i = 0; ; i++ )
-    {
+    for (i = 0; ; i++) {
         ret = connect(acpi_events_fd, (struct sockaddr *)&addr, sizeof(addr));
 
-        if ( ret != -1 )
+        if (ret != -1)
             break;
 
-        if ( i == 5 )
-        {
-            xcpmd_log(LOG_INFO, "ACPI events initialization failed!\n");
+        if (i == 5) {
+            xcpmd_log(LOG_DEBUG, "ACPI events initialization failed!\n");
             acpi_events_cleanup();
             return -1;
         }
 
-        xcpmd_log(LOG_ERR, "Socket connection function failed with error - %d, on attempt %d\n",
-                  errno, i + 1);
-
+        xcpmd_log(LOG_ERR, "Socket connection function failed with error %d, on attempt %d\n", errno, i + 1);
         sleep(5);
     }
 
-    /* register event on acpi socket */
-    event_set(&acpi_event, acpi_events_fd, EV_READ | EV_PERSIST,
-              wrapper_acpi_event, NULL);
+    //Register event on acpi socket.
+    event_set(&acpi_event, acpi_events_fd, EV_READ | EV_PERSIST, wrapper_acpi_event, NULL);
     event_add(&acpi_event, NULL);
 
-    xcpmd_log(LOG_INFO, "ACPI events initialized.\n");
+    //Set up battery polling.
+    //Ideally, we'd use battery status notifications, but several platforms emit
+    //notifications before data is ready on a hardware level. If a quirk is added
+    //to the battery driver for these platforms, we can move to an event-driven 
+    //model.
+    event_set(&refresh_battery_event, -1, EV_TIMEOUT | EV_PERSIST, wrapper_refresh_battery_event, NULL);
+    wrapper_refresh_battery_event(0, 0, NULL);
+
+    //Initialize state info.
+    initialize_state();
+
+    xcpmd_log(LOG_DEBUG, "ACPI events initialized.\n");
 
     return 0;
 }
 
-void acpi_events_cleanup(void)
-{
-    xcpmd_log(LOG_INFO, "ACPI events cleanup\n");
 
-    if ( acpi_events_fd != -1 )
+void acpi_events_cleanup(void) {
+
+    xcpmd_log(LOG_DEBUG, "ACPI events cleanup\n");
+
+    if (acpi_events_fd != -1)
         close(acpi_events_fd);
 
     acpi_events_fd = -1;
 }
-

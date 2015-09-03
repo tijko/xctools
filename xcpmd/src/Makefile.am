@@ -25,10 +25,10 @@
 CPROTO=cproto
 INCLUDES =  ${LIBXC_INC} ${LIBXCDBUS_INC} ${LIBXENACPI_INC} ${DBUS_GLIB_1_INC} ${GLIB_20_INC} ${LIBXCXENSTORE_CFLAGS}
 
-DBUS_CLIENT_IDLS=surfman 
+DBUS_CLIENT_IDLS=surfman
 DBUS_SERVER_IDLS=xcpmd
 
-noinst_HEADERS=project.h prototypes.h xcpmd.h
+noinst_HEADERS=project.h prototypes.h xcpmd.h battery.h
 
 sbin_PROGRAMS = xcpmd
 
@@ -38,7 +38,7 @@ BUILT_SOURCES = ${DBUS_CLIENT_IDLS:%=rpcgen/%_client.h} \
 	${DBUS_SERVER_IDLS:%=rpcgen/%_server_obj.h} \
 	version.h 
 
-SRCS=xcpmd.c acpi-events.c platform.c version.c rpcgen/xcpmd_server_obj.c xcpmd-dbus-server.c utils.c netlink.c
+SRCS=xcpmd.c acpi-events.c platform.c version.c rpcgen/xcpmd_server_obj.c xcpmd-dbus-server.c utils.c battery.c
 xcpmd_SOURCES = ${SRCS}
 xcpmd_LDADD = -lpci -levent ${LIBXC_LIB} ${LIBXCDBUS_LIB} ${LIBXENACPI_LIB} ${DBUS_GLIB_1_LIB} ${GLIB_20_LIB} ${LIBXCXENSTORE_LIBS} ${LIBNL_LIBS} ${LIBNL_GENL_LIBS}
 
