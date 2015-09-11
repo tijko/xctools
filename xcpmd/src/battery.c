@@ -541,8 +541,11 @@ void update_batteries(void) {
     //Keep a copy of what the battery status/info used to be.
     old_status = (struct battery_status *)malloc(num_battery_structs_allocd * sizeof(struct battery_status));
     old_info = (struct battery_info *)malloc(num_battery_structs_allocd * sizeof(struct battery_info));
-    memcpy(old_status, last_status, num_battery_structs_allocd * sizeof(struct battery_status));
-    memcpy(old_info, last_info, num_battery_structs_allocd * sizeof(struct battery_info));
+
+    if (last_status != NULL && last_info != NULL) {
+        memcpy(old_status, last_status, num_battery_structs_allocd * sizeof(struct battery_status));
+        memcpy(old_info, last_info, num_battery_structs_allocd * sizeof(struct battery_info));
+    }
     old_array_size = num_battery_structs_allocd;
 
 
@@ -553,14 +556,16 @@ void update_batteries(void) {
             xcpmd_log(LOG_INFO, "All batteries removed.\n");
             free(last_info);
             free(last_status);
+            last_info = NULL;
+            last_status = NULL;
         }
         else {
             last_info = (struct battery_info *)realloc(last_info, new_array_size * sizeof(struct battery_info));
             last_status = (struct battery_status *)realloc(last_status, new_array_size * sizeof(struct battery_status));
             memset(last_info, 0, new_array_size * sizeof(struct battery_info));
             memset(last_status, 0, new_array_size * sizeof(struct battery_status));
-            num_battery_structs_allocd = new_array_size;
         }
+        num_battery_structs_allocd = new_array_size;
     }
 
     num_batteries_to_update = (new_array_size > old_array_size) ? new_array_size : old_array_size;
