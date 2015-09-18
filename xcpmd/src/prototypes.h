@@ -25,6 +25,7 @@ int get_ac_adapter_status(void);
 int get_lid_status(void);
 int acpi_events_initialize(void);
 void acpi_events_cleanup(void);
+void acpi_initialize_state(void);
 
 /* platform.c */
 extern uint32_t pm_quirks;
@@ -58,11 +59,12 @@ void xcpmd_dbus_cleanup(void);
 int strnicmp(const char *s1, const char *s2, size_t len);
 int get_terminal_number(char * str);
 char * strsplit(char * str, char delim);
+char * clone_string(char * str);
+char * safe_sprintf(char * format, ...);
+void safe_str_append(char ** str1, char * format, ...);
 void write_ulong_lsb_first(char *temp_val, unsigned long val);
 int file_set_blocking(int fd);
 int file_set_nonblocking(int fd);
-int test_has_directio(void);
-int test_gpu_delegated(void);
 int find_efi_entry_location(const char *efi_entry, uint32_t length, size_t *location);
 int pci_lib_init(void);
 uint32_t pci_host_read_dword(int bus, int dev, int fn, uint32_t addr);

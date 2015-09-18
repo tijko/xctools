@@ -27,8 +27,8 @@
 
 /* #define RUN_STANDALONE */
 /* #define RUN_IN_SIMULATE_MODE */
-//#define XCPMD_DEBUG
-//#define XCPMD_DEBUG_DETAILS
+/* #define XCPMD_DEBUG */
+/* #define XCPMD_DEBUG_DETAILS */
 
 #if __WORDSIZE == 64
 #define UINT_FMT "%lx"
@@ -36,10 +36,16 @@
 #define UINT_FMT "%x"
 #endif
 
-#define SURFMAN_SERVICE "com.citrix.xenclient.surfman"
-#define SURFMAN_PATH    "/"
-#define XCPMD_SERVICE   "com.citrix.xenclient.xcpmd"
-#define XCPMD_PATH      "/"
+#define SURFMAN_SERVICE     "com.citrix.xenclient.surfman"
+#define SURFMAN_PATH        "/"
+#define XCPMD_SERVICE       "com.citrix.xenclient.xcpmd"
+#define XCPMD_PATH          "/"
+#define XENMGR_SERVICE      "com.citrix.xenclient.xenmgr"
+#define XENMGR_VM_INTERFACE "com.citrix.xenclient.xenmgr.vm"
+#define XENMGR_PATH         "/"
+#define DB_SERVICE          "com.citrix.xenclient.db"
+#define DB_PATH             "/"
+
 
 
 #define PCI_INVALID_VALUE 0xffffffff
@@ -114,7 +120,7 @@ enum TABLET_STATE {
 
 struct battery_info {
     enum BATTERY_PRESENT    present;
-    unsigned long charge_full_design; /* mA */ 
+    unsigned long charge_full_design; /* mA */
     unsigned long charge_full;        /* mA */
     unsigned long energy_full_design; /* mW */
     unsigned long energy_full;        /* mW */
@@ -219,7 +225,7 @@ struct battery_status {
 # ifdef XCPMD_DEBUG
     #define xcpmd_log(priority, format, p...) syslog(priority, format, ##p)
 # else
-    #define xcpmd_log(priority, format, p...) priority == LOG_INFO ? : syslog(priority, format, ##p)
+    #define xcpmd_log(priority, format, p...) priority == LOG_INFO || priority == LOG_DEBUG ? : syslog(priority, format, ##p)
 # endif
 #else
 # ifdef XCPMD_DEBUG
@@ -247,6 +253,11 @@ extern uint32_t pm_quirks;
 extern uint32_t pm_specs;
 
 #define XCPMD_PID_FILE                      "/var/run/xcpmd.pid"
+
+#define MODULE_PATH                         "/usr/lib/xcpmd/"
+#define DB_PM_PATH                          "/power-management"
+#define DB_VAR_MAP_PATH                     "/power-management/vars"
+#define DB_RULE_PATH                        "/power-management/rules"
 
 #endif /* __XCPMD_H__ */
 

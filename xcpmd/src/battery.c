@@ -1,7 +1,35 @@
-#include <stdlib.h>
+/*
+ * battery.c
+ *
+ * Functions for monitoring system battery state
+ *
+ * Copyright (c) 2011 Citrix Systems, Inc.
+ * Copyright (c) 2015 Assured Information Security, Inc.
+ *
+ * Authors:
+ * Kamala Narasimhan <kamala.narasimhan@citrix.com>
+ * Ross Philipson <philipsonr@ainfosec.com>
+ * Jennifer Temkin <temkinj@ainfosec.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License version 2
+ * as published by the Free Software Foundation
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include "project.h"
 #include "xcpmd.h"
 #include "battery.h"
+#include "modules.h"
+#include <stdlib.h>
 
 
 //Battery info for consumption by dbus and others
@@ -18,7 +46,6 @@ static DIR * get_battery_dir(unsigned int battery_index);
 static void set_battery_status_attribute(char * attrib_name, char * attrib_value, struct battery_status * status);
 static void set_battery_info_attribute(char *attrib_name, char *attrib_value, struct battery_info *info);
 static int get_max_battery_index(void);
-static int battery_is_present(unsigned int battery_index);
 
 //Get the overall warning level of all batteries in the system.
 int get_current_battery_level(void) {
@@ -124,7 +151,7 @@ static DIR * get_battery_dir(unsigned int battery_index) {
 
 
 //Returns YES if this battery slot exists and a battery is present in it.
-static int battery_is_present(unsigned int battery_index) {
+int battery_is_present(unsigned int battery_index) {
 
     if (battery_index >= num_battery_structs_allocd) {
         return NO;
@@ -139,6 +166,7 @@ static int battery_is_present(unsigned int battery_index) {
         return NO;
     }
 }
+
 
 //Given an attribute name and value, sets the appropriate member of a battery_status struct.
 static void set_battery_status_attribute(char * attrib_name, char * attrib_value, struct battery_status * status) {
@@ -181,7 +209,7 @@ static void set_battery_info_attribute(char *attrib_name, char *attrib_value, st
 
     if (!strcmp(attrib_name, "present")) {
         if (strstr(attrib_value, "1"))
-	        info->present = YES;
+            info->present = YES;
     }
     else if (!strcmp(attrib_name, "charge_full_design")) {
         info->charge_full_design = strtoull(attrib_value, NULL, 10) / 1000;
@@ -206,11 +234,11 @@ static void set_battery_info_attribute(char *attrib_name, char *attrib_value, st
     }
     else if (!strcmp(attrib_name, "technology")) {
         if (strstr(attrib_value, "Li-ion"))
-	        strncpy(info->battery_type, "LION\n\0", 6);
-	    else if (strstr(attrib_value, "Li-poly"))
-	        strncpy(info->battery_type, "LiP\n\0", 6);
-	    else
-	        strncpy(info->battery_type, attrib_value, 32);
+            strncpy(info->battery_type, "LION\n\0", 6);
+        else if (strstr(attrib_value, "Li-poly"))
+            strncpy(info->battery_type, "LiP\n\0", 6);
+        else
+            strncpy(info->battery_type, attrib_value, 32);
         info->battery_technology = RECHARGEABLE;
     }
     else if (!strcmp(attrib_name, "manufacturer")) {
@@ -302,7 +330,7 @@ int update_battery_status(unsigned int battery_index) {
     closedir(battery_dir);
     memcpy(&last_status[battery_index], &status, sizeof(struct battery_status));
 #ifdef XCPMD_DEBUG
-    print_battery_status();
+    print_battery_status(battery_index);
 #endif
     return 1;
 }
@@ -556,8 +584,6 @@ void update_batteries(void) {
             xcpmd_log(LOG_INFO, "All batteries removed.\n");
             free(last_info);
             free(last_status);
-            last_info = NULL;
-            last_status = NULL;
         }
         else {
             last_info = (struct battery_info *)realloc(last_info, new_array_size * sizeof(struct battery_info));
@@ -644,8 +670,9 @@ void update_batteries(void) {
         }
     }
 
-    if ((old_array_size != new_array_size) || (memcmp(old_info, last_info, new_array_size * sizeof(struct battery_info))))
+    if ((old_array_size != new_array_size) || (memcmp(old_info, last_info, new_array_size * sizeof(struct battery_info)))) {
         notify_com_citrix_xenclient_xcpmd_battery_info_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+    }
 
     if ((old_array_size != new_array_size) || (memcmp(old_status, last_status, new_array_size * sizeof(struct battery_status)))) {
         //Here for compatibility--should eventually be removed
@@ -653,8 +680,9 @@ void update_batteries(void) {
         notify_com_citrix_xenclient_xcpmd_battery_status_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
     }
 
-    if (present_batteries_changed)
+    if (present_batteries_changed) {
         notify_com_citrix_xenclient_xcpmd_num_batteries_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+    }
 
     free(old_info);
     free(old_status);
@@ -676,8 +704,9 @@ int get_num_batteries(void) {
 
     //Count all entries whose names start with BAT.
     while ((dp = readdir(dir)) != NULL) {
-        if (!strncmp(dp->d_name, "BAT", 3))
+        if (!strncmp(dp->d_name, "BAT", 3)) {
             ++count;
+        }
     }
 
     closedir(dir);
@@ -713,6 +742,7 @@ static int get_max_battery_index(void) {
 
     return max_index;
 }
+
 
 //Counts the number of batteries present in the sysfs.
 int get_num_batteries_present(void) {
@@ -776,7 +806,6 @@ static void cleanup_removed_battery(unsigned int battery_index) {
         xenstore_write("0", XS_BATTERY_PRESENT);
     else
         xenstore_write("1", XS_BATTERY_PRESENT);
-
 }
 
 
