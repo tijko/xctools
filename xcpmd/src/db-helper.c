@@ -153,7 +153,7 @@ static struct arg_node get_db_var(char * var_name) {
     char *var_value, *var_string;
     char * error;
 
-    path = safe_sprintf("%s%s", DB_VAR_MAP_PATH, var_name);
+    path = safe_sprintf("%s/%s", DB_VAR_MAP_PATH, var_name);
     var_value = db_read(path);
 
     if (var_value == NULL) {
@@ -190,7 +190,7 @@ static struct arg_node get_db_var(char * var_name) {
 static void delete_db_var(char * var_name) {
 
     char * path;
-    path = safe_sprintf("%s%s", DB_VAR_MAP_PATH, var_name);
+    path = safe_sprintf("%s/%s", DB_VAR_MAP_PATH, var_name);
     db_rm(path);
     free(path);
 }
@@ -386,7 +386,7 @@ void write_db_rules() {
 void delete_db_rule(char * rule_name) {
 
     char * path;
-    path = safe_sprintf("%s%s", DB_RULE_PATH, rule_name);
+    path = safe_sprintf("%s/%s", DB_RULE_PATH, rule_name);
     db_rm(path);
     free(path);
 }
@@ -405,7 +405,7 @@ bool parse_db_rules(struct parse_data * data) {
     cJSON *jroot, *jrule;
     char ** rule_arr;
     char *json, *name, *conditions, *actions, *undos;
-    char * err;
+    char * err, *ep;
     int num_rules, i, j;
 
     json = dump_db_path(DB_RULE_PATH);
@@ -418,14 +418,24 @@ bool parse_db_rules(struct parse_data * data) {
 
     jroot = cJSON_Parse(json);
     if (jroot == NULL) {
-        xcpmd_log(LOG_DEBUG, "Error parsing DB rules - memory error\n");
+        ep = (char *)cJSON_GetErrorPtr();
+        if (json <= ep && strchr(json, '\0') >= ep) {
+            xcpmd_log(LOG_WARNING, "Invalid DB string: %s", json);
+        }
+        else {
+            xcpmd_log(LOG_ERR, "Error parsing DB rules - memory error\n");
+        }
         free(json);
         return false;
     }
     free(json);
 
-    if (jroot->type != cJSON_Object) {
-        xcpmd_log(LOG_DEBUG, "Error parsing DB rules - %s is malformed", DB_RULE_PATH);
+    if (jroot->type == cJSON_NULL) {
+        //There are no rules in the DB.
+        return true;
+    }
+    else if (jroot->type != cJSON_Object) {
+        xcpmd_log(LOG_DEBUG, "Error parsing DB rules - %s is malformed (type %d)", DB_RULE_PATH, jroot->type);
         cJSON_Delete(jroot);
         return false;
     }
