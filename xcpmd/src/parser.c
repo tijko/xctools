@@ -256,7 +256,6 @@ struct state_list {
 };
 
 
-
 //Creates and returns an arg_node struct and populates it with the argument type and value from a given fn_arg struct
 struct arg_node conv_fn_arg(struct fn_arg fnarg) {
 
@@ -1535,6 +1534,7 @@ bool parse(struct parse_data *data, //current parse_data struct
         return false;
 }
 
+
 //Loads variables and rules from the DB, returns 0 if successful, -1 otherwise
 int parse_config_from_db() {
 
@@ -1553,6 +1553,7 @@ int parse_config_from_db() {
     init_parse_data(&data, &var_map, build_parse_state_list(&states), NULL, NULL, NULL, NULL, NULL, TYPE_UNDETERMINED);
     if (parse_db_vars(&data)) {
         if(!parse_db_rules(&data)) {
+            xcpmd_log(LOG_WARNING, "Error parsing db rules - %s.\n", extract_parse_error(&data));
             ret = -1;
         }
         else {
@@ -1560,6 +1561,7 @@ int parse_config_from_db() {
         }
     }
     else {
+        xcpmd_log(LOG_WARNING, "Error parsing db vars - %s.\n", extract_parse_error(&data));
         ret = -1;
     }
 

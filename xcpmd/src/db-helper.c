@@ -97,8 +97,12 @@ static void db_write(char * path, char * value) {
 static char * db_read(char * path) {
 
     char * string;
-    com_citrix_xenclient_db_read_(xcdbus_conn, DB_SERVICE, DB_PATH, path, &string);
-    return string;
+    if (com_citrix_xenclient_db_read_(xcdbus_conn, DB_SERVICE, DB_PATH, path, &string)) {
+        return string;
+    }
+    else {
+        return NULL;
+    }
 }
 
 
@@ -115,8 +119,12 @@ static void db_rm(char * path) {
 static char * dump_db_path(char * path) {
 
     char * string;
-    com_citrix_xenclient_db_dump_(xcdbus_conn, DB_SERVICE, DB_PATH, path, &string);
-    return string;
+    if (com_citrix_xenclient_db_dump_(xcdbus_conn, DB_SERVICE, DB_PATH, path, &string)) {
+        return string;
+    }
+    else {
+        return NULL;
+    }
 }
 
 
@@ -200,15 +208,23 @@ static bool each_sibling(char * path, bool (func(cJSON * node, void * data)), vo
 
     cJSON *jroot, *jsib;
     char * json, *ep;
-    int i, num_vars;
+    int i, num_vars, tries;
     bool success, total_success;
     bool rpcproxy = false;
 
-    while(!rpcproxy) {
+    tries = 0;
+
+    while(!rpcproxy && tries < 10) {
+
+        ++tries;
+
         json = dump_db_path(path);
         if(json == NULL) {
-            xcpmd_log(LOG_WARNING, "Error opening DB node %s - received null response\n", path);
-            return false;
+            xcpmd_log(LOG_DEBUG, "Error opening DB node %s - received null response. Retrying...\n", path);
+
+            //rpcproxy might not be up yet--wait a second and try again.
+            sleep(1);
+            continue;
         }
         if(json[0] == '\0') {
             free(json);
@@ -217,31 +233,28 @@ static bool each_sibling(char * path, bool (func(cJSON * node, void * data)), vo
 
         jroot = cJSON_Parse(json);
         if (jroot == NULL) {
-
-            //If rpc-proxy is queried before it's completely started up, it'll
-            //return non-parseable gibberish. cJSON returns NULL on both a 
-            //memory error and if the string is not parseable, but in the 
-            //second case, it sets an error pointer to the first non-parseable
-            //character it finds. If ep is within the JSON string, then we're
-            //fairly sure we have gibberish.
             ep = (char *)cJSON_GetErrorPtr();
             if (json <= ep && strchr(json, '\0') >= ep) {
                 xcpmd_log(LOG_WARNING, "Invalid DB string: %s", json);
+
                 rpcproxy = false;
                 free(json);
 
-                //Wait for a while--maybe rpc-proxy will be there when we wake up.
                 sleep(1);
                 continue;
             }
             else {
-                xcpmd_log(LOG_WARNING, "Error opening DB node %s - out of memory\n", path);//FIXME: 
+                xcpmd_log(LOG_WARNING, "Error opening DB node %s - out of memory\n", path);
                 free(json);
                 return false;
             }
         }
         free(json);
         rpcproxy = true;
+    }
+    if (rpcproxy == false) {
+        xcpmd_log(LOG_WARNING, "Couldn't establish DB connection.\n");
+        return false;
     }
 
     //Path is a leaf.
@@ -251,7 +264,6 @@ static bool each_sibling(char * path, bool (func(cJSON * node, void * data)), vo
     }
 
     num_vars = cJSON_GetArraySize(jroot);
-
     total_success = true;
     for (i=0; i < num_vars; ++i) {
         jsib = cJSON_GetArrayItem(jroot, i);
