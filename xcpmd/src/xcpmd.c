@@ -97,6 +97,9 @@ int main(int argc, char *argv[]) {
         xcpmd_log(LOG_WARNING, "Error loading policy from DB; continuing...\n");
     }
 
+    //This relies on both acpi-events and acpi-module having been initialized
+    acpi_initialize_state();
+
 #ifdef POLICY_FILE_PATH
     if (load_policy_from_file(POLICY_FILE_PATH) == -1) {
         xcpmd_log(LOG_WARNING, "Error loading policy from file %s; continuing...\n", POLICY_FILE_PATH);
@@ -107,9 +110,6 @@ int main(int argc, char *argv[]) {
     xcpmd_log(LOG_DEBUG, "Rules loaded:\n");
     print_rules();
 #endif
-
-    //This relies on both acpi-events and acpi-module having been initialized
-    acpi_initialize_state();
 
     xcpmd_log(LOG_DEBUG, "Entering event loop.\n");
     event_dispatch();

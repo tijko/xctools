@@ -1086,7 +1086,7 @@ void print_rule(struct rule * rule) {
 
     xcpmd_log(LOG_DEBUG, "    Conditions:\n");
     list_for_each_entry(condition, &(rule->conditions.list), list) {
-        line = safe_sprintf("        %s(", condition->type->name);
+        line = safe_sprintf("        %s%s(", condition->is_inverted ? "!" : "", condition->type->name);
         list_for_each_entry(arg, &(condition->args.list), list) {
             tmp = arg_to_string(arg->type, arg->arg);
             safe_str_append(&line, "%s", tmp);

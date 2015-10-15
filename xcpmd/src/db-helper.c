@@ -22,6 +22,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <yajl/yajl_tree.h>
+#include <yajl/yajl_gen.h>
 #include "rpcgen/db_client.h"
 #include "project.h"
 #include "xcpmd.h"
@@ -53,41 +55,36 @@
 
 //Function prototypes
 static void db_write(char * path, char * value);
+static void db_inject(char * path, char * json);
 static char * db_read(char * path);
 static void db_rm(char * path);
-static char * dump_db_path(char * path);
+static char * db_dump_path(char * path);
 
-static void each_leaf(cJSON * node, void (leaf_func(cJSON * node, void * data)), void * data);
-static void _write_db_node(cJSON * this_node, void * data_ptr);
-
-static bool each_sibling(char * path, bool (func(cJSON * node, void * data)), void * data);
-static bool _sibling_parse_vars(cJSON * node, void * data_ptr);
-
-static char * path_of_node(cJSON * node, cJSON * needle);
+static char * path_of_node(yajl_val node, yajl_val needle);
 
 static struct arg_node get_db_var(char * var_name);
 static void write_db_var(char * name, enum arg_type type, union arg_u value);
 static void delete_db_var(char * var_name);
 static void delete_db_vars();
 
-static char ** cjson_rule_to_parseable(cJSON * jrule);
-static cJSON * rule_to_cjson(struct rule * rule);
+static char ** json_rule_to_parseable(char * name, char * json);
+static char * rule_to_json(struct rule * rule);
 
 static struct db_var * cache_db_var(char * name, enum arg_type type, union arg_u value);
 static int uncache_db_var(char * name);
-
-
-//Container for data passed to _write_db_node.
-struct _write_db_node_data {
-    cJSON * root;
-    char * path_prefix;
-};
 
 
 //Write a value to the specified DB path.
 static void db_write(char * path, char * value) {
 
     com_citrix_xenclient_db_write_(xcdbus_conn, DB_SERVICE, DB_PATH, path, value);
+}
+
+
+//Writes a whole JSON blob to the specified DB path.
+static void db_inject(char * path, char * json) {
+
+    com_citrix_xenclient_db_inject_(xcdbus_conn, DB_SERVICE, DB_PATH, path, json);
 }
 
 
@@ -116,7 +113,7 @@ static void db_rm(char * path) {
 //Allocates memory!
 //Dump the DB contents at the given path into a string.
 //The string returned should be freed.
-static char * dump_db_path(char * path) {
+static char * db_dump_path(char * path) {
 
     char * string;
     if (com_citrix_xenclient_db_dump_(xcdbus_conn, DB_SERVICE, DB_PATH, path, &string)) {
@@ -203,171 +200,55 @@ static void delete_db_vars() {
 }
 
 
-//Performs func() for each sibling under a DB path.
-static bool each_sibling(char * path, bool (func(cJSON * node, void * data)), void * data) {
-
-    cJSON *jroot, *jsib;
-    char * json, *ep;
-    int i, num_vars, tries;
-    bool success, total_success;
-    bool rpcproxy = false;
-
-    tries = 0;
-
-    while(!rpcproxy && tries < 10) {
-
-        ++tries;
-
-        json = dump_db_path(path);
-        if(json == NULL) {
-            xcpmd_log(LOG_DEBUG, "Error opening DB node %s - received null response. Retrying...\n", path);
-
-            //rpcproxy might not be up yet--wait a second and try again.
-            sleep(1);
-            continue;
-        }
-        if(json[0] == '\0') {
-            free(json);
-            return true;
-        }
-
-        jroot = cJSON_Parse(json);
-        if (jroot == NULL) {
-            ep = (char *)cJSON_GetErrorPtr();
-            if (json <= ep && strchr(json, '\0') >= ep) {
-                xcpmd_log(LOG_WARNING, "Invalid DB string: %s", json);
-
-                rpcproxy = false;
-                free(json);
-
-                sleep(1);
-                continue;
-            }
-            else {
-                xcpmd_log(LOG_WARNING, "Error opening DB node %s - out of memory\n", path);
-                free(json);
-                return false;
-            }
-        }
-        free(json);
-        rpcproxy = true;
-    }
-    if (rpcproxy == false) {
-        xcpmd_log(LOG_WARNING, "Couldn't establish DB connection.\n");
-        return false;
-    }
-
-    //Path is a leaf.
-    if (jroot->type != cJSON_Object && jroot->type != cJSON_Array) {
-        cJSON_Delete(jroot);
-        return true;
-    }
-
-    num_vars = cJSON_GetArraySize(jroot);
-    total_success = true;
-    for (i=0; i < num_vars; ++i) {
-        jsib = cJSON_GetArrayItem(jroot, i);
-        success = func(jsib, data);
-        total_success = success && total_success;
-    }
-
-    cJSON_Delete(jroot);
-
-    return total_success;
-}
-
-
-//Recursively walks a cJSON tree (depth-first) and calls func() on each leaf.
-//For the initial call, node should be the root of the tree to walk.
-static void each_leaf(cJSON * node, void (func(cJSON * node, void * data)), void * data) {
-
-    if (node == NULL)
-        return;
-
-    if (node->child == NULL) { //we're a leaf
-        func(node, data);
-    }
-
-    each_leaf(node->child, func, data);
-    each_leaf(node->next, func, data);
-}
-
-
 //Parse and cache all DB variables. Requires an initialized parse_data struct.
 bool parse_db_vars(struct parse_data * parse_data) {
 
-    return each_sibling(DB_VAR_MAP_PATH, _sibling_parse_vars, (void *)parse_data);
+    char err[1024];
+    char * json;
+    char *var_name, *var_value, *var_string;
+    yajl_val yajl;
+    bool success = true;
+    int i, num_vars;
+
+    json = db_dump_path(DB_VAR_MAP_PATH);
+    yajl = yajl_tree_parse(json, err, sizeof(err));
+
+    if (YAJL_IS_OBJECT(yajl)) {
+
+        num_vars = yajl->u.object.len;
+        for (i = 0; i < num_vars; ++i) {
+
+            if (YAJL_IS_STRING(yajl->u.object.values[i])) {
+                var_name = (char *)yajl->u.object.keys[i];
+                var_value = (char *)YAJL_GET_STRING(yajl->u.object.values[i]);
+                var_string = safe_sprintf("%s(%s)", var_name, var_value);
+
+                if (!parse_var_persistent(parse_data, var_string)) {
+                    xcpmd_log(LOG_WARNING, "Error parsing var string %s: %s", var_string, extract_parse_error(parse_data));
+                    success = false;
+                }
+                free(var_string);
+            }
+        }
+    }
+
+    free(json);
+    yajl_tree_free(yajl);
+
+    return success;
 }
 
 
-//Component of parse_db_vars().
-//Parses a variable found in the given cJSON node.
-static bool _sibling_parse_vars(cJSON * node, void * data_ptr) {
-
-    char * var_string;
-
-    struct parse_data * data = (struct parse_data *)data_ptr;
-
-    if (node == NULL) {
-        xcpmd_log(LOG_WARNING, "DB node was null");
-        return false;
-    }
-    if (node->type != cJSON_String) {
-        xcpmd_log(LOG_WARNING, "DB node was not a string");
-        return false;
-    }
-    if (node->string == NULL || node->valuestring == NULL) {
-        xcpmd_log(LOG_WARNING, "DB node is malformed");
-        return false;
-    }
-
-    var_string = safe_sprintf("%s(%s)", node->string, node->valuestring);
-    if (parse_var_persistent(data, var_string)) {
-        free(var_string);
-        return true;
-    }
-    else {
-        xcpmd_log(LOG_WARNING, "Error parsing var string %s: %s", var_string, extract_parse_error(data));
-        free(var_string);
-        return false;
-    }
-}
-
-
-//Write the specified rule to the DB. Does not modify the internal cache.
+//Write the specified rule to the DB. Does not modify the internal rule list.
 void write_db_rule(struct rule * rule) {
 
-    cJSON * cj;
-    struct _write_db_node_data data;
+    char * json, *path;
 
-    cj = rule_to_cjson(rule);
-
-    data.root = cj;
-    data.path_prefix = DB_RULE_PATH;
-
-    each_leaf(cj, _write_db_node, (void *)&data);
-
-    cJSON_Delete(cj);
-}
-
-
-//Component of write_db_rule().
-//Writes a node to the DB, respecting its path structure.
-static void _write_db_node(cJSON * this_node, void * data_ptr) {
-
-    struct _write_db_node_data * data;
-    char * path_suffix, *path;
-
-    data = (struct _write_db_node_data *)data_ptr;
-
-    path_suffix = path_of_node(data->root, this_node);
-    path = safe_sprintf("%s%s", data->path_prefix, path_suffix);
-
-    //xcpmd_log(LOG_DEBUG, "Writing %s to %s.\n", this_node->valuestring, path);
-
-    db_write(path, this_node->valuestring);
+    json = rule_to_json(rule);
+    path = safe_sprintf("%s/%s", DB_RULE_PATH, rule->id);
+    db_inject(path, json);
+    free(json);
     free(path);
-    free(path_suffix);
 }
 
 
@@ -402,50 +283,45 @@ void delete_db_rules() {
 //Parses rules from the DB and adds them to the internal rule list.
 bool parse_db_rules(struct parse_data * data) {
 
-    cJSON *jroot, *jrule;
+    yajl_val yajl;
     char ** rule_arr;
-    char *json, *name, *conditions, *actions, *undos;
-    char * err, *ep;
+    char *json_all, *json_rule, *path;
+    char *rule_name;
+    char *name, *conditions, *actions, *undos;
+    char err[1024];
     int num_rules, i, j;
 
-    json = dump_db_path(DB_RULE_PATH);
+    json_all = db_dump_path(DB_RULE_PATH);
+    xcpmd_log(LOG_DEBUG, "Received json: %s", json_all);
 
-    if (strcmp(json, "") == 0) {
+    //There are no rules in the DB.
+    if (*json_all == '\0' || !strncmp(json_all, "null", 4)) {
         xcpmd_log(LOG_DEBUG, "DB rules node is empty\n");
-        free(json);
+        free(json_all);
         return true;
     }
 
-    jroot = cJSON_Parse(json);
-    if (jroot == NULL) {
-        ep = (char *)cJSON_GetErrorPtr();
-        if (json <= ep && strchr(json, '\0') >= ep) {
-            xcpmd_log(LOG_WARNING, "Invalid DB string: %s", json);
-        }
-        else {
-            xcpmd_log(LOG_ERR, "Error parsing DB rules - memory error\n");
-        }
-        free(json);
-        return false;
-    }
-    free(json);
-
-    if (jroot->type == cJSON_NULL) {
-        //There are no rules in the DB.
-        return true;
-    }
-    else if (jroot->type != cJSON_Object) {
-        xcpmd_log(LOG_DEBUG, "Error parsing DB rules - %s is malformed (type %d)", DB_RULE_PATH, jroot->type);
-        cJSON_Delete(jroot);
+    yajl = yajl_tree_parse(json_all, err, sizeof(err));
+    if (yajl == NULL) {
+        xcpmd_log(LOG_WARNING, "Error parsing DB rules: %s", err);
         return false;
     }
 
-    num_rules = cJSON_GetArraySize(jroot);
+    if (!YAJL_IS_OBJECT(yajl)) {
+        xcpmd_log(LOG_DEBUG, "Error parsing DB rules - %s is malformed (type %d)", DB_RULE_PATH, yajl->type);
+        yajl_tree_free(yajl);
+        free(json_all);
+        return false;
+    }
+
+    num_rules = yajl->u.object.len;
     for (i=0; i < num_rules; ++i) {
 
-        jrule = cJSON_GetArrayItem(jroot, i);
-
-        rule_arr = cjson_rule_to_parseable(jrule);
+        rule_name = (char *)yajl->u.object.keys[i];
+        path = safe_sprintf("%s/%s", DB_RULE_PATH, rule_name);
+        json_rule = db_dump_path(path);
+        rule_arr = json_rule_to_parseable(rule_name, json_rule);
+        free(json_rule);
         if (rule_arr == NULL) {
             xcpmd_log(LOG_WARNING, "Error parsing DB rule - rule %d is malformed", i);
             continue;
@@ -456,8 +332,7 @@ bool parse_db_rules(struct parse_data * data) {
         undos = rule_arr[3];
 
         if (!parse_rule_persistent(data, name, conditions, actions, undos)) {
-            err = extract_parse_error(data);
-            xcpmd_log(LOG_WARNING, "Error reading DB rule %s - %s", jrule->string == NULL ? "(null)" : jrule->string, err);
+            xcpmd_log(LOG_WARNING, "Error reading DB rule %s - %s", rule_name, extract_parse_error(data));
         }
 
         for (j=0; j < 4; ++j)
@@ -465,24 +340,30 @@ bool parse_db_rules(struct parse_data * data) {
         free(rule_arr);
     }
 
-    cJSON_Delete(jroot);
+    yajl_tree_free(yajl);
+    free(json_all);
 
     return true;
 }
 
 
 //Allocates memory!
-//Converts a rule in a tree of cJSON nodes into a set of strings that the parser can handle.
+//Converts a JSON rule into a set of strings that the parser can handle.
 //Returns an array of name, conditions, actions, and undos as parseable strings.
 //Allocates memory for both the array and the strings themselves.
-static char ** cjson_rule_to_parseable(cJSON * jrule) {
+static char ** json_rule_to_parseable(char * name, char * json) {
 
-    char *name, *conditions, *actions, *undos;
+    char *conditions, *actions, *undos;
     char ** string_array;
     int i, j, num_entries, num_args;
-    cJSON *jconditions, *jcond, *jargs, *jarg, *jactions, *jact, *jundos, *jundo, *jtype, *jinverted;
     bool has_undos;
     char *str = NULL;
+    char err[1024];
+    yajl_val yajl, yconditions, yactions, yundos;
+    yajl_val ycond, yact, yundo;
+    yajl_val yinverted, ytype, yargs, yarg;
+
+    const char * yajl_path[2] = { NULL, NULL };
 
     /*
      * A rule looks like this in the DB:
@@ -511,77 +392,94 @@ static char ** cjson_rule_to_parseable(cJSON * jrule) {
      *   actions:    "logString(\"battery is less than 50%!\")"
      *   undos:      ""
      *
-     * So we convert the DB structure into a cJSON tree, and walk it to get the
+     * So we convert the DB structure into a YAJL tree, and walk it to get the
      * information we need.
      */
 
-    //There's no guarantee that a DB node (and the cJSON generated from it) will
-    //be properly formatted, so a lot of error checking is necessary.
-
-    //Get the rule name.
-    if (jrule->string == NULL) {
-        xcpmd_log(LOG_WARNING, "Rule with no name detected");
+    //There's no guarantee that a DB node will be properly formatted, so a lot
+    //of error checking is necessary.
+    yajl = yajl_tree_parse(json, err, sizeof(err));
+    if (yajl == NULL) {
+        xcpmd_log(LOG_ERR, "Error parsing JSON: %s\n", err);
         return NULL;
     }
-    name = clone_string(jrule->string);
+
+    //Check for bad JSON, but don't warn for a valid empty rule.
+    if (YAJL_IS_STRING(yajl) && (!strncmp(yajl->u.string, "null", 4) || *(yajl->u.string) == '\0')) {
+        return NULL;
+    }
+    else if (!YAJL_IS_OBJECT(yajl)) {
+        xcpmd_log(LOG_WARNING, "Error parsing JSON: rule is malformed");
+        return NULL;
+    }
+
+    //Get the rule's name.
+    //name = clone_string(yajl->u.object.keys[i]);
+    //yrule = yajl->u.object.values[i];
 
     //Get the conditions.
-    jconditions = cJSON_GetObjectItem(jrule, "conditions");
-    if (jconditions == NULL) {
-        xcpmd_log(LOG_WARNING, "Rule %s has no conditions", name);
-        goto free_name;
-    }
-    if (jconditions->type != cJSON_Object) {
-        xcpmd_log(LOG_WARNING, "Rule %s's conditions are malformed", name);
-        goto free_name;
+    yajl_path[0] = "conditions";
+    yconditions = yajl_tree_get(yajl, yajl_path, yajl_t_any);
+    if (!YAJL_IS_OBJECT(yconditions)) {
+        xcpmd_log(LOG_WARNING, "Error parsing JSON: rule %s's conditions are malformed", name);
+        goto free_yajl;
     }
 
     //Build the condition string, separating each condition with spaces.
-    num_entries = cJSON_GetArraySize(jconditions);
+    num_entries = yconditions->u.object.len;
     for (i = 0; i < num_entries; ++i) {
 
-        jcond = cJSON_GetArrayItem(jconditions, i);
+        ycond = yconditions->u.object.values[i];
+        if (!YAJL_IS_OBJECT(ycond)) {
+            xcpmd_log(LOG_WARNING, "Error parsing JSON: condition %i in rule %s is malformed", i, name);
+            continue;
+        }
 
         //Is the condition inverted?
-        jinverted = cJSON_GetObjectItem(jcond, "is_inverted");
-        if (jinverted == NULL || jinverted->valuestring == NULL) {
-            xcpmd_log(LOG_WARNING, "Condition in rule %s is missing is_inverted.", name);
-            goto free_name;
+        yajl_path[0] = "is_inverted";
+        yinverted = yajl_tree_get(ycond, yajl_path, yajl_t_string);
+        if (yinverted == NULL) {
+            xcpmd_log(LOG_WARNING, "Error parsing JSON: condition %i in rule %s is missing is_inverted.", i, name);
+            goto free_yajl;
         }
-        if (!strcmp(jinverted->valuestring, "true"))
+        if (!strcmp(yinverted->u.string, "true")) {
             safe_str_append(&str, "!");
+        }
 
         //What's its type?
-        jtype = cJSON_GetObjectItem(jcond, "type");
-        if (jtype == NULL || jtype->valuestring == NULL) {
-            xcpmd_log(LOG_WARNING, "Condition in rule %s is missing type.", name);
-            goto free_name;
+        yajl_path[0] = "type";
+        ytype = yajl_tree_get(ycond, yajl_path, yajl_t_string);
+        if (ytype == NULL) {
+            xcpmd_log(LOG_WARNING, "Error parsing JSON: condition %i in rule %s is missing type.", i, name);
+            goto free_yajl;
         }
-        safe_str_append(&str, "%s(", jtype->valuestring);
+        safe_str_append(&str, "%s(", YAJL_GET_STRING(ytype));
 
         //Get its arguments, if it has any.
-        jargs = cJSON_GetObjectItem(jcond, "args");
-        if (jargs != NULL) {
-
-            if (!((jargs->type == cJSON_Object) || (jargs->type == cJSON_String))) {
-                xcpmd_log(LOG_WARNING, "Args of condition %s in rule %s is malformed", jtype->valuestring, name);
-                goto free_name;
-            }
-
-            num_args = cJSON_GetArraySize(jargs);
+        yajl_path[0] = "args";
+        yargs = yajl_tree_get(ycond, yajl_path, yajl_t_any);
+        if ((YAJL_IS_STRING(yargs) && *(YAJL_GET_STRING(yargs))) == '\0') {
+            //Having no arguments is fine
+        }
+        else if (!YAJL_IS_OBJECT(yargs)) {
+            xcpmd_log(LOG_WARNING, "Error parsing JSON: args of condition %s in rule %s is malformed", YAJL_GET_STRING(ytype), name);
+            goto free_yajl;
+        }
+        else {
+            num_args = yargs->u.object.len;
             for (j = 0; j < num_args; ++j) {
 
-                jarg = cJSON_GetArrayItem(jargs, j);
+                yarg = yargs->u.object.values[j];
 
-                if (jarg->valuestring == NULL) {
-                    xcpmd_log(LOG_WARNING, "Empty arg in condition %s in rule %s.\n", jtype->valuestring, name);
-                    goto free_name;
+                if (!YAJL_IS_STRING(yarg)) {
+                    xcpmd_log(LOG_WARNING, "Error parsing JSON: empty arg in condition %s in rule %s.\n", YAJL_GET_STRING(ytype), name);
+                    goto free_yajl;
                 }
 
                 if (j == (num_args - 1))
-                    safe_str_append(&str, "%s", jarg->valuestring);
+                    safe_str_append(&str, "%s", YAJL_GET_STRING(yarg));
                 else
-                    safe_str_append(&str, "%s ", jarg->valuestring);
+                    safe_str_append(&str, "%s ", YAJL_GET_STRING(yarg));
             }
         }
 
@@ -595,49 +493,60 @@ static char ** cjson_rule_to_parseable(cJSON * jrule) {
     str = NULL;
 
     //Now do the same thing to get the action string.
-    jactions = cJSON_GetObjectItem(jrule, "actions");
-    if (jactions == NULL) {
-        xcpmd_log(LOG_WARNING, "Rule %s has no actions", name);
-        goto free_conditions;
-    }
-    if (jactions->type != cJSON_Object) {
-        xcpmd_log(LOG_WARNING, "Rule %s's actions are malformed", name);
+    yajl_path[0] = "actions";
+    yactions = yajl_tree_get(yajl, yajl_path, yajl_t_any);
+    if (!YAJL_IS_OBJECT(yactions)) {
+        xcpmd_log(LOG_WARNING, "Error parsing JSON: rule %s's actions are malformed", name);
         goto free_conditions;
     }
 
     //Glob those actions into a space-separated string.
-    num_entries = cJSON_GetArraySize(jactions);
+    num_entries = yactions->u.object.len;
     for (i = 0; i < num_entries; ++i) {
 
-        jact = cJSON_GetArrayItem(jactions, i);
+        yact = yactions->u.object.values[i];
+        if (!YAJL_IS_OBJECT(yact)) {
+            xcpmd_log(LOG_WARNING, "Error parsing JSON: action %i in rule %s is malformed", i, name);
+            continue;
+        }
 
         //Get the action type.
-        jtype = cJSON_GetObjectItem(jact, "type");
-        if (jtype == NULL || jtype->valuestring == NULL) {
-            xcpmd_log(LOG_WARNING, "Action in rule %s is missing type.", name);
+        yajl_path[0] = "type";
+        ytype = yajl_tree_get(yact, yajl_path, yajl_t_string);
+        if (ytype == NULL) {
+            xcpmd_log(LOG_WARNING, "Error parsing JSON: action %i in rule %s is missing type.", i, name);
             goto free_conditions;
         }
-        safe_str_append(&str, "%s(", jtype->valuestring);
+        safe_str_append(&str, "%s(", YAJL_GET_STRING(ytype));
 
         //Get its args, if it has any.
-        jargs = cJSON_GetObjectItem(jact, "args");
-        if (jargs != NULL) {
-
-            if (!((jargs->type == cJSON_Object) || (jargs->type == cJSON_String))) {
-                xcpmd_log(LOG_WARNING, "Args of action %s in rule %s is malformed", jtype->valuestring, name);
-                goto free_conditions;
-            }
-            num_args = cJSON_GetArraySize(jargs);
+        yajl_path[0] = "args";
+        yargs = yajl_tree_get(yact, yajl_path, yajl_t_any);
+        if (YAJL_IS_STRING(yargs) && *(YAJL_GET_STRING(yargs)) == '\0') {
+            //Having no args is fine.
+        }
+        else if (!YAJL_IS_OBJECT(yargs)) {
+            xcpmd_log(LOG_WARNING, "Error parsing JSON: args of action %s in rule %s is malformed", YAJL_GET_STRING(ytype), name);
+            goto free_conditions;
+        }
+        else {
+            num_args = yargs->u.object.len;
             for (j = 0; j < num_args; ++j) {
 
-                jarg = cJSON_GetArrayItem(jargs, j);
+                yarg = yargs->u.object.values[j];
+
+                if (!YAJL_IS_STRING(yarg)) {
+                    xcpmd_log(LOG_WARNING, "Error parsing JSON: empty arg in action %s in rule %s.\n", YAJL_GET_STRING(ytype), name);
+                    goto free_conditions;
+                }
 
                 if (j == (num_args - 1))
-                    safe_str_append(&str, "%s", jarg->valuestring);
+                    safe_str_append(&str, "%s", YAJL_GET_STRING(yarg));
                 else
-                    safe_str_append(&str, "%s ", jarg->valuestring);
+                    safe_str_append(&str, "%s ", YAJL_GET_STRING(yarg));
             }
         }
+
         //Terminate with a space if this isn't the final action.
         if (i == (num_entries - 1))
             safe_str_append(&str, ")");
@@ -648,75 +557,79 @@ static char ** cjson_rule_to_parseable(cJSON * jrule) {
     str = NULL;
 
     //Finally, build the undo actions string.
-    jundos = cJSON_GetObjectItem(jrule, "undos");
-    if (jundos != NULL) {
-        if (jundos->type == cJSON_String) {
-            if (jundos->valuestring == NULL || jundos->valuestring[0] == '\0') {
-                has_undos = false;
+    yajl_path[0] = "undos";
+    yundos = yajl_tree_get(yajl, yajl_path, yajl_t_any);
+    if (YAJL_IS_STRING(yundos) && *(YAJL_GET_STRING(yundos)) == '\0') {
+        //Undo actions are not required, so the undo string may be empty.
+    }
+    else if (!YAJL_IS_OBJECT(yundos)) {
+        xcpmd_log(LOG_WARNING, "Error parsing JSON: rule %s's undos are malformed", name);
+        goto free_actions;
+    }
+    else {
+        //Undos, if they exist, are handled exactly like actions.
+        num_entries = yundos->u.object.len;
+        for (i = 0; i < num_entries; ++i) {
+
+            yundo = yundos->u.object.values[i];
+            if (!YAJL_IS_OBJECT(yundo)) {
+                xcpmd_log(LOG_WARNING, "Error parsing JSON: undo %i in rule %s is malformed", i, name);
+                continue;
             }
-            else {
-                xcpmd_log(LOG_WARNING, "Rule %s's undos are malformed", name);
+
+            yajl_path[0] = "type";
+            ytype = yajl_tree_get(yundo, yajl_path, yajl_t_string);
+            if (ytype == NULL) {
+                xcpmd_log(LOG_WARNING, "Error parsing JSON: undo %i in rule %s is missing type.", i, name);
                 goto free_actions;
             }
-        }
-        else if (jundos->type != cJSON_Object) {
-            xcpmd_log(LOG_WARNING, "Rule %s's undos are malformed", name);
-            goto free_actions;
-        }
-        else {
-            has_undos = true;
-        }
+            safe_str_append(&str, "%s(", YAJL_GET_STRING(ytype));
 
-        //Undo actions are not required, so this string may be empty.
-        //Otherwise, this section is identical to the previous one.
-        if (has_undos == true) {
+            yajl_path[0] = "args";
+            yargs = yajl_tree_get(yundo, yajl_path, yajl_t_any);
+            if (YAJL_IS_STRING(yargs) && *(YAJL_GET_STRING(yargs)) == '\0') {
+                //Having no args is fine.
+            }
+            else if (!YAJL_IS_OBJECT(yargs)) {
+                xcpmd_log(LOG_WARNING, "Error parsing JSON: args of undo %s in rule %s is malformed", YAJL_GET_STRING(ytype), name);
+                goto free_actions;
+            }
+            else {
+                num_args = yargs->u.object.len;
+                for (j = 0; j < num_args; ++j) {
 
-            num_entries = cJSON_GetArraySize(jundos);
-            for (i = 0; i < num_entries; ++i) {
+                    yarg = yargs->u.object.values[j];
 
-                jundo = cJSON_GetArrayItem(jundos, i);
-
-                jtype = cJSON_GetObjectItem(jundo, "type");
-                if (jtype == NULL || jtype->valuestring == NULL) {
-                    xcpmd_log(LOG_WARNING, "Undo in rule %s is missing type.", name);
-                    goto free_actions;
-                }
-                safe_str_append(&str, "%s(", jtype->valuestring);
-
-                jargs = cJSON_GetObjectItem(jundo, "args");
-                if (jargs != NULL) {
-
-                    if (!((jargs->type == cJSON_Object) || (jargs->type == cJSON_String))) {
-                        xcpmd_log(LOG_WARNING, "Args of undo %s in rule %s is malformed", jtype->valuestring, name);
+                    if (!YAJL_IS_STRING(yarg)) {
+                        xcpmd_log(LOG_WARNING, "Error parsing JSON: empty arg in undo %s in rule %s.\n", YAJL_GET_STRING(ytype), name);
                         goto free_actions;
                     }
-                    num_args = cJSON_GetArraySize(jargs);
-                    for (j = 0; j < num_args; ++j) {
 
-                        jarg = cJSON_GetArrayItem(jargs, j);
-
-                        if (j == (num_args - 1))
-                            safe_str_append(&str, "%s", jarg->valuestring);
-                        else
-                            safe_str_append(&str, "%s, ", jarg->valuestring);
-                    }
+                    if (j == (num_args - 1))
+                        safe_str_append(&str, "%s", YAJL_GET_STRING(yarg));
+                    else
+                        safe_str_append(&str, "%s ", YAJL_GET_STRING(yarg));
                 }
-
-                if (i == (num_entries - 1))
-                    safe_str_append(&str, ")");
-                else
-                    safe_str_append(&str, ") ");
             }
+
+            //Terminate with a space if this isn't the final undo.
+            if (i == (num_entries - 1))
+                safe_str_append(&str, ")");
+            else
+                safe_str_append(&str, ") ");
         }
     }
     undos = str;
 
     //Finally, plunk the strings into a string array.
     string_array = (char **)malloc(4 * sizeof(char *));
-    string_array[0] = name;
+    string_array[0] = clone_string(name);
     string_array[1] = conditions;
     string_array[2] = actions;
     string_array[3] = undos;
+
+    //Clean up the YAJL tree.
+    yajl_tree_free(yajl);
 
     return string_array;
 
@@ -725,118 +638,190 @@ free_actions:
     free(actions);
 free_conditions:
     free(conditions);
-free_name:
-    free(name);
+free_yajl:
 
     if (str != NULL) {
         free(str);
     }
+
+    yajl_tree_free(yajl);
 
     return NULL;
 }
 
 
 //Allocates memory!
-//Converts a rule to a cJSON tree.
-//This tree is dynamically allocated and must be destroyed with cJSON_Delete().
-static cJSON * rule_to_cjson(struct rule * rule) {
+//Converts a rule to a dynamically allocated json string.
+//Elaborates all structure beneath "name", which is itself omitted.
+//(Including "name" in the JSON string interferes with DB injection, and name
+//is easy to retrieve from the rule anyway.)
+static char * rule_to_json(struct rule * rule) {
 
     char index_string[32];
-    char * arg_string;
+    char * arg_string, * bool_string;
     int index, arg_index;
     struct condition * cond;
     struct action * act;
     struct arg_node * arg;
-    cJSON *jroot, *jrule, *jconditions, *jcond, *jargs, *jactions, *jact, *jundos, *jundo;
+    yajl_gen yajl;
     char * ret;
+    size_t len;
 
-    //Roots can't have names, so we create a blank node for our root and build
-    //the rule on top of it.
-    jroot = cJSON_CreateObject();
-    cJSON_AddItemToObject(jroot, rule->id, jrule=cJSON_CreateObject());
+    yajl = yajl_gen_alloc(NULL);
+    if (yajl == NULL) {
+        xcpmd_log(LOG_ERR, "Could not allocate memory!\n");
+        return NULL;
+    }
 
-    //Add the rule's conditions.
-    cJSON_AddItemToObject(jrule, "conditions", jconditions=cJSON_CreateObject());
+    //Add rule name
+    //yajl_gen_string(yajl, (const unsigned char *)rule->id, strlen(rule->id));
+    //yajl_gen_map_open(yajl);
+
+    //Open the root.
+    yajl_gen_map_open(yajl);
+
+    //Add conditions.
+    yajl_gen_string(yajl, (const unsigned char *)"conditions", strlen("conditions"));
+    yajl_gen_map_open(yajl);
+
     index = 0;
     list_for_each_entry(cond, &rule->conditions.list, list) {
         snprintf(index_string, 32, "%d", index);
-        cJSON_AddItemToObject(jconditions, index_string, jcond=cJSON_CreateObject());
-        cJSON_AddStringToObject(jcond, "type", cond->type->name);
-        cJSON_AddStringToObject(jcond, "is_inverted", (cond->is_inverted ? "true" : "false"));
-        cJSON_AddItemToObject(jcond, "args", jargs=cJSON_CreateObject());
+        yajl_gen_string(yajl, (const unsigned char *)index_string, strlen(index_string));
+        yajl_gen_map_open(yajl);
+
+        yajl_gen_string(yajl, (const unsigned char *)"type", strlen("type"));
+        yajl_gen_string(yajl, (const unsigned char *)cond->type->name, strlen(cond->type->name));
+
+        bool_string = cond->is_inverted ? "true" : "false";
+        yajl_gen_string(yajl, (const unsigned char *)"is_inverted", strlen("is_inverted"));
+        yajl_gen_string(yajl, (const unsigned char *)bool_string, strlen(bool_string));
 
         //Add the condition's arguments, if it has any.
-        arg_index = 0;
-        list_for_each_entry(arg, &cond->args.list, list) {
-            snprintf(index_string, 32, "%d", arg_index);
-            arg_string = arg_to_string(arg->type, arg->arg);
-            cJSON_AddStringToObject(jargs, index_string, arg_string);
-            free(arg_string);
-            ++arg_index;
+        yajl_gen_string(yajl, (const unsigned char *)"args", strlen("args"));
+        if (list_empty(&cond->args.list)) {
+            yajl_gen_string(yajl, (const unsigned char *)"", 0);
+        }
+        else {
+            yajl_gen_map_open(yajl);
+
+            arg_index = 0;
+            list_for_each_entry(arg, &cond->args.list, list) {
+                snprintf(index_string, 32, "%d", arg_index);
+                arg_string = arg_to_string(arg->type, arg->arg);
+                yajl_gen_string(yajl, (const unsigned char *)index_string, strlen(index_string));
+                yajl_gen_string(yajl, (const unsigned char *)arg_string, strlen(arg_string));
+                free(arg_string);
+                ++arg_index;
+            }
+            yajl_gen_map_close(yajl);
         }
 
+        yajl_gen_map_close(yajl);
         ++index;
     }
+    yajl_gen_map_close(yajl);
+
 
     //Add the rule's actions.
-    cJSON_AddItemToObject(jrule, "actions", jactions=cJSON_CreateObject());
+    yajl_gen_string(yajl, (const unsigned char *)"actions", strlen("actions"));
+    yajl_gen_map_open(yajl);
+
     index = 0;
     list_for_each_entry(act, &rule->actions.list, list) {
         snprintf(index_string, 32, "%d", index);
-        cJSON_AddItemToObject(jactions, index_string, jact=cJSON_CreateObject());
-        cJSON_AddStringToObject(jact, "type", act->type->name);
-        cJSON_AddItemToObject(jact, "args", jargs=cJSON_CreateObject());
+        yajl_gen_string(yajl, (const unsigned char *)index_string, strlen(index_string));
+        yajl_gen_map_open(yajl);
 
-        //And its arguments.
-        arg_index = 0;
-        list_for_each_entry(arg, &act->args.list, list) {
-            snprintf(index_string, 32, "%d", arg_index);
-            arg_string = arg_to_string(arg->type, arg->arg);
-            cJSON_AddStringToObject(jargs, index_string, arg_string);
-            free(arg_string);
-            ++arg_index;
+        yajl_gen_string(yajl, (const unsigned char *)"type", strlen("type"));
+        yajl_gen_string(yajl, (const unsigned char *)act->type->name, strlen(act->type->name));
+
+        //Add the action's arguments, if it has any.
+        yajl_gen_string(yajl, (const unsigned char *)"args", strlen("args"));
+        if (list_empty(&act->args.list)) {
+            yajl_gen_string(yajl, (const unsigned char *)"", 0);
+        }
+        else {
+            yajl_gen_map_open(yajl);
+
+            arg_index = 0;
+            list_for_each_entry(arg, &act->args.list, list) {
+                snprintf(index_string, 32, "%d", arg_index);
+                arg_string = arg_to_string(arg->type, arg->arg);
+                yajl_gen_string(yajl, (const unsigned char *)index_string, strlen(index_string));
+                yajl_gen_string(yajl, (const unsigned char *)arg_string, strlen(arg_string));
+                free(arg_string);
+                ++arg_index;
+            }
+            yajl_gen_map_close(yajl);
         }
 
+        yajl_gen_map_close(yajl);
         ++index;
     }
+    yajl_gen_map_close(yajl);
+
 
     //Add the undo actions, if any.
-    cJSON_AddItemToObject(jrule, "undos", jundos=cJSON_CreateObject());
-    index = 0;
-    list_for_each_entry(act, &rule->undos.list, list) {
-        snprintf(index_string, 32, "%d", index);
-        cJSON_AddItemToObject(jundos, index_string, jundo=cJSON_CreateObject());
-        cJSON_AddStringToObject(jundo, "type", act->type->name);
-        cJSON_AddItemToObject(jundo, "args", jargs=cJSON_CreateObject());
-
-        //And arguments.
-        arg_index = 0;
-        list_for_each_entry(arg, &act->args.list, list) {
-            snprintf(index_string, 32, "%d", arg_index);
-            arg_string = arg_to_string(arg->type, arg->arg);
-            cJSON_AddStringToObject(jargs, index_string, arg_string);
-            free(arg_string);
-            ++arg_index;
-        }
-
-        ++index;
+    yajl_gen_string(yajl, (const unsigned char *)"undos", strlen("undos"));
+    if (list_empty(&rule->undos.list)) {
+        yajl_gen_string(yajl, (const unsigned char *)"", 0);
     }
+    else {
+        yajl_gen_map_open(yajl);
 
-    //Discard the blank root.
-    cJSON_DetachItemFromObject(jroot, rule->id);
-    cJSON_Delete(jroot);
+        index = 0;
+        list_for_each_entry(act, &rule->undos.list, list) {
+            snprintf(index_string, 32, "%d", index);
+            yajl_gen_string(yajl, (const unsigned char *)index_string, strlen(index_string));
+            yajl_gen_map_open(yajl);
 
-    return jrule;
+            yajl_gen_string(yajl, (const unsigned char *)"type", strlen("type"));
+            yajl_gen_string(yajl, (const unsigned char *)act->type->name, strlen(act->type->name));
+
+            //And arguments.
+            yajl_gen_string(yajl, (const unsigned char *)"args", strlen("args"));
+            if (list_empty(&act->args.list)) {
+                yajl_gen_string(yajl, (const unsigned char *)"", 0);
+            }
+            else {
+                yajl_gen_map_open(yajl);
+
+                arg_index = 0;
+                list_for_each_entry(arg, &act->args.list, list) {
+                    snprintf(index_string, 32, "%d", arg_index);
+                    arg_string = arg_to_string(arg->type, arg->arg);
+                    yajl_gen_string(yajl, (const unsigned char *)index_string, strlen(index_string));
+                    yajl_gen_string(yajl, (const unsigned char *)arg_string, strlen(arg_string));
+                    free(arg_string);
+                    ++arg_index;
+                }
+                yajl_gen_map_close(yajl);
+            }
+            yajl_gen_map_close(yajl);
+
+            ++index;
+        }
+        yajl_gen_map_close(yajl);
+    }
+    yajl_gen_map_close(yajl);
+
+    yajl_gen_get_buf(yajl, (const unsigned char **)&ret, &len);
+    ret = clone_string(ret);
+
+    yajl_gen_free(yajl);
+
+    return ret;
 }
 
 
 //Allocates memory!
-//Gets the DB path to the specified cJSON node.
+//Gets the DB path to the specified YAJL node.
 //For the initial call, node should be the root of the tree to search.
 //Needle is the node to find the path to.
 //Returns the path from the root to the needle, or null if the search fails.
 //The string returned must be freed.
-static char * path_of_node(cJSON * node, cJSON * needle) {
+static char * path_of_node(yajl_val node, yajl_val needle) {
 
     //Recursively walk the tree and build/tear down the path as you go.
 
@@ -845,6 +830,7 @@ static char * path_of_node(cJSON * node, cJSON * needle) {
     static int depth = 0;
     char * path;
     char * ptr;
+    int i, num_children;
 
     char buffer[1024];
 
@@ -858,11 +844,6 @@ static char * path_of_node(cJSON * node, cJSON * needle) {
         return NULL;
     }
 
-    //Add this node to the path
-    if (node->string != NULL) {
-        safe_str_append(&pathbuild, "/%s", node->string);
-    }
-
     //If we've found the needle, set ret and stop traversing the tree.
     if (node == needle) {
         ret = clone_string(pathbuild);
@@ -870,20 +851,29 @@ static char * path_of_node(cJSON * node, cJSON * needle) {
     else {
 
         //Try this node's children.
-        ++depth;
-        path_of_node(node->child, needle);
-        --depth;
+        if (YAJL_IS_OBJECT(node)) {
 
-        //Remove this node from the path
-        ptr = strchr(pathbuild, '\0');
-        while (ptr > pathbuild && ptr != 0 && *ptr != '/') {
-            *ptr = '\0';
-            ptr -= sizeof(char);
+            for (i = 0; i < num_children; ++i) {
+
+                //Add the next node to the path--YAJL nodes don't know their
+                //own keys
+                safe_str_append(&pathbuild, "/%s", node->u.object.keys[i]);
+
+                ++depth;
+                path_of_node(node->u.object.values[i], needle);
+                --depth;
+
+                //Remove that node from the path
+                ptr = strchr(pathbuild, '\0');
+                while (ptr > pathbuild && ptr != 0 && *ptr != '/') {
+                    *ptr = '\0';
+                    ptr -= sizeof(char);
+                }
+                *ptr = '\0';
+            }
+
+            //Trying this node's siblings shouldn't be necessary--iteration above should cover all nodes
         }
-        *ptr = '\0';
-
-        //Try this node's siblings.
-        path_of_node(node->next, needle);
 
     }
     //If we're the root node, reset all static variables and return the path.
@@ -893,7 +883,13 @@ static char * path_of_node(cJSON * node, cJSON * needle) {
         free(pathbuild);
         pathbuild = NULL;
 
-        //xcpmd_log(LOG_DEBUG, "Path of %s is %s", needle->string, path);
+        if (YAJL_IS_STRING(needle)) {
+            xcpmd_log(LOG_DEBUG, "Path of %s is %s", YAJL_GET_STRING(needle), path);
+        }
+        else {
+            xcpmd_log(LOG_DEBUG, "Path of needle is %s", path);
+        }
+
         return path;
     }
 
