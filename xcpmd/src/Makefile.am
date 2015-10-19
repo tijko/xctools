@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2012 Citrix Systems, Inc.
+# Copyright (c) 2015 Assured Information Security, Inc.
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
