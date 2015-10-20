@@ -91,14 +91,14 @@ int main(int argc, char *argv[]) {
         goto xcpmd_err;
     }
 
+    //This relies on both acpi-events and acpi-module having been initialized
+    acpi_initialize_state();
+
     // Load policy
     xcpmd_log(LOG_DEBUG, "Loading policy.\n");
     if (load_policy_from_db() == -1) {
         xcpmd_log(LOG_WARNING, "Error loading policy from DB; continuing...\n");
     }
-
-    //This relies on both acpi-events and acpi-module having been initialized
-    acpi_initialize_state();
 
 #ifdef POLICY_FILE_PATH
     if (load_policy_from_file(POLICY_FILE_PATH) == -1) {
