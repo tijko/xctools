@@ -245,17 +245,84 @@ gboolean xcpmd_get_actions(XcpmdObject *this, char** *OUT_actions, GError** erro
 }
 
 
+//Gets a human-readable list of the currently loaded rules.
 gboolean xcpmd_get_rules(XcpmdObject *this, char** *OUT_rules, GError** error) {
 
-    //todo
-    return FALSE;
+    unsigned int num_rules, i, j;
+    char ** rule_strings;
+    struct rule * rule;
+
+    num_rules = list_length(&rules.list);
+    rule_strings = (char **)malloc((num_rules + 1) * sizeof(char *));
+    if (rule_strings == NULL) {
+        xcpmd_log(LOG_ERR, "Couldn't allocate memory!");
+        g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "Couldn't allocate memory!");
+        return FALSE;
+    }
+
+    i = 0;
+    list_for_each_entry(rule, &rules.list, list) {
+        rule_strings[i] = rule_to_string(rule);
+        if (rule_strings[i] == NULL) {
+            xcpmd_log(LOG_WARNING, "Couldn't convert rule %d to string!", i);
+            g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "Couldn't convert rule %d to string!", i);
+            for (j = 0; j < i; ++j) {
+                free(rule_strings[j]);
+            }
+            free(rule_strings);
+            return FALSE;
+        }
+        ++i;
+    }
+
+    //Null-terminate the string array
+    rule_strings[num_rules] = NULL;
+    *OUT_rules = rule_strings;
+
+    return TRUE;
+
 }
 
 
+//Gets a human-readable list of the currently loaded variables.
 gboolean xcpmd_get_vars(XcpmdObject *this, char** *OUT_vars, GError** error) {
 
-    //todo
-    return FALSE;
+    unsigned int num_vars, i, j;
+    char ** var_strings;
+    struct db_var * var;
+    struct arg_node * arg;
+    char * arg_string;
+
+    num_vars = list_length(&db_vars.list);
+    var_strings = (char **)malloc((num_vars + 1) * sizeof(char *));
+    if (var_strings == NULL) {
+        xcpmd_log(LOG_ERR, "Couldn't allocate memory!");
+        g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "Couldn't allocate memory!");
+        return FALSE;
+    }
+
+    i = 0;
+    list_for_each_entry(var, &db_vars.list, list) {
+        arg = resolve_var(var->name);
+        arg_string = arg_to_string(arg->type, arg->arg);
+        var_strings[i] = safe_sprintf("%s(%s)", var->name, arg_string);
+        if (var_strings[i] == NULL) {
+            xcpmd_log(LOG_WARNING, "Couldn't convert var %s to string!", var->name);
+            g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "Couldn't convert var %s to string!", var->name);
+            for (j = 0; j < i; ++j) {
+                free(var_strings[j]);
+            }
+            free(var_strings);
+            return FALSE;
+        }
+        ++i;
+    }
+
+    //Null-terminate the string array
+    var_strings[num_vars] = NULL;
+    *OUT_vars = var_strings;
+
+    return TRUE;
 }
 
 

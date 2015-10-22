@@ -1074,6 +1074,71 @@ char * arg_to_string(enum arg_type type, union arg_u value) {
 }
 
 
+//Allocates memory!
+//Converts a rule to a string form that can be used in a rules file.
+char * rule_to_string(struct rule * rule) {
+    struct condition * condition;
+    struct action * action;
+    struct arg_node * arg;
+    char * out = NULL;
+    char * tmp;
+
+    out = safe_sprintf("%s | ", rule->id);
+    list_for_each_entry(condition, &(rule->conditions.list), list) {
+        if (condition->is_inverted) {
+            safe_str_append(&out, "!");
+        }
+        safe_str_append(&out, "%s(", condition->type->name);
+        list_for_each_entry(arg, &(condition->args.list), list) {
+            tmp = arg_to_string(arg->type, arg->arg);
+            safe_str_append(&out, "%s", tmp);
+            free(tmp);
+            if (arg->list.next != &condition->args.list) {
+                safe_str_append(&out, " ");
+            }
+        }
+        safe_str_append(&out, ") ");
+    }
+
+    safe_str_append(&out, "| ");
+    list_for_each_entry(action, &(rule->actions.list), list) {
+        safe_str_append(&out, "%s(", action->type->name);
+        list_for_each_entry(arg, &(action->args.list), list) {
+            tmp = arg_to_string(arg->type, arg->arg);
+            safe_str_append(&out, "%s", tmp);
+            free(tmp);
+            if (arg->list.next != &action->args.list) {
+                safe_str_append(&out, " ");
+            }
+        }
+        safe_str_append(&out, ") ");
+    }
+
+    if (!list_empty(&rule->undos.list)) {
+        safe_str_append(&out, "| ");
+        list_for_each_entry(action, &(rule->actions.list), list) {
+            safe_str_append(&out, "%s(", action->type->name);
+            list_for_each_entry(arg, &(action->args.list), list) {
+                tmp = arg_to_string(arg->type, arg->arg);
+                safe_str_append(&out, "%s", tmp);
+                free(tmp);
+                if (arg->list.next != &action->args.list) {
+                    safe_str_append(&out, " ");
+                }
+            }
+            safe_str_append(&out, ") ");
+        }
+    }
+
+    //Null out the trailing space
+    if (out != NULL && strlen(out) >=1) {
+        out[strlen(out) - 1] = '\0';
+    }
+
+    return out;
+}
+
+
 //Prints a description of a rule.
 void print_rule(struct rule * rule) {
 

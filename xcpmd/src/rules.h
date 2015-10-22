@@ -273,6 +273,8 @@ void print_registered_events();
 void print_rule(struct rule * rule);
 void print_rules(void);
 
+char * rule_to_string(struct rule * rule);
+
 struct arg_node * get_arg(struct arg_node * head, unsigned int index);
 struct arg_node * next_arg(struct arg_node * arg);
 struct list_head * get_list_member_at_index(struct list_head * head, unsigned int index);
