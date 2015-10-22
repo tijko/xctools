@@ -77,13 +77,21 @@ int get_lid_status(void) {
 
     char data[128];
     FILE * file;
+
+    //Try both lid state paths.
     file = fopen(LID_STATE_FILE_PATH, "r");
 
-    //If the file doesn't exist, we're not a laptop.
-    if (file == NULL && errno == ENOENT)
+    if (file == NULL && errno == ENOENT) {
+        file = fopen(LID_STATE_FILE_PATH2, "r");
+    }
+
+    //If we still don't have a lid, then we're not a laptop.
+    if (file == NULL && errno == ENOENT) {
         return NO_LID;
-    else if (file == NULL)
+    }
+    else if (file == NULL) {
         return LID_UNKNOWN;
+    }
 
     fgets(data, sizeof(data), file);
     fclose(file);

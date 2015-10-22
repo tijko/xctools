@@ -176,7 +176,9 @@ struct battery_status {
 #define AC_ADAPTER_DIR_PATH                 "/sys/class/power_supply/AC"
 #define AC_ADAPTER_STATE_FILE_PATH          AC_ADAPTER_DIR_PATH"/online"
 #define LID_DIR_PATH                        "/proc/acpi/button/lid/LID"
+#define LID_DIR_PATH2                       "/proc/acpi/button/lid/LID0"
 #define LID_STATE_FILE_PATH                 LID_DIR_PATH"/state"
+#define LID_STATE_FILE_PATH2                LID_DIR_PATH2"/state"
 #define ACPID_SOCKET_PATH                   "/var/run/acpid.socket"
 
 #define XS_FORMAT_PATH_LEN                  128
