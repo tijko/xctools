@@ -25,10 +25,10 @@
 CPROTO=cproto
 INCLUDES =  ${LIBXC_INC} ${LIBXCDBUS_INC} ${LIBXENACPI_INC} ${DBUS_GLIB_1_INC} ${GLIB_20_INC} ${LIBXCXENSTORE_CFLAGS}
 
-DBUS_CLIENT_IDLS=surfman
+DBUS_CLIENT_IDLS=surfman xenmgr xenmgr_vm db
 DBUS_SERVER_IDLS=xcpmd
 
-noinst_HEADERS=project.h prototypes.h xcpmd.h battery.h
+noinst_HEADERS=project.h prototypes.h xcpmd.h rules.h modules.h default-inputs-module.h list.h battery.h parser.h db-helper.h vm-utils.h
 
 sbin_PROGRAMS = xcpmd
 
@@ -36,15 +36,41 @@ BUILT_SOURCES = ${DBUS_CLIENT_IDLS:%=rpcgen/%_client.h} \
 	${DBUS_SERVER_IDLS:%=rpcgen/%_server_marshall.h} \
 	${DBUS_SERVER_IDLS:%=rpcgen/%_server_obj.c} \
 	${DBUS_SERVER_IDLS:%=rpcgen/%_server_obj.h} \
-	version.h 
+	version.h
 
-SRCS=xcpmd.c acpi-events.c platform.c version.c rpcgen/xcpmd_server_obj.c xcpmd-dbus-server.c utils.c battery.c
+
+# Use libtool to build our .so files.
+pkglib_LTLIBRARIES = default-actions-module.la acpi-module.la vm-actions-module.la default-inputs-module.la vm-events-module.la
+
+default_inputs_module_la_SOURCES = default-inputs-module.c default-inputs-module.h rules.h
+default_inputs_module_la_LDFLAGS = -avoid-version -module -shared
+
+default_actions_module_la_SOURCES = default-actions-module.c rules.h
+default_actions_module_la_LDFLAGS = -avoid-version -module -shared
+
+acpi_module_la_SOURCES = acpi-module.c project.h xcpmd.h rules.h acpi-module.h battery.h
+acpi_module_la_LDFLAGS = -avoid-version -module -shared
+
+vm_actions_module_la_SOURCES = vm-actions-module.c project.h xcpmd.h rules.h rpcgen/xenmgr_client.h rpcgen/xenmgr_vm_client.h vm-utils.h
+vm_actions_module_la_LDFLAGS = -avoid-version -module -shared
+
+vm_events_module_la_SOURCES = vm-events-module.c project.h xcpmd.h modules.h rules.h vm-events-module.h vm-utils.h
+vm_events_module_la_LDFLAGS = -avoid-version -module -shared
+
+
+
+SRCS=xcpmd.c acpi-events.c platform.c version.c rpcgen/xcpmd_server_obj.c xcpmd-dbus-server.c utils.c rules.c modules.c battery.c parser.c db-helper.c vm-utils.c
 xcpmd_SOURCES = ${SRCS}
-xcpmd_LDADD = -lpci -levent ${LIBXC_LIB} ${LIBXCDBUS_LIB} ${LIBXENACPI_LIB} ${DBUS_GLIB_1_LIB} ${GLIB_20_LIB} ${LIBXCXENSTORE_LIBS} ${LIBNL_LIBS} ${LIBNL_GENL_LIBS}
+xcpmd_LDADD = -lm -ldl -lpci -levent -lyajl ${LIBXC_LIB} ${LIBXCDBUS_LIB} ${LIBXENACPI_LIB} ${DBUS_GLIB_1_LIB} ${GLIB_20_LIB} ${LIBXCXENSTORE_LIBS} ${LIBNL_LIBS} ${LIBNL_GENL_LIBS}
+xcpmd_LDFLAGS = -rdynamic
 
-AM_CFLAGS=-g -W -Wall -Werror -Wno-unused
 
-xcpmd_LDFLAGS = 
+AM_CFLAGS=-g -W -Wall -Werror -Wno-unused -std=gnu99
+
+# Discard the .la files libtool produces.
+install-exec-hook:
+	rm $(DESTDIR)$(libdir)/$(PACKAGE)/*.la
+
 
 VFD=${srcdir}/..
 VF=${shell cat ${VFD}/version-files}

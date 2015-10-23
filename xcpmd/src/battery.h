@@ -24,7 +24,7 @@ int get_overall_battery_percentage(void);
 int get_current_battery_level(void);
 void wrapper_refresh_battery_event(int fd, short event, void *opaque);
 int battery_slot_exists(unsigned int battery_index);
-
+int battery_is_present(unsigned int battery_index);
 
 
 #endif

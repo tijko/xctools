@@ -30,11 +30,15 @@
 #include "project.h"
 #include "xcpmd.h"
 #include "acpi-events.h"
+#include "modules.h"
+#include "rules.h"
+#include "acpi-module.h"
 #include "battery.h"
 
 static int acpi_events_fd = -1;
 static struct event acpi_event;
 
+static struct ev_wrapper ** acpi_event_table;
 
 void adjust_brightness(int increase, int force) {
 
@@ -73,13 +77,21 @@ int get_lid_status(void) {
 
     char data[128];
     FILE * file;
+
+    //Try both lid state paths.
     file = fopen(LID_STATE_FILE_PATH, "r");
 
-    //If the file doesn't exist, we're not a laptop.
-    if (file == NULL && errno == ENOENT)
+    if (file == NULL && errno == ENOENT) {
+        file = fopen(LID_STATE_FILE_PATH2, "r");
+    }
+
+    //If we still don't have a lid, then we're not a laptop.
+    if (file == NULL && errno == ENOENT) {
         return NO_LID;
-    else if (file == NULL)
+    }
+    else if (file == NULL) {
         return LID_UNKNOWN;
+    }
 
     fgets(data, sizeof(data), file);
     fclose(file);
@@ -100,11 +112,12 @@ int get_tablet_status(void) {
 
 }
 
-
+/*
 static void handle_battery_info_event(int battery_index) {
 
     char path[256];
 
+    struct ev_wrapper * e = battery_info_events[battery_index];
     //xcpmd_log(LOG_DEBUG, "Info change event on battery %d\n", battery_index);
 
     update_battery_info(battery_index);
@@ -114,6 +127,8 @@ static void handle_battery_info_event(int battery_index) {
     xenstore_write("1", path);
 
     notify_com_citrix_xenclient_xcpmd_battery_info_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+
+    handle_events(e);
 }
 
 
@@ -121,6 +136,7 @@ static void handle_battery_status_event(int battery_index) {
 
     char path[256];
 
+    struct ev_wrapper * e = battery_status_events[battery_index];
     //xcpmd_log(LOG_DEBUG, "Status change event on battery %d\n", battery_index);
 
     update_battery_status(battery_index);
@@ -133,12 +149,17 @@ static void handle_battery_status_event(int battery_index) {
     xenstore_write("1", XS_BATTERY_STATUS_CHANGE_EVENT_PATH);
 
     notify_com_citrix_xenclient_xcpmd_battery_status_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+
+    handle_events(e);
 }
+*/
 
 
 static void handle_lid_event(int status) {
 
     int lid_status;
+
+    struct ev_wrapper * e = acpi_event_table[EVENT_LID];
 
     xcpmd_log(LOG_INFO, "Lid change event\n");
 
@@ -151,34 +172,57 @@ static void handle_lid_event(int status) {
     xenstore_write(lid_status == LID_OPEN ? "open" : "closed", XS_LID_STATE_PATH);
     xenstore_write("1", XS_LID_EVENT_PATH);
     //notify_com_citrix_xenclient_xcpmd_lid_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+
+    e->value.i = lid_status;
+    handle_events(e);
 }
 
 
 static void handle_power_button_event(void) {
 
+    struct ev_wrapper * e = acpi_event_table[EVENT_PWR_BTN];
+
     xcpmd_log(LOG_INFO, "Power button pressed event\n");
+
     xenstore_write("1", XS_PWRBTN_EVENT_PATH);
     notify_com_citrix_xenclient_xcpmd_power_button_pressed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+
+    e->value.b = true;
+    handle_events(e);
+
 }
 
 
 static void handle_sleep_button_event(void) {
 
+    struct ev_wrapper * e = acpi_event_table[EVENT_SLP_BTN];
+
     xcpmd_log(LOG_INFO, "Sleep button pressed event\n");
     xenstore_write("1", XS_SLPBTN_EVENT_PATH);
     notify_com_citrix_xenclient_xcpmd_sleep_button_pressed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+
+    e->value.b = true;
+    handle_events(e);
+
 }
 
 
 static void handle_suspend_button_event(void) {
 
+    struct ev_wrapper * e = acpi_event_table[EVENT_SUSP_BTN];
+
     xcpmd_log(LOG_INFO, "Suspend button pressed event\n");
     xenstore_write("1", XS_SUSPBTN_EVENT_PATH);
     //notify_com_citrix_xenclient_xcpmd_suspend_button_pressed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+
+    e->value.b = true;
+    handle_events(e);
 }
 
 
 static void handle_bcl_event(enum BCL_CMD cmd) {
+
+    struct ev_wrapper * e = acpi_event_table[EVENT_BCL];
 
     if (cmd == BCL_UP) {
         xenstore_write("1", XS_BCL_CMD);
@@ -198,25 +242,35 @@ static void handle_bcl_event(enum BCL_CMD cmd) {
     }
 
     notify_com_citrix_xenclient_xcpmd_bcl_key_pressed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
+
+    e->value.i = cmd;
+    handle_events(e);
 }
 
 
 static void handle_ac_adapter_event(uint32_t data) {
+
+    struct ev_wrapper * e = acpi_event_table[EVENT_ON_AC];
 
     xenstore_write_int(data, XS_AC_ADAPTER_STATE_PATH);
     notify_com_citrix_xenclient_xcpmd_ac_adapter_state_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
 
     switch(data) {
         case ACPI_AC_STATUS_OFFLINE:
+            e->value.b = ON_BATT;
             xcpmd_log(LOG_DEBUG, "AC adapter state change event: on battery");
             break;
         case ACPI_AC_STATUS_ONLINE:
+            e->value.b = ON_AC;
             xcpmd_log(LOG_DEBUG, "AC adapter state change event: on AC");
             break;
         case ACPI_AC_STATUS_UNKNOWN:
         default:
+            e->value.b = AC_UNKNOWN;
             xcpmd_log(LOG_DEBUG, "AC adapter state change event: unknown state");
     }
+
+    handle_events(e);
 }
 
 
@@ -236,14 +290,19 @@ static void handle_tablet_mode_event(uint32_t data) {
 }
 
 
-//Writes the AC adapter state, lid state, and battery information to xenstore.
-static void initialize_state(void) {
+//Writes the AC adapter state, lid state, and battery information to xenstore
+//and initializes stateful evwrappers.
+void acpi_initialize_state(void) {
 
     int ac_adapter_status = get_ac_adapter_status();
     int lid_status = get_lid_status();
     int tablet_status = get_tablet_status();
 
     xcpmd_log(LOG_DEBUG, "Lid is %s and system is on %s\n", lid_status == LID_OPEN ? "open" : "closed", ac_adapter_status == ON_AC ? "ac" : "battery");
+
+    acpi_event_table[EVENT_ON_AC]->value.i = ac_adapter_status;
+    acpi_event_table[EVENT_LID]->value.i = lid_status;
+    acpi_event_table[EVENT_TABLET_MODE]->value.i = tablet_status;
 
     xenstore_write_int((ac_adapter_status == ON_AC) ? 1 : 0, XS_AC_ADAPTER_STATE_PATH);
     xenstore_write_int((lid_status == LID_CLOSED) ? 0 : 1, XS_LID_STATE_PATH);
@@ -356,7 +415,6 @@ static void process_acpi_message(char *acpi_buffer, ssize_t len) {
             return;
         }
 
-
         if (!strcmp(subclass, ACPI_BUTTON_SUBCLASS_LID)) {
 
             if (tokens[2] == NULL)
@@ -406,7 +464,6 @@ static void process_acpi_message(char *acpi_buffer, ssize_t len) {
                 xcpmd_log(LOG_DEBUG, "Tablet mode data field doesn't look like a hex integer: %s\n", tokens[3]);
                 return;
             }
-
             handle_tablet_mode_event(data);
         }
     }
@@ -515,16 +572,24 @@ int acpi_events_initialize(void) {
     event_set(&acpi_event, acpi_events_fd, EV_READ | EV_PERSIST, wrapper_acpi_event, NULL);
     event_add(&acpi_event, NULL);
 
+
+    //Pull in ACPI event tables.
+    acpi_event_table = get_event_table(ACPI_EVENTS, MODULE_PATH ACPI_MODULE_SONAME);
+    if (acpi_event_table == NULL) {
+        xcpmd_log(LOG_ERR, "ACPI events init failed: couldn't load ACPI event table.\n");
+        return -1;
+    }
+
+
     //Set up battery polling.
     //Ideally, we'd use battery status notifications, but several platforms emit
     //notifications before data is ready on a hardware level. If a quirk is added
-    //to the battery driver for these platforms, we can move to an event-driven 
+    //to the battery driver for these platforms, we can move to an event-driven
     //model.
     event_set(&refresh_battery_event, -1, EV_TIMEOUT | EV_PERSIST, wrapper_refresh_battery_event, NULL);
     wrapper_refresh_battery_event(0, 0, NULL);
 
-    //Initialize state info.
-    initialize_state();
+    //State must be initialized after acpi-module is loaded--call it from main().
 
     xcpmd_log(LOG_DEBUG, "ACPI events initialized.\n");
 
@@ -541,3 +606,20 @@ void acpi_events_cleanup(void) {
 
     acpi_events_fd = -1;
 }
+
+
+void handle_battery_events(void) {
+
+    unsigned int i;
+    struct ev_wrapper * info_e   = acpi_event_table[EVENT_BATT_INFO];
+    struct ev_wrapper * status_e = acpi_event_table[EVENT_BATT_STATUS];
+
+    for (i=0; i < num_battery_structs_allocd; ++i) {
+
+        info_e->value.i = i;
+        status_e->value.i = i;
+        handle_events(info_e);
+        handle_events(status_e);
+    }
+}
+

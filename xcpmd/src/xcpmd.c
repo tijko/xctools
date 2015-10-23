@@ -41,6 +41,8 @@ static char rcsid[] = "$Id:$";
 
 #include "project.h"
 #include "xcpmd.h"
+#include "modules.h"
+#include "rules.h"
 
 
 int main(int argc, char *argv[]) {
@@ -70,18 +72,46 @@ int main(int argc, char *argv[]) {
 
     initialize_platform_info();
 
-    // Initialize xcpmd services
+
+    xcpmd_log(LOG_DEBUG, "Starting DBUS server.\n");
     if (xcpmd_dbus_initialize() == -1) {
         xcpmd_log(LOG_ERR, "Failed to initialize DBUS server\n");
         goto xcpmd_err;
     }
 
+    xcpmd_log(LOG_DEBUG, "Starting ACPI events monitor.\n");
     if (acpi_events_initialize() == -1) {
         xcpmd_log(LOG_ERR, "Failed to initialize ACPI events monitor\n");
         goto xcpmd_err;
     }
 
-    // Run main server loop
+    // Load modules
+    if (init_modules() == -1) {
+        xcpmd_log(LOG_ERR, "Failed to load all modules\n");
+        goto xcpmd_err;
+    }
+
+    //This relies on both acpi-events and acpi-module having been initialized
+    acpi_initialize_state();
+
+    // Load policy
+    xcpmd_log(LOG_DEBUG, "Loading policy.\n");
+    if (load_policy_from_db() == -1) {
+        xcpmd_log(LOG_WARNING, "Error loading policy from DB; continuing...\n");
+    }
+
+#ifdef POLICY_FILE_PATH
+    if (load_policy_from_file(POLICY_FILE_PATH) == -1) {
+        xcpmd_log(LOG_WARNING, "Error loading policy from file %s; continuing...\n", POLICY_FILE_PATH);
+    }
+#endif
+
+#ifdef XCPMD_DEBUG
+    xcpmd_log(LOG_DEBUG, "Rules loaded:\n");
+    print_rules();
+#endif
+
+    xcpmd_log(LOG_DEBUG, "Entering event loop.\n");
     event_dispatch();
 
     goto xcpmd_out;
@@ -89,6 +119,7 @@ int main(int argc, char *argv[]) {
 xcpmd_err:
     ret = -1;
 xcpmd_out:
+    uninit_modules();
     acpi_events_cleanup();
     xcpmd_dbus_cleanup();
 #ifndef RUN_STANDALONE
@@ -97,3 +128,5 @@ xcpmd_out:
 
     return ret;
 }
+
+

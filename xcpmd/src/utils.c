@@ -59,6 +59,7 @@ int strnicmp(const char *s1, const char *s2, size_t len)
     return (int)c1 - (int)c2;
 }
 
+
 //Extracts a number from the end of a string, e.g. BAT1 returns 1.
 //Returns -1 on failure.
 int get_terminal_number(char * str) {
@@ -89,9 +90,9 @@ int get_terminal_number(char * str) {
 
 
 //Splits a string at a delimiter, similar to strtok().
-//Unlike strtok(), returns empty strings for consecutive delimiters (like Ruby's String.split).
-//To receive a complete set of tokens, call once with a string, then with NULL
-//until a null pointer is returned.
+//Unlike strtok(), returns empty strings for consecutive delimiters (like
+//Ruby's String.split). To receive a complete set of tokens, call once with a
+//string, then with NULL until a null pointer is returned.
 char * strsplit(char * str, char delim) {
     static char * last_found;
     static char * str_end;
@@ -124,6 +125,81 @@ char * strsplit(char * str, char delim) {
 
     //Then return the pointer to the beginning of the token.
     return search;
+}
+
+
+//Allocates memory!
+//Deep clones a string. Don't forget to free() later.
+char * clone_string(char * string) {
+
+    char * clone;
+    int length;
+
+    length = strlen(string) + 1;
+    clone = (char *)malloc(length * sizeof(char));
+    if (clone == NULL) {
+        xcpmd_log(LOG_ERR, "Couldn't allocate memory\n");
+        return NULL;
+    }
+    strcpy(clone, string);
+
+    return clone;
+}
+
+//Allocates memory!
+//Allocates an appropriately sized string and prints to it.
+char * safe_sprintf(char * format, ...) {
+
+    int length;
+    char * string;
+    va_list args;
+
+    va_start(args, format);
+    length = vsnprintf(NULL, 0, format, args) + 1;
+    string = (char *)malloc(length * sizeof(char));
+    if (string == NULL) {
+        xcpmd_log(LOG_ERR, "Couldn't allocate memory\n");
+        return NULL;
+    }
+    vsnprintf(string, length, format, args);
+    va_end(args);
+
+    return string;
+}
+
+
+//Allocates memory! Frees *str1 if it's not null!
+//Places a pointer to the concatenation of *str1 and the sprintf of the
+//remaining args into str1.
+void safe_str_append(char ** str1, char * format, ...) {
+
+    if (str1 == NULL || format == NULL)
+        return;
+
+    int length;
+    char *formatted, *concatted;
+    va_list args;
+
+    va_start(args, format);
+    length = vsnprintf(NULL, 0, format, args) + 1;
+    formatted = (char *)malloc(length * sizeof(char));
+    if (formatted == NULL) {
+        xcpmd_log(LOG_ERR, "Couldn't allocate memory\n");
+        return;
+    }
+    vsnprintf(formatted, length, format, args);
+    va_end(args);
+
+    if (*str1 == NULL) {
+        *str1 = formatted;
+    }
+    else {
+        concatted = safe_sprintf("%s%s", *str1, formatted);
+        free(*str1);
+        free(formatted);
+
+        *str1 = concatted;
+    }
 }
 
 
@@ -178,7 +254,7 @@ int find_efi_entry_location(const char *efi_entry, uint32_t length, size_t *loca
 
         if ( loc != 0 )
         {
-        	*location = loc;
+            *location = loc;
             return 0;
         }
     }
@@ -207,7 +283,7 @@ uint32_t pci_host_read_dword(int bus, int dev, int fn, uint32_t addr)
 
     pci_dev = pci_get_dev(pci_acc, 0, bus, dev, fn);
     if ( !pci_dev )
-	    return 0;
+        return 0;
 
     pci_read_block(pci_dev, addr, (uint8_t*)&val, 4);
     memcpy((uint8_t*)&ret, (uint8_t*)&val, 4);
