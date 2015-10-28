@@ -35,21 +35,24 @@
  */
 
 //Function prototypes
-bool bcl_up_pressed       (struct ev_wrapper * event, struct arg_node * args);
-bool bcl_down_pressed     (struct ev_wrapper * event, struct arg_node * args);
-bool pbtn_pressed         (struct ev_wrapper * event, struct arg_node * args);
-bool sbtn_pressed         (struct ev_wrapper * event, struct arg_node * args);
-bool susp_pressed         (struct ev_wrapper * event, struct arg_node * args);
-bool lid_closed           (struct ev_wrapper * event, struct arg_node * args);
-bool lid_open             (struct ev_wrapper * event, struct arg_node * args);
-bool on_ac                (struct ev_wrapper * event, struct arg_node * args);
-bool on_battery           (struct ev_wrapper * event, struct arg_node * args);
-bool tablet_mode          (struct ev_wrapper * event, struct arg_node * args);
-bool non_tablet_mode      (struct ev_wrapper * event, struct arg_node * args);
-bool battery_greater_than (struct ev_wrapper * event, struct arg_node * args);
-bool battery_less_than    (struct ev_wrapper * event, struct arg_node * args);
-bool battery_equal_to     (struct ev_wrapper * event, struct arg_node * args);
-bool battery_present      (struct ev_wrapper * event, struct arg_node * args);
+bool bcl_up_pressed               (struct ev_wrapper * event, struct arg_node * args);
+bool bcl_down_pressed             (struct ev_wrapper * event, struct arg_node * args);
+bool pbtn_pressed                 (struct ev_wrapper * event, struct arg_node * args);
+bool sbtn_pressed                 (struct ev_wrapper * event, struct arg_node * args);
+bool susp_pressed                 (struct ev_wrapper * event, struct arg_node * args);
+bool lid_closed                   (struct ev_wrapper * event, struct arg_node * args);
+bool lid_open                     (struct ev_wrapper * event, struct arg_node * args);
+bool on_ac                        (struct ev_wrapper * event, struct arg_node * args);
+bool on_battery                   (struct ev_wrapper * event, struct arg_node * args);
+bool tablet_mode                  (struct ev_wrapper * event, struct arg_node * args);
+bool non_tablet_mode              (struct ev_wrapper * event, struct arg_node * args);
+bool battery_greater_than         (struct ev_wrapper * event, struct arg_node * args);
+bool battery_less_than            (struct ev_wrapper * event, struct arg_node * args);
+bool battery_equal_to             (struct ev_wrapper * event, struct arg_node * args);
+bool battery_present              (struct ev_wrapper * event, struct arg_node * args);
+bool overall_battery_greater_than (struct ev_wrapper * event, struct arg_node * args);
+bool overall_battery_less_than    (struct ev_wrapper * event, struct arg_node * args);
+bool overall_battery_equal_to     (struct ev_wrapper * event, struct arg_node * args);
 
 
 //Private data structures
@@ -86,21 +89,24 @@ static struct event_data_row event_data[] = {
 
 
 static struct cond_table_row condition_data[] = {
-    {"onBacklightDownBtn"   , bcl_up_pressed       , "n"    , "void"                        , EVENT_BCL         } ,
-    {"onBacklightUpBtn"     , bcl_down_pressed     , "n"    , "void"                        , EVENT_BCL         } ,
-    {"onPowerBtn"           , pbtn_pressed         , "n"    , "void"                        , EVENT_PWR_BTN     } ,
-    {"onSleepBtn"           , sbtn_pressed         , "n"    , "void"                        , EVENT_SLP_BTN     } ,
-    {"onSuspendBtn"         , susp_pressed         , "n"    , "void"                        , EVENT_SUSP_BTN    } ,
-    {"whileLidClosed"       , lid_closed           , "n"    , "void"                        , EVENT_LID         } ,
-    {"whileLidOpen"         , lid_open             , "n"    , "void"                        , EVENT_LID         } ,
-    {"whileUsingAc"         , on_ac                , "n"    , "void"                        , EVENT_ON_AC       } ,
-    {"whileUsingBatt"       , on_battery           , "n"    , "void"                        , EVENT_ON_AC       } ,
-    {"whileInTabletMode"    , tablet_mode          , "n"    , "void"                        , EVENT_TABLET_MODE } ,
-    {"whileNotInTabletMode" , non_tablet_mode      , "n"    , "void"                        , EVENT_TABLET_MODE } ,
-    {"whileBattGreaterThan" , battery_greater_than , "i, i" , "int battNum, int percentage" , EVENT_BATT_STATUS } ,
-    {"whileBattLessThan"    , battery_less_than    , "i, i" , "int battNum, int percentage" , EVENT_BATT_STATUS } ,
-    {"whileBattEqualTo"     , battery_equal_to     , "i, i" , "int battNum, int percentage" , EVENT_BATT_STATUS } ,
-    {"whileBattPresent"     , battery_present      , "i"    , "int battNum"                 , EVENT_BATT_INFO   }
+    {"onBacklightDownBtn"          , bcl_up_pressed               , "n"    , "void"                        , EVENT_BCL         } ,
+    {"onBacklightUpBtn"            , bcl_down_pressed             , "n"    , "void"                        , EVENT_BCL         } ,
+    {"onPowerBtn"                  , pbtn_pressed                 , "n"    , "void"                        , EVENT_PWR_BTN     } ,
+    {"onSleepBtn"                  , sbtn_pressed                 , "n"    , "void"                        , EVENT_SLP_BTN     } ,
+    {"onSuspendBtn"                , susp_pressed                 , "n"    , "void"                        , EVENT_SUSP_BTN    } ,
+    {"whileLidClosed"              , lid_closed                   , "n"    , "void"                        , EVENT_LID         } ,
+    {"whileLidOpen"                , lid_open                     , "n"    , "void"                        , EVENT_LID         } ,
+    {"whileUsingAc"                , on_ac                        , "n"    , "void"                        , EVENT_ON_AC       } ,
+    {"whileUsingBatt"              , on_battery                   , "n"    , "void"                        , EVENT_ON_AC       } ,
+    {"whileInTabletMode"           , tablet_mode                  , "n"    , "void"                        , EVENT_TABLET_MODE } ,
+    {"whileNotInTabletMode"        , non_tablet_mode              , "n"    , "void"                        , EVENT_TABLET_MODE } ,
+    {"whileBattGreaterThan"        , battery_greater_than         , "i, i" , "int battNum, int percentage" , EVENT_BATT_STATUS } ,
+    {"whileBattLessThan"           , battery_less_than            , "i, i" , "int battNum, int percentage" , EVENT_BATT_STATUS } ,
+    {"whileBattEqualTo"            , battery_equal_to             , "i, i" , "int battNum, int percentage" , EVENT_BATT_STATUS } ,
+    {"whileBattPresent"            , battery_present              , "i"    , "int battNum"                 , EVENT_BATT_INFO   } ,
+    {"whileOverallBattGreaterThan" , overall_battery_greater_than , "i"    , "int percentage"              , EVENT_BATT_STATUS } ,
+    {"whileOverallBattLessThan"    , overall_battery_less_than    , "i"    , "int percentage"              , EVENT_BATT_STATUS } ,
+    {"whileOverallBattEqualTo"     , overall_battery_equal_to     , "i"    , "int percentage"              , EVENT_BATT_STATUS }
 };
 
 static unsigned int num_conditions = sizeof(condition_data) / sizeof(condition_data[0]);
@@ -254,4 +260,25 @@ bool battery_equal_to(struct ev_wrapper * event, struct arg_node * args) {
 
     int percentage = get_arg(args, 0)->arg.i;
     return get_battery_percentage(event->value.i) == percentage;
+}
+
+
+bool overall_battery_greater_than(struct ev_wrapper * event, struct arg_node * args) {
+
+    int percentage = get_arg(args, 0)->arg.i;
+    return get_overall_battery_percentage() > percentage;
+}
+
+
+bool overall_battery_less_than(struct ev_wrapper * event, struct arg_node * args) {
+
+    int percentage = get_arg(args, 0)->arg.i;
+    return get_overall_battery_percentage() < percentage;
+}
+
+
+bool overall_battery_equal_to(struct ev_wrapper * event, struct arg_node * args) {
+
+    int percentage = get_arg(args, 0)->arg.i;
+    return get_overall_battery_percentage() == percentage;
 }
