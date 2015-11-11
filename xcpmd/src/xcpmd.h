@@ -227,7 +227,7 @@ struct battery_status {
 # ifdef XCPMD_DEBUG
     #define xcpmd_log(priority, format, p...) syslog(priority, format, ##p)
 # else
-    #define xcpmd_log(priority, format, p...) priority == LOG_INFO || priority == LOG_DEBUG ? : syslog(priority, format, ##p)
+    #define xcpmd_log(priority, format, p...) priority == LOG_DEBUG ? : syslog(priority, format, ##p)
 # endif
 #else
 # ifdef XCPMD_DEBUG

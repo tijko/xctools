@@ -194,7 +194,7 @@ gboolean xcpmd_get_conditions(XcpmdObject *this, char** *OUT_conditions, GError*
     int i;
 
     num_strings = get_registered_condition_types(&str_array);
-    xcpmd_log(LOG_DEBUG, "Number of conditions registered: %d\n", num_strings);
+    xcpmd_log(LOG_INFO, "Number of conditions registered: %d\n", num_strings);
 
     //Null-terminate the string array.
     nt_str_array = (char **)malloc((num_strings + 1) * sizeof(char *));
@@ -224,7 +224,7 @@ gboolean xcpmd_get_actions(XcpmdObject *this, char** *OUT_actions, GError** erro
     int i;
 
     num_strings = get_registered_action_types(&str_array);
-    xcpmd_log(LOG_DEBUG, "Number of actions registered: %d\n", num_strings);
+    xcpmd_log(LOG_INFO, "Number of actions registered: %d\n", num_strings);
 
     //Null-terminate the string array.
     nt_str_array = (char **)malloc((num_strings + 1) * sizeof(char *));

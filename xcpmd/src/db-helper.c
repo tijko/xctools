@@ -308,7 +308,7 @@ bool parse_db_rules(struct parse_data * data) {
     }
 
     if (!YAJL_IS_OBJECT(yajl)) {
-        xcpmd_log(LOG_DEBUG, "Error parsing DB rules - %s is malformed (type %d)", DB_RULE_PATH, yajl->type);
+        xcpmd_log(LOG_WARNING, "Error parsing DB rules - %s is malformed (type %d)", DB_RULE_PATH, yajl->type);
         yajl_tree_free(yajl);
         free(json_all);
         return false;

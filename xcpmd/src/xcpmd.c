@@ -73,29 +73,31 @@ int main(int argc, char *argv[]) {
     initialize_platform_info();
 
 
-    xcpmd_log(LOG_DEBUG, "Starting DBUS server.\n");
+    xcpmd_log(LOG_INFO, "Starting DBUS server.\n");
     if (xcpmd_dbus_initialize() == -1) {
         xcpmd_log(LOG_ERR, "Failed to initialize DBUS server\n");
         goto xcpmd_err;
     }
 
-    xcpmd_log(LOG_DEBUG, "Starting ACPI events monitor.\n");
+    xcpmd_log(LOG_INFO, "Starting ACPI events monitor.\n");
     if (acpi_events_initialize() == -1) {
         xcpmd_log(LOG_ERR, "Failed to initialize ACPI events monitor\n");
         goto xcpmd_err;
     }
 
     // Load modules
+    xcpmd_log(LOG_INFO, "Loading modules.\n");
     if (init_modules() == -1) {
         xcpmd_log(LOG_ERR, "Failed to load all modules\n");
         goto xcpmd_err;
     }
 
     //This relies on both acpi-events and acpi-module having been initialized
+    xcpmd_log(LOG_INFO, "Initializing ACPI state.\n");
     acpi_initialize_state();
 
     // Load policy
-    xcpmd_log(LOG_DEBUG, "Loading policy.\n");
+    xcpmd_log(LOG_INFO, "Loading policy.\n");
     if (load_policy_from_db() == -1) {
         xcpmd_log(LOG_WARNING, "Error loading policy from DB; continuing...\n");
     }
@@ -111,7 +113,7 @@ int main(int argc, char *argv[]) {
     print_rules();
 #endif
 
-    xcpmd_log(LOG_DEBUG, "Entering event loop.\n");
+    xcpmd_log(LOG_INFO, "Entering event loop.\n");
     event_dispatch();
 
     goto xcpmd_out;
