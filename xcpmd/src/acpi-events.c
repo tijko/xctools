@@ -66,10 +66,10 @@ int get_ac_adapter_status(void) {
     fgets(data, sizeof(data), file);
     fclose(file);
 
-    if (strstr(data, "1"))
-        return ON_AC;
-    else
+    if (strstr(data, "0"))
         return ON_BATT;
+    else
+        return ON_AC;
 }
 
 
@@ -315,15 +315,42 @@ void acpi_initialize_state(void) {
     int ac_adapter_status = get_ac_adapter_status();
     int lid_status = get_lid_status();
     int tablet_status = get_tablet_status();
-
-    xcpmd_log(LOG_INFO, "Lid is %s and system is on %s\n", lid_status == LID_OPEN ? "open" : "closed", ac_adapter_status == ON_AC ? "ac" : "battery");
+    char * acpi_status_string = NULL;
 
     acpi_event_table[EVENT_ON_AC]->value.i = ac_adapter_status;
     acpi_event_table[EVENT_LID]->value.i = lid_status;
     acpi_event_table[EVENT_TABLET_MODE]->value.i = tablet_status;
 
-    xenstore_write_int((ac_adapter_status == ON_AC) ? 1 : 0, XS_AC_ADAPTER_STATE_PATH);
-    xenstore_write_int((lid_status == LID_CLOSED) ? 0 : 1, XS_LID_STATE_PATH);
+    switch (ac_adapter_status) {
+        case ON_AC:
+            xenstore_write_int(1, XS_AC_ADAPTER_STATE_PATH);
+            safe_str_append(&acpi_status_string, "System is on AC");
+            break;
+        case ON_BATT:
+        case AC_UNKNOWN:
+            xenstore_write_int(0, XS_AC_ADAPTER_STATE_PATH);
+            safe_str_append(&acpi_status_string, "System is on battery");
+            break;
+        case NO_AC:
+            xenstore_rm(XS_AC_ADAPTER_STATE_PATH);
+            safe_str_append(&acpi_status_string, "System has no removable AC adapter");
+    }
+
+    switch (lid_status) {
+        case LID_CLOSED:
+            xenstore_write_int(0, XS_LID_STATE_PATH);
+            safe_str_append(&acpi_status_string, " and the lid is closed.");
+            break;
+        case LID_OPEN:
+        case LID_UNKNOWN:
+            xenstore_write_int(1, XS_LID_STATE_PATH);
+            safe_str_append(&acpi_status_string, " and the lid is open.");
+            break;
+        case NO_LID:
+            xenstore_rm(XS_LID_STATE_PATH);
+            safe_str_append(&acpi_status_string, " and no lid.");
+    }
+    xcpmd_log(LOG_INFO, "%s\n", acpi_status_string);
 
     update_batteries();
 }
