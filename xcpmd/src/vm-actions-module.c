@@ -705,7 +705,7 @@ void shutdown_vpnvm_dependencies (struct arg_node * args) {
     //Clone their paths, since shutdown_dependencies_of_vm can free the global
     //VM identifier table out from under us.
     num_vms = vm_identifier_table->num_entries;
-    paths = (char **)malloc(num_vms * sizeof(char));
+    paths = (char **)malloc(num_vms * sizeof(char *));
     
     for (i=0; i < num_vms; ++i) {
         paths[i] = clone_string(vm_identifier_table->entries[i].path);
