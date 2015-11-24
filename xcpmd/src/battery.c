@@ -144,7 +144,8 @@ static long get_total_charge_rate(void) {
 
     unsigned int i;
     int state;
-    unsigned long rate, voltage, total_charge_rate;
+    unsigned long rate;
+    long total_charge_rate;
 
     total_charge_rate = 0;
 
@@ -171,7 +172,7 @@ static long get_total_charge_rate(void) {
 static unsigned long get_total_charge(void) {
 
     unsigned int i;
-    unsigned long charge, voltage;
+    unsigned long charge;
     unsigned long total_charge = 0;
 
     for (i = 0; i < num_battery_structs_allocd; ++i) {
@@ -191,7 +192,7 @@ static unsigned long get_total_charge(void) {
 static unsigned long get_total_max_charge(void) {
 
     unsigned int i;
-    unsigned long charge, voltage;
+    unsigned long charge;
     unsigned long total_charge = 0;
 
     for (i = 0; i < num_battery_structs_allocd; ++i) {
@@ -218,7 +219,7 @@ unsigned int time_to_full(void) {
 
     long charge_rate;
     unsigned long max_charge, current_charge;
-    int charge_time, i;
+    int charge_time;
 
     charge_rate = get_total_charge_rate();
 
@@ -246,7 +247,7 @@ unsigned int time_to_empty(void) {
 
     long discharge_rate;
     unsigned long current_charge;
-    int discharge_time, i;
+    int discharge_time;
 
     discharge_rate = -get_total_charge_rate();
 
@@ -266,7 +267,7 @@ unsigned int time_to_empty(void) {
 //May return weird values if one battery is mA and the other is mW.
 int get_overall_battery_percentage(void) {
 
-    unsigned int i, percentage;
+    unsigned int percentage;
     unsigned long capacity_left, capacity_total;
 
     capacity_left = get_total_charge();
@@ -469,7 +470,6 @@ static void set_battery_info_attribute(char *attrib_name, char *attrib_value, st
 //Gets a battery's status from the sysfs and stores it in last_status.
 int update_battery_status(unsigned int battery_index) {
 
-    int i, rc;
     DIR *battery_dir;
     struct dirent * dp;
     FILE *file;
@@ -558,7 +558,6 @@ int update_battery_status(unsigned int battery_index) {
 //Gets a battery's info from the sysfs and stores it in last_info.
 int update_battery_info(unsigned int battery_index) {
 
-    int i, rc;
     DIR *battery_dir;
     struct dirent * dp;
     FILE *file;
