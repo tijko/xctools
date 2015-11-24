@@ -470,7 +470,7 @@ gboolean xcpmd_battery_state(XcpmdObject *this, guint IN_bat_n, guint *OUT_state
     return TRUE;
 }
 
-gboolean xcpmd_system_battery_percentage(XcpmdObject *this, guint *OUT_percentage, GError **error)
+gboolean xcpmd_aggregate_battery_percentage(XcpmdObject *this, guint *OUT_percentage, GError **error)
 {
     if (get_num_batteries_present() == 0) {
         g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No batteries in the system");
@@ -481,7 +481,7 @@ gboolean xcpmd_system_battery_percentage(XcpmdObject *this, guint *OUT_percentag
     return TRUE;
 }
 
-gboolean xcpmd_system_battery_state(XcpmdObject *this, guint *OUT_state, GError **error)
+gboolean xcpmd_aggregate_battery_state(XcpmdObject *this, guint *OUT_state, GError **error)
 {
     if (get_num_batteries_present() == 0) {
         g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No batteries in the system");
@@ -492,7 +492,7 @@ gboolean xcpmd_system_battery_state(XcpmdObject *this, guint *OUT_state, GError 
     return TRUE;
 }
 
-gboolean xcpmd_system_time_to_full(XcpmdObject *this, guint *OUT_time_to_full, GError **error)
+gboolean xcpmd_aggregate_battery_time_to_full(XcpmdObject *this, guint *OUT_time_to_full, GError **error)
 {
     if (get_num_batteries_present() == 0) {
         g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No batteries in the system");
@@ -503,7 +503,7 @@ gboolean xcpmd_system_time_to_full(XcpmdObject *this, guint *OUT_time_to_full, G
     return TRUE;
 }
 
-gboolean xcpmd_system_time_to_empty(XcpmdObject *this, guint *OUT_time_to_empty, GError **error)
+gboolean xcpmd_aggregate_battery_time_to_empty(XcpmdObject *this, guint *OUT_time_to_empty, GError **error)
 {
     if (get_num_batteries_present() == 0) {
         g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No batteries in the system");
