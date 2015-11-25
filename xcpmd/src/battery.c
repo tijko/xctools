@@ -40,12 +40,15 @@ unsigned int num_battery_structs_allocd = 0;
 //Event struct for libevent
 struct event refresh_battery_event;
 
-//static bool battery_slot_is_present(int battery_index);
 static void cleanup_removed_battery(unsigned int battery_index);
 static DIR * get_battery_dir(unsigned int battery_index);
 static void set_battery_status_attribute(char * attrib_name, char * attrib_value, struct battery_status * status);
 static void set_battery_info_attribute(char *attrib_name, char *attrib_value, struct battery_info *info);
 static int get_max_battery_index(void);
+static unsigned long get_total_charge(void);
+static unsigned long get_total_max_charge(void);
+static long get_total_charge_rate(void);
+
 
 //Get the overall warning level of all batteries in the system.
 int get_current_battery_level(void) {
@@ -64,23 +67,224 @@ int get_current_battery_level(void) {
         return NORMAL;
 }
 
+
+//Returns whether a battery is charging, discharging, full, etc.
+int get_battery_charge_state(unsigned int battery_index) {
+
+    unsigned int percent, i;
+
+    if (last_status[battery_index].state & 0x1)
+        return BATT_DISCHARGING;
+    else if (last_status[battery_index].state & 0x2)
+        return BATT_CHARGING;
+    else {
+        /* We're not charging nor discharging... */
+        percent = get_battery_percentage(battery_index);
+        /* Are we full or empty? */
+        if (percent > 90)
+            return BATT_FULL;
+        else if (percent < 10)
+             return BATT_EMPTY;
+        else {
+            /* Is anybody else (dis)charging? */
+            for (i = 0; i < num_battery_structs_allocd; ++i) {
+                if (i != battery_index &&
+                    last_status[i].present == YES &&
+                    (last_status[i].state & 0x1 || last_status[i].state & 0x2)) {
+                    break;
+                }
+            }
+            if (i < num_battery_structs_allocd) {
+                /* Yes! */
+                /* If the other battery is charging, we're pending charge */
+                if (last_status[i].state & 0x2)
+                    return BATT_PENDING_CHARGE;
+                /* If the other battery is discharging, we're pending discharge */
+                else if (last_status[i].state & 0x1)
+                    return BATT_PENDING_DISCHARGE;
+            }
+            /* We tried everything, the state is unknown... */
+            return BATT_STATE_UNKNOWN;
+        }
+    }
+
+    return BATT_STATE_UNKNOWN;
+}
+
+
+//Returns whether the system as a whole is charging, discharging, full, or empty.
+int get_system_charge_state(void) {
+
+    int percentage = get_overall_battery_percentage();
+    long charge_rate = get_total_charge_rate();
+
+    if (get_ac_adapter_status() == ON_AC) {
+        if (percentage > 90 || charge_rate == 0) {
+            return BATT_FULL;
+        }
+        else {
+            return BATT_CHARGING;
+        }
+    }
+    else {
+        if (percentage < 10) {
+            return BATT_EMPTY;
+        }
+        else {
+            return BATT_DISCHARGING;
+        }
+    }
+}
+
+
+//Returns the overall energy flowing in/out of all batteries per hour.
+//Positive return values signify that the batteries are charging; negative
+//values indicate the batteries are discharging.
+static long get_total_charge_rate(void) {
+
+    unsigned int i;
+    int state;
+    unsigned long rate;
+    long total_charge_rate;
+
+    total_charge_rate = 0;
+
+    for (i = 0; i < num_battery_structs_allocd; ++i) {
+        if (last_status[i].present == YES) {
+
+            rate = labs(last_status[i].present_rate);
+            state = get_battery_charge_state(i);
+
+            if (state == BATT_CHARGING) {
+                total_charge_rate += rate;
+            }
+            else if (state == BATT_DISCHARGING) {
+                total_charge_rate -= rate;
+            }
+        }
+    }
+
+    return total_charge_rate;
+}
+
+
+//Returns the total charge of all batteries in the system.
+static unsigned long get_total_charge(void) {
+
+    unsigned int i;
+    unsigned long charge;
+    unsigned long total_charge = 0;
+
+    for (i = 0; i < num_battery_structs_allocd; ++i) {
+        if (last_status[i].present == YES) {
+
+            charge = last_status[i].remaining_capacity;
+
+            total_charge += charge;
+        }
+    }
+
+    return total_charge;
+}
+
+
+//Returns the sum of the maximum charge of all batteries in the system.
+static unsigned long get_total_max_charge(void) {
+
+    unsigned int i;
+    unsigned long charge;
+    unsigned long total_charge = 0;
+
+    for (i = 0; i < num_battery_structs_allocd; ++i) {
+        if (last_status[i].present == YES) {
+
+            if (last_info[i].last_full_capacity != 0) {
+                charge = last_info[i].last_full_capacity;
+            }
+            else {
+                charge = last_info[i].design_capacity;
+            }
+
+            total_charge += charge;
+        }
+    }
+
+    return total_charge;
+}
+
+
+//Returns an estimate of the time to fully charge the system, in seconds, or
+//0 if the system isn't charging.
+unsigned int time_to_full(void) {
+
+    long charge_rate;
+    unsigned long max_charge, current_charge;
+    int charge_time;
+
+    charge_rate = get_total_charge_rate();
+
+    //Return 0 if the system isn't charging.
+    if (charge_rate <= 0) {
+        return 0;
+    }
+
+    max_charge = get_total_max_charge();
+    current_charge = get_total_charge();
+    charge_time = ((max_charge - current_charge) * 3600) / charge_rate;
+
+    //Correct for systems that report current charge greater than max charge.
+    if (charge_time < 0) {
+        charge_time = 0;
+    }
+
+    return charge_time;
+}
+
+
+//Returns an estimate of the time to fully discharge the system, in seconds, or
+//0 if the system isn't discharging.
+unsigned int time_to_empty(void) {
+
+    long discharge_rate;
+    unsigned long current_charge;
+    int discharge_time;
+
+    discharge_rate = -get_total_charge_rate();
+
+    //Return 0 if the system isn't charging.
+    if (discharge_rate <= 0) {
+        return 0;
+    }
+
+    current_charge = get_total_charge();
+    discharge_time = (current_charge * 3600) / discharge_rate;
+
+    return discharge_time;
+}
+
+
 //Get the overall battery percentage of the system.
 //May return weird values if one battery is mA and the other is mW.
 int get_overall_battery_percentage(void) {
 
-    unsigned int i;
+    unsigned int percentage;
     unsigned long capacity_left, capacity_total;
 
-    capacity_left = capacity_total = 0;
+    capacity_left = get_total_charge();
+    capacity_total = get_total_max_charge();
 
-    for (i=0; i < num_battery_structs_allocd; ++i) {
-        if (last_status[i].present == YES) {
-            capacity_left += last_status[i].remaining_capacity;
-            capacity_total += last_info[i].last_full_capacity;
-        }
+    //Don't divide by zero.
+    if (capacity_total == 0) {
+        return 0;
+    }
+    percentage = ((100 * capacity_left) / capacity_total);
+
+    //Don't report greater than 100% charge.
+    if (percentage > 100) {
+        percentage = 100;
     }
 
-    return (int) ((100 * capacity_left) / capacity_total);
+    return (int)percentage;
 }
 
 
@@ -90,6 +294,7 @@ int get_battery_percentage(unsigned int battery_index) {
     unsigned int percentage;
     struct battery_status * status;
     struct battery_info * info;
+    unsigned long capacity;
 
     if (battery_index >= num_battery_structs_allocd)
         return 0;
@@ -100,13 +305,28 @@ int get_battery_percentage(unsigned int battery_index) {
     status = &last_status[battery_index];
     info = &last_info[battery_index];
 
-    //Avoid dividing by zero
-    if (info->last_full_capacity == 0)
-        percentage = 0;
-    else
-        percentage = status->remaining_capacity * 100 / info->last_full_capacity;
+    //If last_full_capacity isn't available, use design_capacity.
+    if (info->last_full_capacity != 0) {
+        capacity = info->last_full_capacity;
+    }
+    else {
+        capacity = info->design_capacity;
+    }
 
-    return percentage;
+    //Avoid dividing by zero
+    if (capacity == 0) {
+        percentage = 0;
+    }
+    else {
+        percentage = status->remaining_capacity * 100 / capacity;
+    }
+
+    //Don't report greater than 100% charge.
+    if (percentage > 100) {
+        percentage = 100;
+    }
+
+    return (int)percentage;
 }
 
 
@@ -250,7 +470,6 @@ static void set_battery_info_attribute(char *attrib_name, char *attrib_value, st
 //Gets a battery's status from the sysfs and stores it in last_status.
 int update_battery_status(unsigned int battery_index) {
 
-    int i, rc;
     DIR *battery_dir;
     struct dirent * dp;
     FILE *file;
@@ -339,7 +558,6 @@ int update_battery_status(unsigned int battery_index) {
 //Gets a battery's info from the sysfs and stores it in last_info.
 int update_battery_info(unsigned int battery_index) {
 
-    int i, rc;
     DIR *battery_dir;
     struct dirent * dp;
     FILE *file;

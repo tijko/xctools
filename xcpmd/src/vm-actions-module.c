@@ -56,10 +56,12 @@ void suspend_vm_to_file          (struct arg_node *);
 void suspend_vm_by_uuid_to_file  (struct arg_node *);
 void resume_vm_from_file         (struct arg_node *);
 void resume_vm_by_uuid_from_file (struct arg_node *);
+void shutdown_vpnvm_dependencies (struct arg_node *);
 void shutdown_dependencies_of_vm_by_name (struct arg_node *);
 void shutdown_dependencies_of_vm_by_uuid (struct arg_node *);
 void shutdown_vpnvm_dependencies_of_vm_by_name (struct arg_node *);
 void shutdown_vpnvm_dependencies_of_vm_by_uuid (struct arg_node *);
+
 
 
 //Private data structures
@@ -102,6 +104,7 @@ static struct action_table_row action_table[] = {
     {"startVmUuid"                , start_vm_by_uuid                             , "s"      , "string vm_uuid"                  },
     {"suspendVmUuidToFile"        , suspend_vm_by_uuid_to_file                   , "s s"    , "string vm_uuid, string filename" },
     {"resumeVmUuidFromFile"       , resume_vm_by_uuid_from_file                  , "s s"    , "string vm_uuid, string filename" },
+    {"shutdownUnusedVpnvms"       , shutdown_vpnvm_dependencies                  , "n"      , "void"                            },
     {"shutdownDepsOfVm"           , shutdown_dependencies_of_vm_by_name          , "s"      , "string vm_name"                  },
     {"shutdownDepsOfVmUuid"       , shutdown_dependencies_of_vm_by_uuid          , "s"      , "string vm_uuid"                  },
     {"shutdownVpnvmsForVm"        , shutdown_vpnvm_dependencies_of_vm_by_name    , "s"      , "string vm_name"                  },
@@ -532,6 +535,21 @@ void shutdown_dependencies_of_vm(char * vm_path, char * type) {
     //Add all dependencies of the vm to a jeopardy list.
     gather_dependencies(vm_path, &vm_deps_list, &jeopardy);
 
+    //Abort if this VM has no dependencies.
+    if (list_empty(&jeopardy.list)) {
+        xcpmd_log(LOG_DEBUG, "VM %s has no dependencies.\n", vm_path);
+
+        //Free the dependencies list.
+        list_for_each_entry_safe(deps_list_entry, deps_list_ptr, &vm_deps_list.list, list) {
+            list_del(&deps_list_entry->list);
+            free_vm_identifier_table(deps_list_entry->deps);
+            free(deps_list_entry->vm_path);
+            free(deps_list_entry->vm_state);
+            free(deps_list_entry);
+        }
+        return;
+    }
+
     //Generate the complement of the jeopardy list, the safe list.
     list_for_each_entry(deps_list_entry, &vm_deps_list.list, list) {
 
@@ -595,7 +613,7 @@ void shutdown_dependencies_of_vm(char * vm_path, char * type) {
     //Anything remaining in the jeopardy list at this point is ready to be shut down.
     list_for_each_entry_safe(jeopardy_list_entry, vm_list_ptr, &jeopardy.list, list) {
 
-        //xcpmd_log(LOG_DEBUG, "Shutting down %s.", jeopardy_list_entry->vm_path);
+        xcpmd_log(LOG_DEBUG, "Shutting down %s.", jeopardy_list_entry->vm_path);
         shutdown_vm_async(jeopardy_list_entry->vm_path);
         list_del(&jeopardy_list_entry->list);
         free(jeopardy_list_entry->vm_path);
@@ -669,4 +687,39 @@ void shutdown_vpnvm_dependencies_of_vm_by_uuid (struct arg_node * args) {
         shutdown_dependencies_of_vm(vmid->path, "vpnvm");
     }
     free_vmid_search_result(vmid);
+}
+
+
+//We currently have no way of passing information from conditions to actions,
+//so in lieu of "if a VM shuts down, kill that VM's dependencies" we can only
+//go through the list of stopping/stopped VMs and kill their unused deps.
+void shutdown_vpnvm_dependencies (struct arg_node * args) {
+
+    char * state;
+    char ** paths;
+    int num_vms, i;
+
+    //Gather a fresh list of VMs
+    populate_vm_identifier_table();
+
+    //Clone their paths, since shutdown_dependencies_of_vm can free the global
+    //VM identifier table out from under us.
+    num_vms = vm_identifier_table->num_entries;
+    paths = (char **)malloc(num_vms * sizeof(char *));
+    
+    for (i=0; i < num_vms; ++i) {
+        paths[i] = clone_string(vm_identifier_table->entries[i].path);
+    }
+
+    for (i=0; i < num_vms; ++i) {
+        property_get_com_citrix_xenclient_xenmgr_vm_state_(xcdbus_conn, XENMGR_SERVICE, paths[i], &state);
+
+        if (!strcmp("stopping", state) || !strcmp("stopped", state)) {
+            shutdown_dependencies_of_vm(paths[i], "vpnvm");
+        }
+
+        free(paths[i]);
+    }
+
+    free(paths);
 }

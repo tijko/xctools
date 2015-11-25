@@ -1016,7 +1016,7 @@ void print_registered_condition_types() {
     struct condition_type * condition;
 
     list_for_each_entry(condition, &(condition_types.list), list) {
-        xcpmd_log(LOG_DEBUG, "Condition type: %s(%s)\n", condition->name, condition->pretty_prototype);
+        xcpmd_log(LOG_INFO, "Condition type: %s(%s)\n", condition->name, condition->pretty_prototype);
     }
     return;
 }
@@ -1147,9 +1147,9 @@ void print_rule(struct rule * rule) {
     struct arg_node * arg;
     char *line, *tmp;
 
-    xcpmd_log(LOG_DEBUG, "Rule %s:\n", rule->id);
+    xcpmd_log(LOG_INFO, "Rule %s:\n", rule->id);
 
-    xcpmd_log(LOG_DEBUG, "    Conditions:\n");
+    xcpmd_log(LOG_INFO, "    Conditions:\n");
     list_for_each_entry(condition, &(rule->conditions.list), list) {
         line = safe_sprintf("        %s%s(", condition->is_inverted ? "!" : "", condition->type->name);
         list_for_each_entry(arg, &(condition->args.list), list) {
@@ -1161,12 +1161,12 @@ void print_rule(struct rule * rule) {
             }
         }
         safe_str_append(&line, ")\n");
-        xcpmd_log(LOG_DEBUG, "%s", line);
+        xcpmd_log(LOG_INFO, "%s", line);
         free(line);
         line = NULL;
     }
 
-    xcpmd_log(LOG_DEBUG, "    Actions:\n");
+    xcpmd_log(LOG_INFO, "    Actions:\n");
     list_for_each_entry(action, &(rule->actions.list), list) {
         line = safe_sprintf("        %s(", action->type->name);
         list_for_each_entry(arg, &(action->args.list), list) {
@@ -1178,12 +1178,12 @@ void print_rule(struct rule * rule) {
             }
         }
         safe_str_append(&line, ")\n");
-        xcpmd_log(LOG_DEBUG, "%s", line);
+        xcpmd_log(LOG_INFO, "%s", line);
         free(line);
         line = NULL;
     }
 
-    xcpmd_log(LOG_DEBUG, "    Undos:\n");
+    xcpmd_log(LOG_INFO, "    Undos:\n");
     list_for_each_entry(action, &(rule->undos.list), list) {
         line = safe_sprintf("        %s(", action->type->name);
         list_for_each_entry(arg, &(action->args.list), list) {
@@ -1195,7 +1195,7 @@ void print_rule(struct rule * rule) {
             }
         }
         safe_str_append(&line, ")\n");
-        xcpmd_log(LOG_DEBUG, "%s", line);
+        xcpmd_log(LOG_INFO, "%s", line);
         free(line);
     }
 }
@@ -1208,7 +1208,7 @@ void print_rules(void) {
 
     list_for_each_entry(rule, &(rules.list), list) {
         print_rule(rule);
-        xcpmd_log(LOG_DEBUG, "\n");
+        xcpmd_log(LOG_INFO, "\n");
     }
 }
 

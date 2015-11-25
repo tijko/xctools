@@ -194,7 +194,7 @@ gboolean xcpmd_get_conditions(XcpmdObject *this, char** *OUT_conditions, GError*
     int i;
 
     num_strings = get_registered_condition_types(&str_array);
-    xcpmd_log(LOG_DEBUG, "Number of conditions registered: %d\n", num_strings);
+    xcpmd_log(LOG_INFO, "Number of conditions registered: %d\n", num_strings);
 
     //Null-terminate the string array.
     nt_str_array = (char **)malloc((num_strings + 1) * sizeof(char *));
@@ -224,7 +224,7 @@ gboolean xcpmd_get_actions(XcpmdObject *this, char** *OUT_actions, GError** erro
     int i;
 
     num_strings = get_registered_action_types(&str_array);
-    xcpmd_log(LOG_DEBUG, "Number of actions registered: %d\n", num_strings);
+    xcpmd_log(LOG_INFO, "Number of actions registered: %d\n", num_strings);
 
     //Null-terminate the string array.
     nt_str_array = (char **)malloc((num_strings + 1) * sizeof(char *));
@@ -426,9 +426,6 @@ gboolean xcpmd_battery_time_to_full(XcpmdObject *this, guint IN_bat_n, guint *OU
 
 gboolean xcpmd_battery_percentage(XcpmdObject *this, guint IN_bat_n, guint *OUT_percentage, GError **error)
 {
-    int juice_left;
-    int juice_when_full;
-
     if (battery_slot_exists(IN_bat_n) != YES) {
         g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
         return FALSE;
@@ -440,20 +437,7 @@ gboolean xcpmd_battery_percentage(XcpmdObject *this, guint IN_bat_n, guint *OUT_
         return FALSE;
     }
 
-    juice_left = last_status[IN_bat_n].remaining_capacity;
-    juice_when_full = last_info[IN_bat_n].last_full_capacity;
-
-    /* If there's no last_full_capacity, try design_capacity */
-    if (juice_when_full == 0)
-        juice_when_full = last_info[IN_bat_n].design_capacity;
-
-    /* Let's not divide by 0 */
-    if (juice_when_full == 0) {
-        g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "Unhappy battery: %d", IN_bat_n);
-        return FALSE;
-    }
-
-    *OUT_percentage = juice_left * 100 / juice_when_full;
+    *OUT_percentage = get_battery_percentage(IN_bat_n);
 
     return TRUE;
 }
@@ -476,63 +460,60 @@ gboolean xcpmd_battery_is_present(XcpmdObject *this, guint IN_bat_n, gboolean *O
 
 gboolean xcpmd_battery_state(XcpmdObject *this, guint IN_bat_n, guint *OUT_state, GError **error)
 {
-    /* 0: Unknown */
-    /* 1: Charging */
-    /* 2: Discharging */
-    /* 3: Empty */
-    /* 4: Fully charged */
-    /* 5: Pending charge */
-    /* 6: Pending discharge */
-
-    int juice_left;
-    int juice_when_full;
-    int percent;
-    unsigned int i;
-
     if (battery_slot_exists(IN_bat_n) != YES) {
         g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No such battery slot: %d", IN_bat_n);
         return FALSE;
     }
 
-    if (last_status[IN_bat_n].state & 0x1)
-        *OUT_state = 2;
-    else if (last_status[IN_bat_n].state & 0x2)
-        *OUT_state = 1;
-    else {
-        /* We're not charging nor discharging... */
-        juice_left = last_status[IN_bat_n].remaining_capacity;
-        juice_when_full = last_info[IN_bat_n].last_full_capacity;
-        percent = juice_left * 100 / juice_when_full;
-        /* Are we full or empty? */
-        if (percent > 90)
-            *OUT_state = 4;
-        else if (percent < 10)
-            *OUT_state = 3;
-        else {
-            /* Is anybody else (dis)charging? */
-            for (i = 0; i < num_battery_structs_allocd; ++i) {
-                if (i != IN_bat_n &&
-                    last_status[i].present == YES &&
-                    (last_status[i].state & 0x1 || last_status[i].state & 0x2)) {
-                    break;
-                }
-            }
-            if (i < num_battery_structs_allocd) {
-                /* Yes! */
-                /* If the other battery is charging, we're pending charge */
-                if (last_status[i].state & 0x2)
-                    *OUT_state = 5;
-                /* If the other battery is discharging, we're pending discharge */
-                else if (last_status[i].state & 0x1)
-                    *OUT_state = 6;
-            } else
-                /* We tried everything, the state is unknown... */
-                *OUT_state = 0;
-        }
-    }
+    *OUT_state = get_battery_charge_state(IN_bat_n);
 
     return TRUE;
 }
+
+gboolean xcpmd_aggregate_battery_percentage(XcpmdObject *this, guint *OUT_percentage, GError **error)
+{
+    if (get_num_batteries_present() == 0) {
+        g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No batteries in the system");
+        return FALSE;
+    }
+
+    *OUT_percentage = get_overall_battery_percentage();
+    return TRUE;
+}
+
+gboolean xcpmd_aggregate_battery_state(XcpmdObject *this, guint *OUT_state, GError **error)
+{
+    if (get_num_batteries_present() == 0) {
+        g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No batteries in the system");
+        return FALSE;
+    }
+
+    *OUT_state = get_system_charge_state();
+    return TRUE;
+}
+
+gboolean xcpmd_aggregate_battery_time_to_full(XcpmdObject *this, guint *OUT_time_to_full, GError **error)
+{
+    if (get_num_batteries_present() == 0) {
+        g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No batteries in the system");
+        return FALSE;
+    }
+
+    *OUT_time_to_full = time_to_full();
+    return TRUE;
+}
+
+gboolean xcpmd_aggregate_battery_time_to_empty(XcpmdObject *this, guint *OUT_time_to_empty, GError **error)
+{
+    if (get_num_batteries_present() == 0) {
+        g_set_error(error, DBUS_GERROR, DBUS_GERROR_FAILED, "No batteries in the system");
+        return FALSE;
+    }
+
+    *OUT_time_to_empty = time_to_empty();
+    return TRUE;
+}
+
 
 /* End of UIVM battery methods */
 

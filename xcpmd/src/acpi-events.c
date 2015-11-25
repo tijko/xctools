@@ -66,10 +66,10 @@ int get_ac_adapter_status(void) {
     fgets(data, sizeof(data), file);
     fclose(file);
 
-    if (strstr(data, "1"))
-        return ON_AC;
-    else
+    if (strstr(data, "0"))
         return ON_BATT;
+    else
+        return ON_AC;
 }
 
 
@@ -158,10 +158,9 @@ static void handle_battery_status_event(int battery_index) {
 static void handle_lid_event(int status) {
 
     int lid_status;
+    char * lid_status_string;
 
     struct ev_wrapper * e = acpi_event_table[EVENT_LID];
-
-    xcpmd_log(LOG_INFO, "Lid change event\n");
 
     //We may have to check the sysfs if the ACPI string didn't tell us the status.
     if (status == LID_UNKNOWN)
@@ -169,7 +168,24 @@ static void handle_lid_event(int status) {
     else
         lid_status = status;
 
-    xenstore_write(lid_status == LID_OPEN ? "open" : "closed", XS_LID_STATE_PATH);
+    switch (lid_status) {
+        case LID_OPEN:
+            lid_status_string = "open";
+            break;
+        case LID_CLOSED:
+            lid_status_string = "closed";
+            break;
+        case LID_UNKNOWN:
+            lid_status_string = "unknown";
+            break;
+        case NO_LID:
+        default:
+            lid_status_string = "no lid";
+    }
+
+    xcpmd_log(LOG_INFO, "Lid change event: %s\n", lid_status_string);
+
+    xenstore_write(lid_status == LID_CLOSED ? "closed" : "open", XS_LID_STATE_PATH);
     xenstore_write("1", XS_LID_EVENT_PATH);
     //notify_com_citrix_xenclient_xcpmd_lid_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
 
@@ -225,11 +241,13 @@ static void handle_bcl_event(enum BCL_CMD cmd) {
     struct ev_wrapper * e = acpi_event_table[EVENT_BCL];
 
     if (cmd == BCL_UP) {
+        xcpmd_log(LOG_INFO, "Brightness up button pressed event\n");
         xenstore_write("1", XS_BCL_CMD);
         xenstore_write("1", XS_BCL_EVENT_PATH);
         adjust_brightness(1, 0);
     }
     else if (cmd == BCL_DOWN) {
+        xcpmd_log(LOG_INFO, "Brightness down button pressed event\n");
         xenstore_write("2", XS_BCL_CMD);
         xenstore_write("1", XS_BCL_EVENT_PATH);
         adjust_brightness(0, 0);
@@ -258,16 +276,16 @@ static void handle_ac_adapter_event(uint32_t data) {
     switch(data) {
         case ACPI_AC_STATUS_OFFLINE:
             e->value.b = ON_BATT;
-            xcpmd_log(LOG_DEBUG, "AC adapter state change event: on battery");
+            xcpmd_log(LOG_INFO, "AC adapter state change event: on battery");
             break;
         case ACPI_AC_STATUS_ONLINE:
             e->value.b = ON_AC;
-            xcpmd_log(LOG_DEBUG, "AC adapter state change event: on AC");
+            xcpmd_log(LOG_INFO, "AC adapter state change event: on AC");
             break;
         case ACPI_AC_STATUS_UNKNOWN:
         default:
             e->value.b = AC_UNKNOWN;
-            xcpmd_log(LOG_DEBUG, "AC adapter state change event: unknown state");
+            xcpmd_log(LOG_INFO, "AC adapter state change event: unknown state");
     }
 
     handle_events(e);
@@ -297,15 +315,42 @@ void acpi_initialize_state(void) {
     int ac_adapter_status = get_ac_adapter_status();
     int lid_status = get_lid_status();
     int tablet_status = get_tablet_status();
-
-    xcpmd_log(LOG_DEBUG, "Lid is %s and system is on %s\n", lid_status == LID_OPEN ? "open" : "closed", ac_adapter_status == ON_AC ? "ac" : "battery");
+    char * acpi_status_string = NULL;
 
     acpi_event_table[EVENT_ON_AC]->value.i = ac_adapter_status;
     acpi_event_table[EVENT_LID]->value.i = lid_status;
     acpi_event_table[EVENT_TABLET_MODE]->value.i = tablet_status;
 
-    xenstore_write_int((ac_adapter_status == ON_AC) ? 1 : 0, XS_AC_ADAPTER_STATE_PATH);
-    xenstore_write_int((lid_status == LID_CLOSED) ? 0 : 1, XS_LID_STATE_PATH);
+    switch (ac_adapter_status) {
+        case ON_AC:
+            xenstore_write_int(1, XS_AC_ADAPTER_STATE_PATH);
+            safe_str_append(&acpi_status_string, "System is on AC");
+            break;
+        case ON_BATT:
+        case AC_UNKNOWN:
+            xenstore_write_int(0, XS_AC_ADAPTER_STATE_PATH);
+            safe_str_append(&acpi_status_string, "System is on battery");
+            break;
+        case NO_AC:
+            xenstore_rm(XS_AC_ADAPTER_STATE_PATH);
+            safe_str_append(&acpi_status_string, "System has no removable AC adapter");
+    }
+
+    switch (lid_status) {
+        case LID_CLOSED:
+            xenstore_write_int(0, XS_LID_STATE_PATH);
+            safe_str_append(&acpi_status_string, " and the lid is closed.");
+            break;
+        case LID_OPEN:
+        case LID_UNKNOWN:
+            xenstore_write_int(1, XS_LID_STATE_PATH);
+            safe_str_append(&acpi_status_string, " and the lid is open.");
+            break;
+        case NO_LID:
+            xenstore_rm(XS_LID_STATE_PATH);
+            safe_str_append(&acpi_status_string, " and no lid.");
+    }
+    xcpmd_log(LOG_INFO, "%s\n", acpi_status_string);
 
     update_batteries();
 }
