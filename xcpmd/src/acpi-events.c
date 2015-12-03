@@ -557,8 +557,8 @@ int xcpmd_process_input(int input_value) {
             break;
         case XCPMD_INPUT_BRIGHTNESSUP:
         case XCPMD_INPUT_BRIGHTNESSDOWN:
-            /* Only HP laptops use input events for brightness */
-            if (pm_quirks & PM_QUIRK_HP_HOTKEY_INPUT)
+            /* Some laptops use input events for brightness */
+            if (pm_quirks & (PM_QUIRK_HP_HOTKEY_INPUT | PM_QUIRK_SW_ASSIST_BCL))
                 handle_bcl_event(input_value == XCPMD_INPUT_BRIGHTNESSUP ? BCL_UP : BCL_DOWN);
             break;
         default:
