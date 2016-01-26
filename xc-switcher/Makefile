@@ -28,8 +28,8 @@ LDFLAGS += $(shell pkg-config --libs dbus-glib-1)
 # gtk and gtk-x11
 CFLAGS += $(shell pkg-config --cflags gtk+-2.0)
 CFLAGS += $(shell pkg-config --cflags gtk+-x11-2.0)
-#LDFLAGS += $(shell pkg-config --libs gtk+-2.0)
-#LDFLAGS += $(shell pkg-config --libs gtk+-x11-2.0)
+LDFLAGS += $(shell pkg-config --libs gtk+-2.0)
+LDFLAGS += $(shell pkg-config --libs gtk+-x11-2.0)
 
 ifdef LIBAPPINDICATOR
 # appindicator
@@ -49,5 +49,10 @@ all: $(BIN)
 
 $(BIN): $(OBJS)
 	gcc -o $(BIN) $^ $(LDFLAGS)
+
+install: $(BIN)
+	install -d $(DESTDIR)/usr/bin
+	install $(BIN) $(DESTDIR)/usr/bin/$(BIN)
+
 clean:
 	rm -f $(OBJS) $(BIN)
