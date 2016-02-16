@@ -409,7 +409,7 @@ static GtkWidget* create_menu_item(char *name, int getIcon, gpointer sb)
     struct strbuf *path = (struct strbuf*) sb;
     GtkWidget *menu_item;
     DBusMessage *msg;
-    GtkImage *img;
+    GtkWidget *img;
 
     menu_item = gtk_image_menu_item_new_with_label(name);
 
@@ -436,7 +436,7 @@ static GtkWidget* create_menu_item(char *name, int getIcon, gpointer sb)
 #else
 			bpix_scaled = gdk_pixbuf_scale_simple(bpix, 24, 24, GDK_INTERP_BILINEAR);
 			img = gtk_image_new_from_pixbuf(bpix_scaled);
-			gtk_image_set_pixel_size(img, 48);
+			gtk_image_set_pixel_size(GTK_IMAGE(img), 48);
 			gtk_image_menu_item_set_image(GTK_IMAGE_MENU_ITEM(menu_item), img);
 			gtk_image_menu_item_set_always_show_image(GTK_IMAGE_MENU_ITEM(menu_item), TRUE);
 			g_object_unref(bpix_scaled);
@@ -560,7 +560,7 @@ cont:
 
 static void show_menu()
 {
-    gtk_menu_popup (app.menu, NULL, NULL, gtk_status_icon_position_menu, app.ind, NULL, gtk_get_current_event_time());
+    gtk_menu_popup (GTK_MENU(app.menu), NULL, NULL, gtk_status_icon_position_menu, app.ind, 0, gtk_get_current_event_time());
 }
 
 static void tray_icon_on_click(GtkStatusIcon *status_icon,
@@ -617,7 +617,6 @@ int main(int argc, char **argv)
                 *c = '_';
     }
 
-    g_type_init();
     gtk_init(&argc, &argv);
 
     app.loop = g_main_loop_new(NULL, FALSE);
@@ -643,6 +642,8 @@ int main(int argc, char **argv)
     g_main_loop_run(app.loop);
 
     return 0;
+#ifdef LIBAPPINDICATOR
 fail1:
     return 1;
+#endif
 }
