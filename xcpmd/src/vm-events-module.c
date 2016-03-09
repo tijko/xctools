@@ -364,10 +364,20 @@ void vm_state_changed(DBusMessage * dbus_message) {
     char * vm_state;
     int acpi_state;
     struct ev_wrapper * e;
-	struct vm_identifier_table_row * vmid;
+    struct vm_identifier_table_row * vmid;
 
-
-    dbus_message_get_args(dbus_message, &error, DBUS_TYPE_STRING, &vm_uuid, DBUS_TYPE_OBJECT_PATH, &obj_path, DBUS_TYPE_STRING, &vm_state, DBUS_TYPE_INT32, &acpi_state);
+    dbus_error_init(&error);
+    if (!dbus_message_get_args(dbus_message, &error,
+                               DBUS_TYPE_STRING, &vm_uuid,
+                               DBUS_TYPE_OBJECT_PATH, &obj_path,
+                               DBUS_TYPE_STRING, &vm_state,
+                               DBUS_TYPE_INT32, &acpi_state,
+                               DBUS_TYPE_INVALID)) {
+        xcpmd_log(LOG_ERR, "dbus_message_get_args() failed: %s (%s).\n",
+                  error.name, error.message);
+        dbus_error_free(&error);
+        return;
+    }
 
     //For whatever reason the "creating" signal is fired multiple times, but
     //only once does it have the acpi_state of 5. At present, the acpi_state is
