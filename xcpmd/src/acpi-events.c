@@ -360,8 +360,7 @@ void acpi_initialize_state(void) {
 static void process_acpi_message(char *acpi_buffer, ssize_t len) {
 
     unsigned int i;
-    int device_num;
-    char *class, *subclass, *device;
+    char *class, *subclass;
     uint32_t type, data;
     char * token;
     char buffer[len + 1];
@@ -576,7 +575,7 @@ int xcpmd_process_input(int input_value) {
 
 int acpi_events_initialize(void) {
 
-    int ret, i, err;
+    int ret, i;
     struct sockaddr_un addr;
 
     acpi_events_fd = socket(PF_UNIX, SOCK_STREAM, 0);

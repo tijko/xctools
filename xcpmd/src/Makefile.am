@@ -60,13 +60,13 @@ vm_events_module_la_LDFLAGS = -avoid-version -module -shared
 
 
 
-SRCS=xcpmd.c acpi-events.c platform.c version.c rpcgen/xcpmd_server_obj.c xcpmd-dbus-server.c utils.c rules.c modules.c battery.c parser.c db-helper.c vm-utils.c
+SRCS=xcpmd.c acpi-events.c platform.c rpcgen/xcpmd_server_obj.c xcpmd-dbus-server.c utils.c rules.c modules.c battery.c parser.c db-helper.c vm-utils.c
 xcpmd_SOURCES = ${SRCS}
 xcpmd_LDADD = -lm -ldl -lpci -levent -lyajl ${LIBXC_LIB} ${LIBXCDBUS_LIB} ${LIBXENACPI_LIB} ${DBUS_GLIB_1_LIB} ${GLIB_20_LIB} ${LIBXCXENSTORE_LIBS} ${LIBNL_LIBS} ${LIBNL_GENL_LIBS}
 xcpmd_LDFLAGS = -rdynamic
 
 
-AM_CFLAGS=-g -W -Wall -Werror -Wno-unused -std=gnu99
+AM_CFLAGS=-g -W -Wall -Werror -std=gnu99
 
 # Discard the .la files libtool produces.
 install-exec-hook:

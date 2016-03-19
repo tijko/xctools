@@ -125,7 +125,6 @@ __attribute__((constructor)) static void init_module() {
     if (times_loaded > 0)
         return;
 
-    union arg_u tmp;
     unsigned int i;
 
     //Allocate space for event tables.
@@ -146,8 +145,6 @@ __attribute__((constructor)) static void init_module() {
         struct cond_table_row entry = condition_data[i];
         add_condition_type(entry.name, entry.func, entry.prototype, entry.pretty_prototype, _vm_event_table[entry.event_index]);
     }
-
-    DBusConnection * connection = xcdbus_get_dbus_connection(xcdbus_conn);
 
     //Set up a match and filter to get signals.
     add_dbus_filter("type='signal',interface='com.citrix.xenclient.xenmgr',member='vm_state_changed'", dbus_signal_handler, NULL, NULL);
@@ -426,9 +423,6 @@ void vm_state_changed(DBusMessage * dbus_message) {
 
 //This signal handler is called whenever a matched signal is received.
 DBusHandlerResult dbus_signal_handler(DBusConnection * connection, DBusMessage * dbus_message, void * user_data) {
-
-    int type;
-    const char *path, *interface, *member;
 
     //type = dbus_message_get_type(dbus_message);
     //path = dbus_message_get_path(dbus_message);

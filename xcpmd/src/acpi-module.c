@@ -126,9 +126,7 @@ __attribute__((constructor)) static void init_module() {
     if (times_loaded > 0)
         return;
 
-    union arg_u tmp;
-    unsigned int i, j;
-
+    unsigned int i;
 
     //Allocate space for event table.
     _acpi_event_table = (struct ev_wrapper **)malloc(num_events * sizeof(struct ev_wrapper *));

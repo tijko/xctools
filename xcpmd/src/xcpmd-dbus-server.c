@@ -148,9 +148,6 @@ gboolean xcpmd_clear_vars(XcpmdObject *this, GError** error) {
 gboolean xcpmd_add_var(XcpmdObject *this, const char* IN_name, const char* IN_value, GError** error) {
 
     char * var_string;
-    struct db_var * var;
-    enum arg_type type;
-    union arg_u arg;
     char * parse_error = NULL;
 
     var_string = safe_sprintf("%s(%s)", IN_name, IN_value);
@@ -573,7 +570,6 @@ xcdbus_conn_t *xcpmd_get_xcdbus_conn(void)
 int xcpmd_dbus_initialize(void)
 {
     GError *error = NULL;
-    DBusConnection *dbus_conn;
     DBusGConnection *gdbus_conn;
     XcpmdObject *xcpmd_obj;
 
