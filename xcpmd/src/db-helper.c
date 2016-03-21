@@ -60,8 +60,6 @@ static char * db_read(char * path);
 static void db_rm(char * path);
 static char * db_dump_path(char * path);
 
-static char * path_of_node(yajl_val node, yajl_val needle);
-
 static struct arg_node get_db_var(char * var_name);
 static void write_db_var(char * name, enum arg_type type, union arg_u value);
 static void delete_db_var(char * var_name);
@@ -356,7 +354,6 @@ static char ** json_rule_to_parseable(char * name, char * json) {
     char *conditions, *actions, *undos;
     char ** string_array;
     int i, j, num_entries, num_args;
-    bool has_undos;
     char *str = NULL;
     char err[1024];
     yajl_val yajl, yconditions, yactions, yundos;
@@ -816,88 +813,6 @@ static char * rule_to_json(struct rule * rule) {
 
 
 //Allocates memory!
-//Gets the DB path to the specified YAJL node.
-//For the initial call, node should be the root of the tree to search.
-//Needle is the node to find the path to.
-//Returns the path from the root to the needle, or null if the search fails.
-//The string returned must be freed.
-static char * path_of_node(yajl_val node, yajl_val needle) {
-
-    //Recursively walk the tree and build/tear down the path as you go.
-
-    static char * pathbuild = NULL;
-    static char * ret = NULL;
-    static int depth = 0;
-    char * path;
-    char * ptr;
-    int i, num_children;
-
-    char buffer[1024];
-
-    //If ret is set, we've found the needle. Don't recurse further.
-    if (ret != NULL) {
-        return NULL;
-    }
-
-    //If this was somehow called on a null node, return.
-    if (node == NULL) {
-        return NULL;
-    }
-
-    //If we've found the needle, set ret and stop traversing the tree.
-    if (node == needle) {
-        ret = clone_string(pathbuild);
-    }
-    else {
-
-        //Try this node's children.
-        if (YAJL_IS_OBJECT(node)) {
-
-            for (i = 0; i < num_children; ++i) {
-
-                //Add the next node to the path--YAJL nodes don't know their
-                //own keys
-                safe_str_append(&pathbuild, "/%s", node->u.object.keys[i]);
-
-                ++depth;
-                path_of_node(node->u.object.values[i], needle);
-                --depth;
-
-                //Remove that node from the path
-                ptr = strchr(pathbuild, '\0');
-                while (ptr > pathbuild && ptr != 0 && *ptr != '/') {
-                    *ptr = '\0';
-                    ptr -= sizeof(char);
-                }
-                *ptr = '\0';
-            }
-
-            //Trying this node's siblings shouldn't be necessary--iteration above should cover all nodes
-        }
-
-    }
-    //If we're the root node, reset all static variables and return the path.
-    if (depth == 0) {
-        path = ret;
-        ret = NULL;
-        free(pathbuild);
-        pathbuild = NULL;
-
-        if (YAJL_IS_STRING(needle)) {
-            xcpmd_log(LOG_DEBUG, "Path of %s is %s", YAJL_GET_STRING(needle), path);
-        }
-        else {
-            xcpmd_log(LOG_DEBUG, "Path of needle is %s", path);
-        }
-
-        return path;
-    }
-
-    return NULL;
-}
-
-
-//Allocates memory!
 //Adds a variable, transparently caching it and writing back to the DB.
 //If the variable already exists, and there are no type conflicts, its previous
 //value will be overwritten.
@@ -1017,7 +932,6 @@ void delete_vars() {
 //any strings that must be copied.
 static struct db_var * cache_db_var(char * name, enum arg_type type, union arg_u value) {
 
-    char *string_copy;
     struct db_var * var = (struct db_var *)malloc(sizeof(struct db_var));
     if (var == NULL) {
         xcpmd_log(LOG_ERR, "Failed to allocate memory\n");

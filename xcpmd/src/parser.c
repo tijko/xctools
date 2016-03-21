@@ -1538,7 +1538,6 @@ bool parse(struct parse_data *data, //current parse_data struct
 //Loads variables and rules from the DB, returns 0 if successful, -1 otherwise
 int parse_config_from_db() {
 
-    char msg_buf[1024];
     struct state_list states;
     struct var_map var_map;
     struct parse_data data;
@@ -1609,7 +1608,6 @@ bool dbus_add_rule(char * name,       //rule name
     struct parse_data data;
     struct rule * rule;
     bool ret;
-    int err;
 
     init_state_list(&states);
     init_var_map(&var_map);
@@ -1663,7 +1661,6 @@ bool parse_rule(char * name,       //rule name
     struct parse_data data;
     struct rule * rule;
     bool ret;
-    int err;
 
     init_state_list(&states);
     init_var_map(&var_map);
@@ -1712,7 +1709,6 @@ bool parse_var(char * var_string, //string of the form varname(value)
     struct state_list states;
     struct var_map var_map;
     struct parse_data data;
-    struct rule * rule;
     bool ret;
 
     init_state_list(&states);
@@ -1748,10 +1744,8 @@ bool parse_arg(char * arg_string,         //a string containing an argument lite
     struct state_list states;
     struct var_map var_map;
     struct parse_data data;
-    struct rule * rule;
     struct arg_node tmp_arg;
     bool ret;
-    int err;
 
     init_state_list(&states);
     init_var_map(&var_map);
@@ -1869,16 +1863,10 @@ int parse_config_from_file(char * filename) {
     struct state_list states;
     struct var_map var_map;
     struct parse_data data;
-    struct fn * fn;
-    struct fn_arg * fn_arg;
-    struct rule * rule;
-    struct condition * condition;
-    struct arg_node arg;
-    struct action * action;
     char line[1024];
     int line_no = 0;
     char * name, *conditions, *actions, *undos;
-    char * string, *ptr, *token_start, *token_end, *string_end;
+    char *ptr, *token_start, *token_end, *string_end;
     bool in_var_section = true;
     bool in_quotes;
 

@@ -112,8 +112,6 @@ static struct action_table_row action_table[] = {
 };
 
 static unsigned int num_action_types = sizeof(action_table) / sizeof(action_table[0]);
-static int times_loaded = 0;
-
 
 //Registers this module's action types.
 //The constructor attribute causes this function to run at load (dlopen()) time.

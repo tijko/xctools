@@ -46,8 +46,6 @@
 #define DB_SERVICE          "com.citrix.xenclient.db"
 #define DB_PATH             "/"
 
-
-
 #define PCI_INVALID_VALUE 0xffffffff
 #define EFI_LINE_SIZE     64
 
@@ -173,16 +171,7 @@ struct battery_status {
     #define print_battery_status(x)
 #endif
 
-#ifdef RUN_IN_SIMULATE_MODE
-    #define BATTERY_DIR_PATH                "/tmp/battery"
-    #define THERMAL_TRIP_POINTS_FILE        "/tmp/thermal_zone/%s/trip_points"
-    #define THERMAL_TEMPERATURE_FILE        "/tmp/thermal_zone/%s/temperature"
-#else
-    #define BATTERY_DIR_PATH                "/sys/class/power_supply"
-    #define THERMAL_TRIP_POINTS_FILE        "/proc/acpi/thermal_zone/%s/trip_points"
-    #define THERMAL_TEMPERATURE_FILE        "/proc/acpi/thermal_zone/%s/temperature"
-#endif
-
+#define BATTERY_DIR_PATH                    "/sys/class/power_supply"
 #define AC_ADAPTER_DIR_PATH                 "/sys/class/power_supply/AC"
 #define AC_ADAPTER_STATE_FILE_PATH          AC_ADAPTER_DIR_PATH"/online"
 #define LID_DIR_PATH                        "/proc/acpi/button/lid/LID"
@@ -203,8 +192,6 @@ struct battery_status {
 #define XS_BATTERY_EVENT_PATH               "/pm/events/bat" //%i
 #define XS_BATTERY_INFO_EVENT_LEAF          "info_changed"
 #define XS_BATTERY_STATUS_EVENT_LEAF        "status_changed"
-
-
 
 #define XS_BATTERY_PRESENT                  "/pm/battery_present"
 #define XS_BIF                              "/pm/bif"
@@ -272,4 +259,3 @@ extern uint32_t pm_specs;
 #define DB_RULE_PATH                        "/power-management/rules"
 
 #endif /* __XCPMD_H__ */
-

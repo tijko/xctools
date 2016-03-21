@@ -70,7 +70,6 @@ __attribute__ ((destructor)) void uninit_rules() {
     struct condition_node * tmp_condition_node;
     struct action_type * tmp_action_type;
     struct condition_type * tmp_condition_type;
-    struct db_var * tmp_var;
 
     //Clean up all rules.
     list_for_each_safe(posi, i, &rules.list) {
@@ -606,7 +605,7 @@ void delete_condition_from_listeners(struct condition * condition) {
 bool check_prototype(char * prototype, struct arg_node * args, char ** err) {
 
     char *to_check;
-    char *str, *ptr, *expected, *received;
+    char *ptr, *expected, *received;
     unsigned int prototype_length;
     enum arg_type type;
     bool ret;
