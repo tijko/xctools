@@ -61,28 +61,8 @@ DEFINE_MESSAGE(7, update_pci_bar, uint8_t barID,
 
 DEFINE_MESSAGE(8, empty_reply)
 
-# XenGFX specific
-DEFINE_MESSAGE(9, gart_invalidate, uint64_t gart_base)
-DEFINE_MESSAGE(10, crtc_enable, uint8_t CrtcID,
-                                uint8_t enable)
-DEFINE_MESSAGE(11, hires_enable, uint8_t enable)
-DEFINE_MESSAGE(12, display_get_edid, uint8_t DisplayID)
-DEFINE_MESSAGE(13, display_edid, uint8_t DisplayID,
-                                 Buff256 edid)
-
 DEFINE_IN_RPC_WITH_RETURN(display_resize, empty_reply)
 DEFINE_IN_RPC_WITH_RETURN(display_get_info, display_info)
-DEFINE_IN_RPC_WITH_RETURN(config_io_read, config_io_reply)
-DEFINE_IN_RPC_WITH_RETURN(config_io_write, empty_reply)
-DEFINE_IN_RPC_WITH_RETURN(attach_pci_device, empty_reply)
-DEFINE_IN_RPC_WITH_RETURN(update_pci_bar, empty_reply)
-
-DEFINE_IN_RPC_WITH_RETURN(gart_invalidate, empty_reply)
-DEFINE_IN_RPC_NO_RETURN(crtc_enable)
-DEFINE_IN_RPC_NO_RETURN(hires_enable)
-
-DEFINE_IN_RPC_WITH_RETURN(display_get_edid, display_edid)
-DEFINE_OUT_RPC(display_info)
 
 # Input
 
