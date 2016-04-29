@@ -44,21 +44,6 @@ DEFINE_MESSAGE(2, display_info, uint8_t DisplayID,
                              uint16_t max_xres,
                              uint16_t max_yres,
                              uint16_t align)
-DEFINE_MESSAGE(3, config_io_reply, uint32_t data)
-DEFINE_MESSAGE(4, config_io_read, unsigned long offset,
-                               uint32_t size)
-DEFINE_MESSAGE(5, config_io_write, unsigned long offset,
-                                uint32_t size,
-                                uint32_t data)
-
-DEFINE_MESSAGE(6, attach_pci_device, uint8_t bus,
-                                  uint8_t device,
-                                  uint8_t function)
-DEFINE_MESSAGE(7, update_pci_bar, uint8_t barID,
-                                  uint64_t hostaddr,
-                                  uint64_t guestaddr,
-                                  uint64_t len)
-
 DEFINE_MESSAGE(8, empty_reply)
 
 DEFINE_IN_RPC_WITH_RETURN(display_resize, empty_reply)
