@@ -1,0 +1,31 @@
+AC_INIT([atapi-pt-helper], [0.0])
+AM_INIT_AUTOMAKE
+AC_PREREQ(2.13)
+
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_CHECK_PROG(MD5SUM,md5sum,md5sum)
+AC_CHECK_PROG(GREP,grep,grep)
+
+AC_HEADER_STDC
+AC_UNISTD_H
+AC_CHECK_HEADERS([stdio.h fcntl.h errno.h signal.h])
+AC_CHECK_HEADERS([sys/socket.h sys/types.h sys/stat.h])
+AC_CHECK_HEADERS([libv4v.h])
+AC_HEADER_ASSERT
+
+AC_C_INLINE
+AC_C_CONST
+AC_SYS_LARGEFILE
+
+AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_HEADERS([src/config.h])
+
+PKG_CHECK_MODULES(LIBV4V, libv4v, [], [AC_MSG_ERROR("libv4v required.")])
+AC_SUBST(LIBV4V_CFLAGS)
+AC_SUBST(LIBV4V_LIBS)
+
+AC_OUTPUT([Makefile
+	   src/Makefile])
