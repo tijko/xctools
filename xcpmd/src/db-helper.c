@@ -302,6 +302,7 @@ bool parse_db_rules(struct parse_data * data) {
     yajl = yajl_tree_parse(json_all, err, sizeof(err));
     if (yajl == NULL) {
         xcpmd_log(LOG_WARNING, "Error parsing DB rules: %s", err);
+        free(json_all);
         return false;
     }
 
@@ -403,11 +404,11 @@ static char ** json_rule_to_parseable(char * name, char * json) {
 
     //Check for bad JSON, but don't warn for a valid empty rule.
     if (YAJL_IS_STRING(yajl) && (!strncmp(yajl->u.string, "null", 4) || *(yajl->u.string) == '\0')) {
-        return NULL;
+        goto free_yajl;
     }
     else if (!YAJL_IS_OBJECT(yajl)) {
         xcpmd_log(LOG_WARNING, "Error parsing JSON: rule is malformed");
-        return NULL;
+        goto free_yajl;
     }
 
     //Get the rule's name.
