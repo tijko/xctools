@@ -305,7 +305,7 @@ int load_policy_from_db() {
 //See parser.c for information on policy file format.
 int load_policy_from_file(char * filename) {
 
-    if (!parse_config_from_file(filename))
+    if (parse_config_from_file(filename) == -1)
         return -1;
 
     write_db_rules();
