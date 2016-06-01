@@ -578,8 +578,9 @@ void shutdown_dependencies_of_vm(char * vm_path, char * vm_type) {
 
         deps_list_entry->vm_path = clone_string(vm_identifier_table->entries[i].path);
 
+        //Property_get_* returns an alloc'd string, so don't bother cloning it.
         property_get_com_citrix_xenclient_xenmgr_vm_state_(xcdbus_conn, XENMGR_SERVICE, vm_identifier_table->entries[i].path, &state);
-        deps_list_entry->vm_state = clone_string(state);
+        deps_list_entry->vm_state = state;
 
         //get_vm_type returns an alloc'd string, so don't bother cloning it.
         get_vm_type(vm_identifier_table->entries[i].path, &type);
@@ -587,6 +588,7 @@ void shutdown_dependencies_of_vm(char * vm_path, char * vm_type) {
 
         get_vm_dependencies(deps_list_entry->vm_path, &tmp);
         deps_list_entry->deps = new_vm_identifier_table(tmp);
+        g_ptr_array_free(tmp, TRUE);
     }
 
     //Add all dependencies of the vm to a jeopardy list.
@@ -808,6 +810,7 @@ void shutdown_vpnvm_dependencies (struct arg_node * args) {
         }
 
         free(paths[i]);
+        free(state);
     }
 
     free(paths);
