@@ -262,6 +262,21 @@ int get_vm_dependencies(const char * vm_path, GPtrArray ** ary) {
 }
 
 
+//Allocates memory!
+//Gets the type of a VM. (ndvm, vpnvm, etc)
+int get_vm_type(const char * vm_path, char ** type) {
+
+    GValue gval;
+    int status;
+    
+    status = dbus_get_property(xcdbus_conn, XENMGR_SERVICE, vm_path, XENMGR_VM_INTERFACE, "type", &gval);
+    *type = (char *)g_value_get_string(&gval);
+    xcpmd_log(LOG_DEBUG, "Type of %s is %s.\n", vm_path, *type);
+
+    return status;
+}
+
+
 //Frees all members of a vmid table row.
 void free_vm_identifier_table_row_data(struct vm_identifier_table_row * r) {
 
