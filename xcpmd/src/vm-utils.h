@@ -56,6 +56,7 @@ struct vm_identifier_table_row * new_vmid_search_result_by_uuid(char * uuid);
 struct vm_identifier_table_row * new_vmid_search_result_by_path(char * path);
 struct vm_identifier_table_row * clone_vmid_table_row(struct vm_identifier_table_row * ir);
 int get_vm_dependencies(const char * vm_path, GPtrArray ** ary);
+int get_vm_type(const char * vm_path, char ** type);
 
 void free_vm_identifier_table_row_data(struct vm_identifier_table_row * r);
 void free_vm_identifier_table(struct vm_identifier_table * table);
