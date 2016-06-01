@@ -89,8 +89,8 @@ static struct event_data_row event_data[] = {
 
 
 static struct cond_table_row condition_data[] = {
-    {"onBacklightDownBtn"          , bcl_up_pressed               , "n"    , "void"                        , EVENT_BCL         } ,
-    {"onBacklightUpBtn"            , bcl_down_pressed             , "n"    , "void"                        , EVENT_BCL         } ,
+    {"onBacklightUpBtn"            , bcl_up_pressed               , "n"    , "void"                        , EVENT_BCL         } ,
+    {"onBacklightDownBtn"          , bcl_down_pressed             , "n"    , "void"                        , EVENT_BCL         } ,
     {"onPowerBtn"                  , pbtn_pressed                 , "n"    , "void"                        , EVENT_PWR_BTN     } ,
     {"onSleepBtn"                  , sbtn_pressed                 , "n"    , "void"                        , EVENT_SLP_BTN     } ,
     {"onSuspendBtn"                , susp_pressed                 , "n"    , "void"                        , EVENT_SUSP_BTN    } ,
