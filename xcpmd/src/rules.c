@@ -1115,7 +1115,7 @@ char * rule_to_string(struct rule * rule) {
 
     if (!list_empty(&rule->undos.list)) {
         safe_str_append(&out, "| ");
-        list_for_each_entry(action, &(rule->actions.list), list) {
+        list_for_each_entry(action, &(rule->undos.list), list) {
             safe_str_append(&out, "%s(", action->type->name);
             list_for_each_entry(arg, &(action->args.list), list) {
                 tmp = arg_to_string(arg->type, arg->arg);
