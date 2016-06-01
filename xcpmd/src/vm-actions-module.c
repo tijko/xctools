@@ -137,7 +137,10 @@ __attribute__ ((destructor)) static void uninit_module() {
 void sleep_vm(struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_name(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_name(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to sleep vm %s--couldn't get UUID\n", node->arg.str);
@@ -153,7 +156,10 @@ void sleep_vm(struct arg_node * args) {
 void resume_vm(struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_name(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_name(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to resume vm %s--couldn't get UUID\n", node->arg.str);
@@ -169,7 +175,10 @@ void resume_vm(struct arg_node * args) {
 void pause_vm(struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_name(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_name(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to pause vm %s--couldn't get UUID\n", node->arg.str);
@@ -185,7 +194,10 @@ void pause_vm(struct arg_node * args) {
 void unpause_vm(struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_name(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_name(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to unpause vm %s--couldn't get UUID\n", node->arg.str);
@@ -201,7 +213,10 @@ void unpause_vm(struct arg_node * args) {
 void reboot_vm(struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_name(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_name(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to reboot vm %s--couldn't get UUID\n", node->arg.str);
@@ -217,7 +232,10 @@ void reboot_vm(struct arg_node * args) {
 void shutdown_vm(struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_name(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_name(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to shutdown vm %s--couldn't get UUID\n", node->arg.str);
@@ -233,7 +251,10 @@ void shutdown_vm(struct arg_node * args) {
 void start_vm(struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_name(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_name(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to start vm %s--couldn't get UUID\n", node->arg.str);
@@ -249,7 +270,10 @@ void start_vm(struct arg_node * args) {
 void suspend_vm_to_file(struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_name(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_name(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to suspend vm %s to file--couldn't get UUID\n", node->arg.str);
@@ -268,7 +292,10 @@ void suspend_vm_to_file(struct arg_node * args) {
 void resume_vm_from_file(struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_name(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_name(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to resume vm %s from file--couldn't get UUID\n", node->arg.str);
@@ -287,7 +314,10 @@ void resume_vm_from_file(struct arg_node * args) {
 void sleep_vm_by_uuid (struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_uuid(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_uuid(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to sleep vm--couldn't get xenstore path\n");
@@ -303,7 +333,10 @@ void sleep_vm_by_uuid (struct arg_node * args) {
 void resume_vm_by_uuid (struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_uuid(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_uuid(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to resume vm--couldn't get xenstore path\n");
@@ -319,7 +352,10 @@ void resume_vm_by_uuid (struct arg_node * args) {
 void pause_vm_by_uuid (struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_uuid(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_uuid(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to pause vm--couldn't get xenstore path\n");
@@ -335,7 +371,10 @@ void pause_vm_by_uuid (struct arg_node * args) {
 void unpause_vm_by_uuid (struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_uuid(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_uuid(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to unpause vm--couldn't get xenstore path\n");
@@ -351,7 +390,10 @@ void unpause_vm_by_uuid (struct arg_node * args) {
 void reboot_vm_by_uuid (struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_uuid(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_uuid(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to reboot vm--couldn't get xenstore path\n");
@@ -367,7 +409,10 @@ void reboot_vm_by_uuid (struct arg_node * args) {
 void shutdown_vm_by_uuid (struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_uuid(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_uuid(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to shutdown vm--couldn't get xenstore path\n");
@@ -385,7 +430,10 @@ void shutdown_vm_by_uuid (struct arg_node * args) {
 void start_vm_by_uuid (struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_uuid(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_uuid(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to start vm--couldn't get xenstore path\n");
@@ -403,7 +451,10 @@ void start_vm_by_uuid (struct arg_node * args) {
 void suspend_vm_by_uuid_to_file (struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_uuid(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_uuid(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to shutdown vm--couldn't get xenstore path\n");
@@ -424,7 +475,10 @@ void suspend_vm_by_uuid_to_file (struct arg_node * args) {
 void resume_vm_by_uuid_from_file (struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_uuid(node->arg.str);
+    struct vm_identifier_table_row * vmid;
+
+    populate_vm_identifier_table();
+    vmid = new_vmid_search_result_by_uuid(node->arg.str);
 
     if ((!vmid) || (!(vmid->path))) {
         xcpmd_log(LOG_WARNING, "Failed to shutdown vm--couldn't get xenstore path\n");
@@ -577,7 +631,7 @@ void shutdown_dependencies_of_vm(char * vm_path, char * vm_type) {
 
             //If it is...
             if (!strcmp(jeopardy_list_entry->vm_path, deps_list_entry->vm_path)) {
-                
+
                 //...check its type--if it doesn't match the desired
                 //type, it doesn't belong on the jeopardy list.
                 if (vm_type && strcmp(deps_list_entry->vm_type, vm_type)) {
@@ -668,9 +722,11 @@ void shutdown_dependencies_of_vm(char * vm_path, char * vm_type) {
 void shutdown_dependencies_of_vm_by_name (struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_name(node->arg.str);
+    struct vm_identifier_table_row * vmid;
 
+    populate_vm_identifier_table();
     vmid = new_vmid_search_result_by_name(node->arg.str);
+
     if (vmid && vmid->path) {
         shutdown_dependencies_of_vm(vmid->path, NULL);
     }
@@ -681,9 +737,11 @@ void shutdown_dependencies_of_vm_by_name (struct arg_node * args) {
 void shutdown_dependencies_of_vm_by_uuid (struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_name(node->arg.str);
+    struct vm_identifier_table_row * vmid;
 
+    populate_vm_identifier_table();
     vmid = new_vmid_search_result_by_uuid(node->arg.str);
+
     if (vmid && vmid->path) {
         shutdown_dependencies_of_vm(vmid->path, NULL);
     }
@@ -694,9 +752,11 @@ void shutdown_dependencies_of_vm_by_uuid (struct arg_node * args) {
 void shutdown_vpnvm_dependencies_of_vm_by_name (struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_name(node->arg.str);
+    struct vm_identifier_table_row * vmid;
 
+    populate_vm_identifier_table();
     vmid = new_vmid_search_result_by_name(node->arg.str);
+
     if (vmid && vmid->path) {
         shutdown_dependencies_of_vm(vmid->path, "vpnvm");
     }
@@ -707,9 +767,11 @@ void shutdown_vpnvm_dependencies_of_vm_by_name (struct arg_node * args) {
 void shutdown_vpnvm_dependencies_of_vm_by_uuid (struct arg_node * args) {
 
     struct arg_node * node = get_arg(args, 0);
-    struct vm_identifier_table_row * vmid = new_vmid_search_result_by_name(node->arg.str);
+    struct vm_identifier_table_row * vmid;
 
+    populate_vm_identifier_table();
     vmid = new_vmid_search_result_by_uuid(node->arg.str);
+
     if (vmid && vmid->path) {
         shutdown_dependencies_of_vm(vmid->path, "vpnvm");
     }
@@ -733,7 +795,7 @@ void shutdown_vpnvm_dependencies (struct arg_node * args) {
     //VM identifier table out from under us.
     num_vms = vm_identifier_table->num_entries;
     paths = (char **)malloc(num_vms * sizeof(char *));
-    
+
     for (i=0; i < num_vms; ++i) {
         paths[i] = clone_string(vm_identifier_table->entries[i].path);
     }
