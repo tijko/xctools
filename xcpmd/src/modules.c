@@ -209,7 +209,7 @@ void handle_events(struct ev_wrapper * event) {
 
         list_for_each_entry(node, &(event->listeners.list), list) {
             condition = node->condition;
-            condition->is_true = condition->type->check(event, &condition->args);
+            condition->is_true = false;
         }
     }
 
