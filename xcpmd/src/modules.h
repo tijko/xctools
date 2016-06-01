@@ -40,4 +40,6 @@ int load_policy_from_db();
 int load_policy_from_file(char * filename);
 void evaluate_policy();
 
+bool policy_exists();
+
 #endif

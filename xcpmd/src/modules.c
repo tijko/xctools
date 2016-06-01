@@ -314,3 +314,14 @@ int load_policy_from_file(char * filename) {
     return 0;
 }
 
+
+//Checks if any rules or variables have yet been added.
+bool policy_exists(void) {
+
+    if (list_empty(&rules.list) && list_empty(&db_vars.list)) {
+        return false;
+    }
+    else {
+        return true;
+    }
+}

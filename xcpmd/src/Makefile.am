@@ -68,6 +68,11 @@ xcpmd_LDFLAGS = -rdynamic
 
 AM_CFLAGS=-g -W -Wall -Werror -std=gnu99
 
+
+# Package up default rules.
+configdir="/usr/share/xcpmd"
+dist_config_DATA = default.rules
+
 # Discard the .la files libtool produces.
 install-exec-hook:
 	rm $(DESTDIR)$(libdir)/$(PACKAGE)/*.la

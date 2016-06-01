@@ -101,8 +101,11 @@ int main(int argc, char *argv[]) {
     }
 
 #ifdef POLICY_FILE_PATH
-    if (load_policy_from_file(POLICY_FILE_PATH) == -1) {
-        xcpmd_log(LOG_WARNING, "Error loading policy from file %s; continuing...\n", POLICY_FILE_PATH);
+    if (!policy_exists()) {
+        xcpmd_log(LOG_INFO, "No DB policy found; loading default policy from %s.\n", POLICY_FILE_PATH);
+        if (load_policy_from_file(POLICY_FILE_PATH) == -1) {
+            xcpmd_log(LOG_WARNING, "Error loading policy from file %s; continuing...\n", POLICY_FILE_PATH);
+        }
     }
 #endif
 
