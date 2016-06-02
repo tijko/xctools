@@ -111,8 +111,6 @@ static struct cond_table_row condition_data[] = {
 static unsigned int num_events = sizeof(event_data) / sizeof(event_data[0]);
 static unsigned int num_conditions = sizeof(condition_data) / sizeof(condition_data[0]);
 
-static int times_loaded = 0;
-
 
 //Public data
 struct ev_wrapper ** _vm_event_table;
@@ -121,9 +119,6 @@ struct ev_wrapper ** _vm_event_table;
 //Initializes the module.
 //The constructor attribute causes this function to run at load (dlopen()) time.
 __attribute__((constructor)) static void init_module() {
-
-    if (times_loaded > 0)
-        return;
 
     unsigned int i;
 
@@ -148,18 +143,12 @@ __attribute__((constructor)) static void init_module() {
 
     //Set up a match and filter to get signals.
     add_dbus_filter("type='signal',interface='com.citrix.xenclient.xenmgr',member='vm_state_changed'", dbus_signal_handler, NULL, NULL);
-
-    ++times_loaded;
 }
 
 
 //Cleans up after this module.
 //The destructor attribute causes this to run at unload (dlclose()) time.
 __attribute__((destructor)) static void uninit_module() {
-
-    --times_loaded;
-    if (times_loaded > 0)
-        return;
 
     //Free event tables.
     free(_vm_event_table);
