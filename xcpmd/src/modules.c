@@ -147,7 +147,7 @@ void handle_events(struct ev_wrapper * event) {
     unsigned int nodes_assigned = 0;
     unsigned int i;
     bool condition_is_true, condition_was_true;
-    bool rule_is_true, rule_was_true;
+    bool *rule_is_true, *rule_was_true;
 
     checklist = (struct rule **)malloc(nodes_allocd * sizeof(struct rule *));
     if (checklist == NULL) {
@@ -184,23 +184,36 @@ void handle_events(struct ev_wrapper * event) {
     }
 
     //Evaluate each rule depending on those conditions.
+    rule_is_true = (bool *)malloc(nodes_assigned * sizeof(bool));
+    rule_was_true = (bool *)malloc(nodes_assigned * sizeof(bool));
+    if (rule_is_true == NULL || rule_was_true == NULL) {
+        xcpmd_log(LOG_ERR, "Failed to alloc memory");
+        free(checklist);
+        return;
+    }
+
     for (i=0; i < nodes_assigned; ++i) {
 
-        rule_is_true = evaluate_rule(checklist[i]);
-        rule_was_true = checklist[i]->is_active;
+        rule_was_true[i] = checklist[i]->is_active;
+        rule_is_true[i] = evaluate_rule(checklist[i]);
 
-        if (rule_is_true && !rule_was_true)
-            do_actions(checklist[i]);
-        else if (rule_was_true && !rule_is_true)
+        //Perform all undos first.
+        if (rule_was_true[i] && !rule_is_true[i])
             do_undos(checklist[i]);
+    }
+
+    for (i=0; i < nodes_assigned; ++i) {
+
+        //Then do actions.
+        if (rule_is_true[i] && !rule_was_true[i])
+            do_actions(checklist[i]);
 
         //Immediately reset the rule if the triggering event is stateless--this
         //prevents repeated events from being ignored.
         if (!event->is_stateless) {
-            checklist[i]->is_active = rule_is_true;
+            checklist[i]->is_active = rule_is_true[i];
         }
     }
-
 
     //Reset any events that are stateless, and the conditions that depend on them.
     if (event->is_stateless) {
@@ -215,6 +228,8 @@ void handle_events(struct ev_wrapper * event) {
 
     //Free any memory allocated.
     free(checklist);
+    free(rule_is_true);
+    free(rule_was_true);
 }
 
 
@@ -263,27 +278,43 @@ void evaluate_policy(void) {
     struct condition_node * node;
     struct condition * condition;
     struct rule * rule;
+    bool last_state;
 
     //For all stateful events, check all conditions.
     list_for_each_entry(event, &events.list, list) {
         if (event->is_stateless == FALSE) {
             list_for_each_entry(node, &(event->listeners.list), list) {
                 condition = node->condition;
+
+                last_state = condition->is_true;
                 condition->is_true = condition->type->check(event, &condition->args);
+
+                if (last_state != condition->is_true) {
+                    xcpmd_log(LOG_DEBUG, "Condition %s became %s.", condition->type->name, condition->is_true ? "true" : "false");
+                }
+                else {
+                    xcpmd_log(LOG_DEBUG, "Condition %s remains %s.", condition->type->name, condition->is_true ? "true" : "false");
+                }
             }
         }
     }
 
     //Then evaluate all rules.
+    //Perform all rules' undo actions first.
+    list_for_each_entry(rule, &rules.list, list) {
+        if (evaluate_rule(rule) == false) {
+            if (rule->is_active) {
+                do_undos(rule);
+            }
+            rule->is_active = false;
+        }
+    }
+
+    //Then perform their actions.
     list_for_each_entry(rule, &rules.list, list) {
         if (evaluate_rule(rule) == true) {
             rule->is_active = true;
             do_actions(rule);
-        }
-        else {
-            if (rule->is_active)
-                do_undos(rule);
-            rule->is_active = false;
         }
     }
 }
@@ -295,7 +326,6 @@ int load_policy_from_db() {
     if (parse_config_from_db() != 0)
         return -1;
 
-    evaluate_policy();
     return 0;
 }
 
@@ -309,8 +339,6 @@ int load_policy_from_file(char * filename) {
         return -1;
 
     write_db_rules();
-
-    evaluate_policy();
     return 0;
 }
 
