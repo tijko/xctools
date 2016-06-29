@@ -114,6 +114,9 @@ int main(int argc, char *argv[]) {
     print_rules();
 #endif
 
+    //Initial rule evaluation
+    evaluate_policy();
+
     xcpmd_log(LOG_INFO, "Entering event loop.\n");
     event_dispatch();
 

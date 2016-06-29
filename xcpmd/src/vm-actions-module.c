@@ -640,7 +640,7 @@ void shutdown_dependencies_of_vm(char * vm_path, char * vm_type) {
                     list_del(&jeopardy_list_entry->list);
                     free(jeopardy_list_entry->vm_path);
                     free(jeopardy_list_entry);
-                    xcpmd_log(LOG_DEBUG, "Removing %s from jeopardy list, since its type is %s.", safe_list_entry->vm_path, deps_list_entry->vm_type);
+                    xcpmd_log(LOG_DEBUG, "Removing %s from jeopardy list, since its type is %s.", deps_list_entry->vm_path, deps_list_entry->vm_type);
                 }
                 else {
                     in_jeopardy = true;
