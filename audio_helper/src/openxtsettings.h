@@ -25,6 +25,7 @@
 
 #define SYSLOG
 #define DEBUGGING_ENABLED
+//#define SYSLOG_DEBUGGING_ENABLED
 #define TAG "openxt_audio_back"
 
 // The following means that we should have room for roughly 1280 samples
