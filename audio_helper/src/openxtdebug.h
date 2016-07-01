@@ -61,13 +61,24 @@
 /// You should not use this directly, but instead use one of the openxt_
 /// macros.
 ///
+/// TODO the logging needs refactoring. Currently the debug logging is mixed
+/// in with the actual output from the utility. The SYSLOG_DEBUGGING_ENABLED
+/// macro is just a workaround to allow the verbose debug logging to not be
+/// sent to syslog. Debug logging and actaul output handling should be
+/// separated.
+#ifdef SYSLOG_DEBUGGING_ENABLED
+    #define syslog_debug(...) syslog(LOG_DEBUG, __VA_ARGS__)
+#else
+    #define syslog_debug(...) do {} while(0);
+#endif
+
 #ifdef SYSLOG
     #define OPENXT_ERROR(...) \
         fprintf(stderr, __VA_ARGS__); \
         syslog(LOG_ERR, __VA_ARGS__)
     #define OPENXT_DEBUG(...) \
         fprintf(stdout, __VA_ARGS__); \
-        syslog(LOG_DEBUG, __VA_ARGS__)
+        syslog_debug(__VA_ARGS__)
 #else
     #define OPENXT_ERROR(...) \
         fprintf(stderr, __VA_ARGS__)
