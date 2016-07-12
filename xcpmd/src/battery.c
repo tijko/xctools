@@ -788,10 +788,16 @@ void update_batteries(void) {
     old_status = (struct battery_status *)malloc(num_battery_structs_allocd * sizeof(struct battery_status));
     old_info = (struct battery_info *)malloc(num_battery_structs_allocd * sizeof(struct battery_info));
 
-    if (last_status != NULL && last_info != NULL) {
+    if (last_status != NULL)
         memcpy(old_status, last_status, num_battery_structs_allocd * sizeof(struct battery_status));
+    else
+        memset(old_status, 0, num_battery_structs_allocd * sizeof(struct battery_status));
+
+    if (last_info != NULL)
         memcpy(old_info, last_info, num_battery_structs_allocd * sizeof(struct battery_info));
-    }
+    else
+        memset(old_info, 0, num_battery_structs_allocd * sizeof(struct battery_info));
+
     old_array_size = num_battery_structs_allocd;
 
 
@@ -824,8 +830,14 @@ void update_batteries(void) {
     //Write back to the xenstore and only send notifications if things have changed.
     for (i=0; i < num_batteries_to_update; ++i) {
 
-        write_battery_status_to_xenstore(i);
-        write_battery_info_to_xenstore(i);
+        //No need to update status/info in Xenstore if there was no battery to begin with.
+        //   On some latops, batteries index are not contiguous. It is not a big
+        //   deal to have one or two empty array slot, but it should not be
+        //   reported as a removed battery (OXT-614).
+        if (last_status[i].present || old_status[i].present) {
+            write_battery_status_to_xenstore(i);
+            write_battery_info_to_xenstore(i);
+        }
 
         if (i < old_array_size && i < new_array_size) {
             if (memcmp(&old_info[i], &last_info[i], sizeof(struct battery_info))) {
