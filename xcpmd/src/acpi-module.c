@@ -89,8 +89,8 @@ static struct event_data_row event_data[] = {
 
 
 static struct cond_table_row condition_data[] = {
-    {"onBacklightDownBtn"          , bcl_up_pressed               , "n"    , "void"                        , EVENT_BCL         } ,
-    {"onBacklightUpBtn"            , bcl_down_pressed             , "n"    , "void"                        , EVENT_BCL         } ,
+    {"onBacklightUpBtn"            , bcl_up_pressed               , "n"    , "void"                        , EVENT_BCL         } ,
+    {"onBacklightDownBtn"          , bcl_down_pressed             , "n"    , "void"                        , EVENT_BCL         } ,
     {"onPowerBtn"                  , pbtn_pressed                 , "n"    , "void"                        , EVENT_PWR_BTN     } ,
     {"onSleepBtn"                  , sbtn_pressed                 , "n"    , "void"                        , EVENT_SLP_BTN     } ,
     {"onSuspendBtn"                , susp_pressed                 , "n"    , "void"                        , EVENT_SUSP_BTN    } ,
@@ -112,8 +112,6 @@ static struct cond_table_row condition_data[] = {
 static unsigned int num_conditions = sizeof(condition_data) / sizeof(condition_data[0]);
 static unsigned int num_events = sizeof(event_data) / sizeof(event_data[0]);
 
-static int times_loaded = 0;
-
 
 //Public data
 struct ev_wrapper ** _acpi_event_table;
@@ -122,9 +120,6 @@ struct ev_wrapper ** _acpi_event_table;
 //Initializes the module.
 //The constructor attribute causes this function to run at load (dlopen()) time.
 __attribute__((constructor)) static void init_module() {
-
-    if (times_loaded > 0)
-        return;
 
     unsigned int i;
 
@@ -147,18 +142,12 @@ __attribute__((constructor)) static void init_module() {
         struct cond_table_row entry = condition_data[i];
         add_condition_type(entry.name, entry.func, entry.prototype, entry.pretty_prototype, _acpi_event_table[entry.event_index]);
     }
-
-    ++times_loaded;
 }
 
 
 //Cleans up after this module.
 //The destructor attribute causes this to run at unload (dlclose()) time.
 __attribute__((destructor)) static void uninit_module() {
-
-    --times_loaded;
-    if (times_loaded > 0)
-        return;
 
     //Free event table.
     free(_acpi_event_table);

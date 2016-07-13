@@ -67,7 +67,6 @@ static const struct cond_table_row condition_table[] = {
 
 static const unsigned int num_events = sizeof(event_data) / sizeof(event_data[0]);
 static const unsigned int condition_table_size = sizeof(condition_table) / sizeof(condition_table[0]);
-static int times_loaded = 0;
 
 
 //Public data
@@ -76,9 +75,6 @@ struct ev_wrapper ** default_event_table;
 
 //Registers this module's events and condition types.
 static void __attribute__((constructor)) init_module() {
-
-    if (times_loaded > 0)
-        return;
 
     unsigned int i;
 
@@ -94,17 +90,11 @@ static void __attribute__((constructor)) init_module() {
         add_condition_type(entry.name, entry.func, entry.prototype, entry.pretty_prototype, default_event_table[entry.event_index]);
     }
 
-    ++times_loaded;
-
 }
 
 
 //Cleans up after this module.
 static void __attribute__((destructor)) uninit_module() {
-
-    --times_loaded;
-    if (times_loaded > 0)
-        return;
 
     free(default_event_table);
 }

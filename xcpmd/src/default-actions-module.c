@@ -55,7 +55,6 @@ static struct action_table_row action_table[] = {
 };
 
 static unsigned int num_action_types = sizeof(action_table) / sizeof(action_table[0]);
-static int times_loaded = 0;
 
 
 //Registers this module's action types.
@@ -63,16 +62,10 @@ static int times_loaded = 0;
 //they may be shadowed by the constructors of previously loaded modules!
 static void __attribute__ ((constructor)) init_module() {
 
-    //Guard clause--this prevents things from being registered multiple times.
-    if (times_loaded > 0)
-        return;
-
     unsigned int i;
 
     for (i=0; i < num_action_types; ++i)
         add_action_type(action_table[i].name, action_table[i].func, action_table[i].prototype, action_table[i].pretty_prototype);
-
-    ++times_loaded;
 }
 
 

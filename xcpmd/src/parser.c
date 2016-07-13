@@ -1869,6 +1869,7 @@ int parse_config_from_file(char * filename) {
     char *ptr, *token_start, *token_end, *string_end;
     bool in_var_section = true;
     bool in_quotes;
+    bool whitespace_line;
 
     memset(&data, 0, sizeof(struct parse_data));
     memset(&var_map, 0, sizeof(struct var_map));
@@ -1888,10 +1889,26 @@ int parse_config_from_file(char * filename) {
     while (fgets(line, 1024, file)) {
 
         line_no++;
+        xcpmd_log(LOG_DEBUG, "Parsing line %d: %s", line_no, line);
 
         //Discard any line beginning with a comment character (#).
         if (line[0] == '#')
             continue;
+
+        //Discard any lines containing only whitespace.
+        whitespace_line = false;
+        ptr = line;
+        while (*ptr <= ' ') {
+            if (*ptr == '\0') {
+                whitespace_line = true;
+                break;
+            }
+            ++ptr;
+        }
+        if (whitespace_line) {
+            xcpmd_log(LOG_DEBUG, "Line %d was whitespace.", line_no);
+            continue;
+        }
 
         //Discard any lines longer than 1024 characters.
         if (strchr(line, '\n') == NULL) {
@@ -1952,7 +1969,6 @@ int parse_config_from_file(char * filename) {
                 }
                 ptr += sizeof(char);
             }
-
 
             init_parse_data(&data, &var_map, data.start_state, name, NULL, conditions, actions, undos, TYPE_RULE);
             if (!parse(&data, data.conditions_str)) {

@@ -65,7 +65,7 @@ void populate_vm_identifier_table() {
 struct vm_identifier_table * new_vm_identifier_table(GPtrArray * vm_list) {
 
     struct vm_identifier_table * table;
-    char * tmp;
+    char * tmp = NULL;
     char * vm;
     unsigned int i;
 
@@ -93,24 +93,23 @@ struct vm_identifier_table * new_vm_identifier_table(GPtrArray * vm_list) {
         property_get_com_citrix_xenclient_xenmgr_vm_name_(xcdbus_conn, XENMGR_SERVICE, vm, &tmp);
         if(tmp == NULL) {
             xcpmd_log(LOG_ERR, "Error: Couldn't get name of %s.\n", vm);
-            free_vm_identifier_table(table);
-            return NULL;
+            goto fail;
         }
 
         table->entries[i].name = (char *)malloc(strlen(tmp) + 1);
         if (table->entries[i].name == NULL) {
             xcpmd_log(LOG_ERR, "Failed to allocate memory\n");
-            free_vm_identifier_table(table);
-            return NULL;
+            goto fail;
         }
         strcpy(table->entries[i].name, tmp);
+        free(tmp);
+        tmp = NULL;
 
         //Copy the VM path.
         table->entries[i].path = (char *)malloc(VM_PATH_LEN + 1); //path_len = 40 = 32 path bytes + 4 underscores + "/vm/" (4), and 1 byte for \0
         if (table->entries[i].path == NULL) {
             xcpmd_log(LOG_ERR, "Failed to allocate memory\n");
-            free_vm_identifier_table(table);
-            return NULL;
+            goto fail;
         }
         strncpy(table->entries[i].path, vm, VM_PATH_LEN + 1);
 
@@ -118,8 +117,7 @@ struct vm_identifier_table * new_vm_identifier_table(GPtrArray * vm_list) {
         table->entries[i].uuid = (char *)malloc(VM_PATH_LEN - VM_PATH_UUID_PREFIX_LEN + 1); //path_len = 36 = 32 path bytes + 4 hyphens, and 1 byte for \0
         if (table->entries[i].uuid == NULL) {
             xcpmd_log(LOG_ERR, "Failed to allocate memory\n");
-            free_vm_identifier_table(table);
-            return NULL;
+            goto fail;
         }
         strncpy(table->entries[i].uuid, vm+VM_PATH_UUID_PREFIX_LEN, VM_PATH_LEN - VM_PATH_UUID_PREFIX_LEN + 1);
 
@@ -134,6 +132,15 @@ struct vm_identifier_table * new_vm_identifier_table(GPtrArray * vm_list) {
     }
 
     return table;
+
+fail:
+    if (tmp) {
+        g_free(tmp);
+    }
+
+    free_vm_identifier_table(table);
+    return NULL;
+
 }
 
 
@@ -257,6 +264,22 @@ int get_vm_dependencies(const char * vm_path, GPtrArray ** ary) {
 
     status = dbus_get_property(xcdbus_conn, XENMGR_SERVICE, vm_path, XENMGR_VM_INTERFACE, "dependencies", &gval);
     *ary = (GPtrArray *)g_value_get_boxed(&gval);
+
+    return status;
+}
+
+
+//Allocates memory!
+//Gets the type of a VM. (ndvm, vpnvm, etc)
+int get_vm_type(const char * vm_path, char ** type) {
+
+    GValue gval;
+    int status;
+    
+    status = dbus_get_property(xcdbus_conn, XENMGR_SERVICE, vm_path, XENMGR_VM_INTERFACE, "type", &gval);
+    *type = strdup((char *)g_value_get_string(&gval));
+    xcpmd_log(LOG_DEBUG, "Type of %s is %s.\n", vm_path, *type);
+    g_value_unset(&gval);
 
     return status;
 }
