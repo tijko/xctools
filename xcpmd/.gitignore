@@ -11,3 +11,7 @@ configure
 depcomp
 install-sh
 missing
+INSTALL
+ltmain.sh
+compile
+
