@@ -918,6 +918,7 @@ void do_actions(struct rule * rule) {
 
     struct action * action;
 
+    xcpmd_log(LOG_DEBUG, "Doing actions for rule %s.", rule_to_string(rule));
     list_for_each_entry(action, &(rule->actions.list), list) {
         action->type->action(&action->args);
     }
@@ -929,6 +930,7 @@ void do_undos(struct rule * rule) {
 
     struct action * undo;
 
+    xcpmd_log(LOG_DEBUG, "Doing undos for rule %s.", rule_to_string(rule));
     if (!list_empty(&rule->undos.list)) {
         list_for_each_entry(undo, &(rule->undos.list), list) {
             undo->type->action(&undo->args);
@@ -1115,7 +1117,7 @@ char * rule_to_string(struct rule * rule) {
 
     if (!list_empty(&rule->undos.list)) {
         safe_str_append(&out, "| ");
-        list_for_each_entry(action, &(rule->actions.list), list) {
+        list_for_each_entry(action, &(rule->undos.list), list) {
             safe_str_append(&out, "%s(", action->type->name);
             list_for_each_entry(arg, &(action->args.list), list) {
                 tmp = arg_to_string(arg->type, arg->arg);

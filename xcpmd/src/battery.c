@@ -75,8 +75,15 @@ int get_battery_charge_state(unsigned int battery_index) {
 
     if (last_status[battery_index].state & 0x1)
         return BATT_DISCHARGING;
-    else if (last_status[battery_index].state & 0x2)
-        return BATT_CHARGING;
+    else if (last_status[battery_index].state & 0x2) {
+        // The Dell Venue 11 Pro 7140 reports state = BATT_CHARGING even when it's full.
+        if (last_status[battery_index].charge_now == last_info[battery_index].design_capacity) {
+            return BATT_FULL;
+        }
+        else {
+            return BATT_CHARGING;
+        }
+    }
     else {
         /* We're not charging nor discharging... */
         percent = get_battery_percentage(battery_index);
