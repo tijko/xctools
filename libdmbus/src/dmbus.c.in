@@ -245,6 +245,7 @@ void dmbus_client_disconnect(dmbus_client_t client)
     free(c);
 }
 
+/* TODO: if v4v_send fails, we may want to tell the caller... */
 static void send_msg(struct dmbus_client *c,
                      int msgtype,
                      void *data,
@@ -258,7 +259,11 @@ static void send_msg(struct dmbus_client *c,
     hdr->msg_len = len;
 
     while (b < len) {
-        rc = v4v_send(c->fd, data + b, len - b, 0);
+        /*
+         * Let's not let v4v_send crash the program: 
+         * Use MSG_NOSIGNAL to avoid the SIGPIPE.
+         */
+        rc = v4v_send(c->fd, data + b, len - b, MSG_NOSIGNAL);
         if (rc == -1)
             return;
 
