@@ -65,6 +65,7 @@ do {                                                                 \
 #define V4V_MAGIC_DISCONNECT "dead"
 
 struct qmp_helper_state {
+    int guest_id;
     int stubdom_id;
     int v4v_fd;
     v4v_addr_t remote_addr;
@@ -233,7 +234,7 @@ static int qmph_init_unix_socket(struct qmp_helper_state *pqhs)
     memset(&un, 0, sizeof(un));
     un.sun_family = AF_UNIX;
     snprintf(un.sun_path, sizeof(un.sun_path),
-             "/var/run/xen/qmp-libxl-%d", pqhs->stubdom_id);
+             "/var/run/xen/qmp-libxl-%d", pqhs->guest_id);
 
     unlink(un.sun_path);
 
@@ -279,12 +280,19 @@ int main(int argc, char *argv[])
 
     memset(&qhs, 0, sizeof(qhs));
 
-    if (argc != 2) {
-        QMPH_LOG("usage: %s <stubdom_id>", argv[0]);
+    if (argc != 3) {
+        QMPH_LOG("usage: %s <guest_id> <stubdom_id>", argv[0]);
         return -1;
     }
 
-    qhs.stubdom_id = atoi(argv[1]);
+    qhs.guest_id = atoi(argv[1]);
+
+    if (qhs.guest_id < 0) {
+        QMPH_LOG("ERROR bad guest id (%d)", qhs.guest_id);
+        return -1;
+    }
+
+    qhs.stubdom_id = atoi(argv[2]);
 
     if (qhs.stubdom_id < 0) {
         QMPH_LOG("ERROR bad stubdom id (%d)", qhs.stubdom_id);
