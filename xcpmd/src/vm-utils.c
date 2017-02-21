@@ -155,6 +155,11 @@ struct vm_identifier_table_row * new_vmid_search_result_by_name(char * name) {
 
     if (vm_identifier_table == NULL) {
         populate_vm_identifier_table();
+
+        if (vm_identifier_table == NULL) {
+            xcpmd_log(LOG_WARNING, "Vm identifier table could not be populated. Exiting search.");
+            return NULL;
+        }
     }
 
     unsigned int i;
@@ -181,6 +186,11 @@ struct vm_identifier_table_row * new_vmid_search_result_by_uuid(char * uuid) {
 
     if (vm_identifier_table == NULL) {
         populate_vm_identifier_table();
+
+        if (vm_identifier_table == NULL) {
+            xcpmd_log(LOG_WARNING, "Vm identifier table could not be populated. Exiting search.");
+            return NULL;
+        }
     }
 
     for (i=0; i < vm_identifier_table->num_entries; ++i) {
@@ -205,6 +215,11 @@ struct vm_identifier_table_row * new_vmid_search_result_by_path(char * path) {
 
     if (vm_identifier_table == NULL) {
         populate_vm_identifier_table();
+
+        if (vm_identifier_table == NULL) {
+            xcpmd_log(LOG_WARNING, "Vm identifier table could not be populated. Exiting search.");
+            return NULL;
+        }
     }
 
     for (i=0; i < vm_identifier_table->num_entries; ++i) {
