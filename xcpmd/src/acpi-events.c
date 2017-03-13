@@ -185,7 +185,7 @@ static void handle_lid_event(int status) {
 
     xcpmd_log(LOG_INFO, "Lid change event: %s\n", lid_status_string);
 
-    xenstore_write(lid_status == LID_CLOSED ? "closed" : "open", XS_LID_STATE_PATH);
+    xenstore_write_int(lid_status == LID_CLOSED ? 0 : 1, XS_LID_STATE_PATH);
     xenstore_write("1", XS_LID_EVENT_PATH);
     //notify_com_citrix_xenclient_xcpmd_lid_changed(xcdbus_conn, XCPMD_SERVICE, XCPMD_PATH);
 
