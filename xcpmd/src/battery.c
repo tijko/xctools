@@ -346,6 +346,12 @@ static void make_xenstore_battery_dir(unsigned int battery_index) {
     bool flag;
 
     dir_entries = xenstore_ls(&num_entries, "/pm");
+    if (!dir_entries) {
+        xcpmd_log(LOG_WARNING,
+            "Listing directory /pm failed with error `%s'\n", strerror(errno));
+        return;
+    }
+
     snprintf(xenstore_path, 255, "%s%i", XS_BATTERY_PATH, battery_index);
 
     flag = false;
