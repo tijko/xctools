@@ -321,7 +321,9 @@ void error(struct parse_data * data, //parse_data that is in use at the time
 
     va_start(args, format);
     length = vsnprintf(NULL, 0, format, args) + 1;
+    va_end(args);
     string = (char *)malloc(length * sizeof(char));
+    va_start(args, format);
     vsnprintf(string, length, format, args);
     va_end(args);
 
