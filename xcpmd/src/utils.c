@@ -156,11 +156,13 @@ char * safe_sprintf(char * format, ...) {
 
     va_start(args, format);
     length = vsnprintf(NULL, 0, format, args) + 1;
+    va_end(args);
     string = (char *)malloc(length * sizeof(char));
     if (string == NULL) {
         xcpmd_log(LOG_ERR, "Couldn't allocate memory\n");
         return NULL;
     }
+    va_start(args, format);
     vsnprintf(string, length, format, args);
     va_end(args);
 
@@ -182,11 +184,13 @@ void safe_str_append(char ** str1, char * format, ...) {
 
     va_start(args, format);
     length = vsnprintf(NULL, 0, format, args) + 1;
+    va_end(args);
     formatted = (char *)malloc(length * sizeof(char));
     if (formatted == NULL) {
         xcpmd_log(LOG_ERR, "Couldn't allocate memory\n");
         return;
     }
+    va_start(args, format);
     vsnprintf(formatted, length, format, args);
     va_end(args);
 
