@@ -20,8 +20,7 @@ void *tester(void *conn_obj)
     DBusConnection *conn = (DBusConnection *) conn_obj;
     dbus_connection_flush(conn);
 
-    while ( 1 ) {
-        // XXX mysteriously stopped sending messages?
+    while    (1) {
         sleep(1);
         dbus_connection_read_write(conn, 0);
         DBusMessage *msg = dbus_connection_pop_message(conn);
@@ -150,6 +149,15 @@ int init_request(int client, struct policy *dbus_policy)
     }
 
     dreq->domid = client_addr.domain;
+    struct xs_handle *t = xs_open(XS_OPEN_READONLY);
+    if (!t) 
+        printf("XENSTORE-FAIL!\n");
+    else {
+        // query domain
+        char *path = xs_get_domain_path(t, dreq->domid);
+        printf("Domain: %s\n", path);
+        free(path);
+    }
     dreq->dom_rules = build_domain_policy(dreq->domid, dbus_policy); 
 
     ret = pthread_create(&dbus_req_thread, NULL, 
