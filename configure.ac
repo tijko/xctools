@@ -1,0 +1,10 @@
+AC_INIT([rpc-broker], [1.0], [bug-automake@gnu.org])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
+PKG_CHECK_MODULES([DBUS], [dbus-1])
+PKG_CHECK_MODULES([LIBV4V], [libv4v])
+PKG_CHECK_MODULES([LIBWEBSOCKETS], [libwebsockets])
+PKG_CHECK_MODULES([JSON_C], [json-c])
+PKG_CHECK_MODULES([LIBXML], [libxml-2.0])
+AC_PROG_CC
+##AC_CONFIG_FILES([Makefile])
+AC_OUTPUT([Makefile])
