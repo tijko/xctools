@@ -1,5 +1,6 @@
 AM_CFLAGS = -g -Wall -lpthread \
-	$(DBUS_CFLAGS) $(V4V_CFLAGS) $(LIBWEBSOCKETS_CFLAGS) $(JSON_C_CFLAGS) $(LIBXML_CFLAGS)
+	$(DBUS_CFLAGS) $(V4V_CFLAGS) $(LIBWEBSOCKETS_CFLAGS) \
+    $(JSON_C_CFLAGS) $(LIBXML_CFLAGS) 
 
 sbin_PROGRAMS = rpc-broker
 rpc_broker_SOURCES = \
@@ -19,4 +20,5 @@ rpc_broker_LDADD = \
     $(LIBV4V_LIBS) \
     $(LIBWEBSOCKETS_LIBS) \
     $(JSON_C_LIBS) \
-    $(LIBXML_LIBS)
+    $(LIBXML_LIBS) \
+    -lxenstore
