@@ -15,6 +15,7 @@
 
 #include "rpc-broker.h"
 
+
 void *tester(void *conn_obj)
 {
     DBusConnection *conn = (DBusConnection *) conn_obj;
@@ -64,6 +65,8 @@ void *tester(void *conn_obj)
             break;
         }
     }
+
+    return NULL;
 }
 
 void *broker_message(void *request)
@@ -122,10 +125,10 @@ struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
     struct dbus_message *dmsg = malloc(sizeof *dmsg);
     dmsg->dest = dbus_message_get_destination(dbus_msg);
 
-    char *iface = dbus_message_get_interface(dbus_msg);
+    const char *iface = dbus_message_get_interface(dbus_msg);
     dmsg->iface = iface ? iface : "NULL";
 
-    char *member = dbus_message_get_member(dbus_msg);
+    const char *member = dbus_message_get_member(dbus_msg);
     dmsg->method = member ? member : "NULL";
 
     return dmsg;
@@ -240,7 +243,7 @@ struct json_response *make_json_request(struct json_request *jreq)
     dbus_connection_flush(conn);
 
     if (jreq->id == 1) {
-        char *busname = dbus_bus_get_unique_name(conn);
+        const char *busname = dbus_bus_get_unique_name(conn);
         jrsp->id = jreq->id;
 
         snprintf(jrsp->response_to, JSON_REQ_ID_MAX, JSON_RESP_ID);
@@ -327,7 +330,7 @@ void run(struct dbus_broker_args *args)
     // XXX lock-test->
     memory_lock = malloc(sizeof(sem_t));
 
-    int test = sem_init(memory_lock, 0, 1);
+    sem_init(memory_lock, 0, 1);
 
     struct dbus_broker_server *server = start_server(BROKER_DEFAULT_PORT);
 

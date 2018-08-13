@@ -12,7 +12,8 @@
 #include <syslog.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-
+//
+#include <xenstore.h>
 //
 sem_t *memory_lock;
 //
@@ -120,10 +121,10 @@ struct rule {
 };
 
 struct dbus_message {
-    char *dest;
-    char *iface;
-    char *path;
-    char *method;
+    const char *dest;
+    const char *iface;
+    const char *path;
+    const char *method;
     // struct argument {
     //   void *data;
     //   char dbus_type;
@@ -190,11 +191,13 @@ char *db_rule_query(DBusConnection *conn, char *uuid, int rule_number);
 
 void *dbus_request(void *_req);
 
-int exchange(int rsock, int ssock, ssize_t (*rcv)(int, void *, size_t, int),
-                                   ssize_t (*snd)(int, void *, size_t, int),
+int exchange(int rsock, int ssock, 
+             ssize_t (*rcv)(int, void *, size_t, int),
+             ssize_t (*snd)(int, const void *, size_t, int),
              struct dbus_request *req);
 
-int filter(char *dest, char *iface, char *member, char *rule);
+int filter(const char *dest, const char *iface, 
+           const char *member, char *rule);
 
 // split-up according to functional relation
 int get_rules(DBusConnection *conn, struct rules *policy_rules);
@@ -227,3 +230,6 @@ int retrieve_xml_signature(char *xml_dump, char *args,
 void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter);
 
 struct rule **build_domain_policy(int domid, struct policy *dbus_policy);
+
+struct lws_context *create_ws_context(int port);
+

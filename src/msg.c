@@ -3,9 +3,9 @@
 
 int broker(struct dbus_message *dmsg, struct dbus_request *req)
 {
-    char *dest = dmsg->dest;
-    char *iface = dmsg->iface;
-    char *member = dmsg->method;
+    const char *dest = dmsg->dest;
+    const char *iface = dmsg->iface;
+    const char *member = dmsg->method;
     int domid = req->domid;
     struct rule **rulelist = req->dom_rules;
 
@@ -28,8 +28,9 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
     return 0;
 }
 
-int exchange(int rsock, int ssock, ssize_t (*rcv)(int, void *, size_t, int),
-                                   ssize_t (*snd)(int, void *, size_t, int),
+int exchange(int rsock, int ssock, 
+             ssize_t (*rcv)(int, void *, size_t, int),
+             ssize_t (*snd)(int, const void *, size_t, int),
              struct dbus_request *req)
 {
     char buf[DBUS_MSG_LEN];
@@ -56,7 +57,8 @@ int exchange(int rsock, int ssock, ssize_t (*rcv)(int, void *, size_t, int),
     return rbytes;
 }
 
-int filter(char *dest, char *iface, char *member, char *rule)
+int filter(const char *dest, const char *iface, 
+           const char *member, char *rule)
 {
     char buf[RULE_MAX_LENGTH];
     char *request = malloc(sizeof(char) * RULE_MAX_LENGTH);
@@ -66,7 +68,7 @@ int filter(char *dest, char *iface, char *member, char *rule)
     else
         strcpy(request, "deny");
 
-    char *req_args[] = { dest, iface, member };
+    const char *req_args[] = { dest, iface, member };
     // the optional start of "dom-type" before destination
     // the optional end of "if-boolean" after member
     char *directives[] = { "destination", "interface", "member" };

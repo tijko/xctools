@@ -90,6 +90,16 @@ int ws_request_handler(int client, char *raw_req)
         return 1;
     }
 
+    struct xs_handle *t = xs_open(XS_OPEN_READONLY);
+    if (!t) 
+        printf("XENSTORE-FAIL!\n");
+    else {
+        // query domain
+        char *path = xs_get_domain_path(t, addr.domain);
+        printf("Domain: %s\n", path);
+        free(path);
+    }
+
     struct json_request *jreq = convert_json_request(raw_req);
 
     if (!jreq)
