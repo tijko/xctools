@@ -44,15 +44,12 @@ struct json_request *convert_json_request(char *raw_json_req)
     jreq->id = json_object_get_int(jint);
 
     json_object_put(jint);
-    // put jarray
-    //json_object_put(jobj);
     
     return jreq;
 }
 
 struct json_object *convert_dbus_response(struct json_response *jrsp)
 {
-    // json_object_put(jobj)
     struct json_object *jobj = json_object_new_object();
     
     json_object_object_add(jobj, "id", json_object_new_int(jrsp->id));
@@ -171,8 +168,6 @@ int parse_json_args(struct json_object *jarray, struct json_request *jreq)
         int jtype = json_object_get_type(jarg);
 
         if (jtype == json_type_null) {
-            // at least log warning...
-            // malloc necessary?
             dmsg->args[i] = malloc(sizeof(char) * 2);
             ((char *) dmsg->args[i])[0] = '\0';
             continue;

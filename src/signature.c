@@ -85,7 +85,6 @@ static inline void add_json_array(struct json_object *args, char *key,
 
 void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter)
 {
-    // json_object_put
     struct json_object *dbus_dict = json_object_new_object();
     add_jobj(args, key, dbus_dict);
 

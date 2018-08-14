@@ -95,8 +95,7 @@ static inline void append_variant(DBusMessageIter *iter, int type, void *data)
             break;
 
         default:
-            // log
-            // uint64_t
+            DBUS_BROKER_WARNING("Unrecognized DBus Variant <%d>", type);
             break;
     }
 
@@ -157,7 +156,6 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
         }
     }
 
-    // pending-call unref?
     DBusPendingCall *pc = NULL;
     if (!dbus_connection_send_with_reply(conn, msg, 
                                         &pc, DBUS_REQ_TIMEOUT) || !pc) 
@@ -202,6 +200,7 @@ char *db_rule_query(DBusConnection *conn, char *uuid, int rule_number)
 
     if (rule[0] == '\0')
         return NULL;
+
     return strdup(rule);
 }
 
