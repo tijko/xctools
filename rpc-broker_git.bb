@@ -6,7 +6,7 @@ DEPENDS = "json-c libwebsockets libv4v dbus libxml2"
 PV = "0+git${SRCPV}"
 
 SRCREV = "${AUTOREV}"
-SRC_URI = "git://github.com/tijko/xctools.git;protocol=https;branch=master"
+SRC_URI = "git://github.com/tijko/rpc-broker;protocol=https;branch=master"
 
 S = "${WORKDIR}/git/rpc-broker"
 
