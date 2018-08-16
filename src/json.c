@@ -1,6 +1,22 @@
 #include "../rpc-broker.h"
 
 
+struct json_response *init_jrsp(void)
+{
+    // pass type-of?
+    struct json_response *jrsp = calloc(sizeof *jrsp + 
+                                       (sizeof(char *) * JSON_REQ_MAX), 1); 
+
+    jrsp->args = json_object_new_array();
+    jrsp->response_to = malloc(sizeof(char) * JSON_REQ_ID_MAX);
+    jrsp->type = malloc(sizeof(char) * JSON_REQ_ID_MAX);
+    jrsp->id = rand() % 4096;
+
+    snprintf(jrsp->type, JSON_REQ_ID_MAX, JSON_RESP_TYPE);
+
+    return jrsp;
+}
+
 char *get_json_str_obj(struct json_object *jobj, char *field)
 {
     struct json_object *jfield;

@@ -15,13 +15,13 @@
 
 #include "rpc-broker.h"
 
-// test
+
 void *tester(void *conn_obj)
 {
     DBusConnection *conn = (DBusConnection *) conn_obj;
     dbus_connection_flush(conn);
 
-    while    (1) {
+    while (1) {
         sleep(1);
         dbus_connection_read_write(conn, 0);
         DBusMessage *msg = dbus_connection_pop_message(conn);
@@ -34,35 +34,14 @@ void *tester(void *conn_obj)
             if (dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR)
                 DBUS_BROKER_WARNING("<signal error received>%s", "");
             else {
+
                 printf("Sender: %s\n", dbus_message_get_sender(msg));
                 DBUS_BROKER_EVENT("<signal received!>%s", "");
-                DBusMessageIter iter;
-                if (!dbus_message_iter_init(msg, &iter))
-                    printf("No-Argument Signal?\n");
-                else {
-                    void *arg;
-                    int type = dbus_message_iter_get_arg_type(&iter);
-                    switch (type) {
-
-                        case (DBUS_TYPE_INT32):
-                            arg = malloc(sizeof(int));
-                            dbus_message_iter_get_basic(&iter, arg);
-                            printf("Signal-Int: %d\n", *(int *) arg);
-                            break;
-                        case (DBUS_TYPE_STRING):
-                            arg = malloc(sizeof(char) * 1024);
-                            dbus_message_iter_get_basic(&iter, &arg);
-                            printf("Signal-String: %s\n", (char *) arg);
-                            break;
-
-                        default:
-                            printf("Missed Signal Arg-Type! <%d>\n", type);
-                            break;
-                    }
-                }
+                struct json_response *jrsp = init_jrsp();
+                load_json_response(msg, jrsp);
+                char *reply = prepare_json_reply(jrsp);
+                lws_ring_insert(ring, reply, 1);
             }
-            
-            break;
         }
     }
 
@@ -152,6 +131,7 @@ int init_request(int client, struct policy *dbus_policy)
     }
 
     dreq->domid = client_addr.domain;
+/*
     struct xs_handle *t = xs_open(XS_OPEN_READONLY);
     if (!t) 
         printf("XENSTORE-FAIL!\n");
@@ -161,6 +141,7 @@ int init_request(int client, struct policy *dbus_policy)
         printf("Domain: %s\n", path);
         free(path);
     }
+*/
     dreq->dom_rules = build_domain_policy(dreq->domid, dbus_policy); 
 
     ret = pthread_create(&dbus_req_thread, NULL, 
@@ -194,16 +175,34 @@ void sigint_handler(int signal)
     exit(0);
 }
 
+void load_json_response(DBusMessage *msg, struct json_response *jrsp)
+{
+    DBusMessageIter iter, sub;
+    dbus_message_iter_init(msg, &iter);
+
+    jrsp->arg_sig = dbus_message_iter_get_signature(&iter);
+
+    struct json_object *args = jrsp->args;
+
+    if (jrsp->arg_sig && jrsp->arg_sig[0] == 'a') {
+        dbus_message_iter_recurse(&iter, &sub);
+        iter = sub;
+        if (jrsp->arg_sig[1] == 'a' || 
+            jrsp->arg_sig[1] == 'o' || 
+            jrsp->arg_sig[1] == 's' ||
+            jrsp->arg_sig[1] == 'i') {
+            struct json_object *array = json_object_new_array();
+            json_object_array_add(jrsp->args, array);
+            args = array;
+        }
+    }
+
+    parse_signature(args, NULL, &iter);
+}
+
 struct json_response *make_json_request(struct json_request *jreq)
 {
-    struct json_response *jrsp = calloc(sizeof *jrsp + 
-                                       (sizeof(char *) * JSON_REQ_MAX), 1); 
-    // json_object_put
-    jrsp->args = json_object_new_array();
-    jrsp->response_to = malloc(sizeof(char) * JSON_REQ_ID_MAX);
-    jrsp->type = malloc(sizeof(char) * JSON_REQ_ID_MAX);
-
-    snprintf(jrsp->type, JSON_REQ_ID_MAX, JSON_RESP_TYPE);
+    struct json_response *jrsp = init_jrsp();
 
     DBusConnection *conn = jreq->conn;
 
@@ -234,11 +233,6 @@ struct json_response *make_json_request(struct json_request *jreq)
     }
     printf("\n");
     */
-    if (!conn) {
-        free(jrsp);
-        jrsp = NULL;
-        goto free_request;
-    }
 
     dbus_connection_flush(conn);
 
@@ -249,65 +243,29 @@ struct json_response *make_json_request(struct json_request *jreq)
         snprintf(jrsp->response_to, JSON_REQ_ID_MAX, JSON_RESP_ID);
         jrsp->arg_sig = "s";
         json_object_array_add(jrsp->args, json_object_new_string(busname));
-
-        goto free_request;
+        return jrsp;
     }
     
-    jrsp->id = rand() % 4096;
-
     snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, "%d", jreq->id);
     DBusMessage *msg = make_dbus_call(conn, jreq->dmsg);
 
-    // if AddMatch and at this point save connection bus-address mapped to client-fd
-    /*
+    //cleanup
+    if (!msg || dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) 
+        //DBUS_BROKER_WARNING("response to <%d> request failed", jreq->id); 
+        return NULL;
+
+    load_json_response(msg, jrsp);
+
     if (strcmp("AddMatch", jreq->dmsg->method) == 0) { 
         pthread_t test_thr;
         pthread_create(&test_thr, NULL, tester, conn);
     } 
-    */
-    //
-    DBusMessageIter iter, sub;
-    dbus_message_iter_init(msg, &iter);
-
-    if (!msg || dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) {
-        DBUS_BROKER_WARNING("response to <%d> request failed", jreq->id); 
-        free(jrsp);
-        jrsp = NULL;
-        goto free_request;
-    }
-
-    jrsp->arg_sig = dbus_message_iter_get_signature(&iter);
-    //
-    //printf("Signature: %s\n", jrsp->arg_sig);
-    //
-    struct json_object *args = jrsp->args;
-
-    if (jrsp->arg_sig && jrsp->arg_sig[0] == 'a') {
-        dbus_message_iter_recurse(&iter, &sub);
-        iter = sub;
-        if (jrsp->arg_sig[1] == 'a' || 
-            jrsp->arg_sig[1] == 'o' || 
-            jrsp->arg_sig[1] == 's' ||
-            jrsp->arg_sig[1] == 'i') {
-            struct json_object *array = json_object_new_array();
-            json_object_array_add(jrsp->args, array);
-            args = array;
-        }
-    }
-
- 
-    parse_signature(args, NULL, &iter);
-    
-free_request:
-
-    free(jreq->dmsg);
-    free(jreq);
-    //dbus_connection_unref(conn);
 
     /* XXX PRINT off arguments from response
     if (jrsp)
         printf("response-to %s %s\n", jrsp->response_to, json_object_to_json_string(jrsp->args));
     */
+
     return jrsp;
 }
 

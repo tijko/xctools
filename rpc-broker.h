@@ -15,6 +15,7 @@
 //
 #include <xenstore.h>
 //
+struct lws_ring *ring;
 sem_t *memory_lock;
 //
 
@@ -208,7 +209,7 @@ void print_usage(void);
 
 void sigint_handler(int signal);
 
-int ws_request_handler(int client, char *raw_req);
+int ws_request_handler(struct lws *wsi, char *raw_req);
 
 void run(struct dbus_broker_args *args);
 
@@ -233,3 +234,8 @@ struct rule **build_domain_policy(int domid, struct policy *dbus_policy);
 
 struct lws_context *create_ws_context(int port);
 
+void load_json_response(DBusMessage *msg, struct json_response *jrsp);
+
+char *prepare_json_reply(struct json_response *jrsp);
+
+struct json_response *init_jrsp(void);
