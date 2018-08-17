@@ -140,6 +140,7 @@ struct dbus_message {
 struct json_request {
     int id;
     DBusConnection *conn;
+    struct lws *wsi;
     struct dbus_message *dmsg;
 };
 
@@ -147,6 +148,9 @@ struct json_response {
     int id;
     char *response_to;
     char *type;        // set as bitfield?
+    char *path;
+    char *iface;
+    char *meth;
     char *arg_sig;
     struct json_object *args;
 };
@@ -159,6 +163,11 @@ struct dbus_message *convert_raw_dbus(const char *msg, size_t len);
 int parse_json_args(struct json_object *jarray, struct json_request *jreq);
 void add_jobj(struct json_object *args, char *key, struct json_object *jobj);
 void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter);
+
+struct broker_signal {
+    DBusConnection *conn;
+    struct lws *wsi;
+};
 
 struct policy {
     int vm_number;

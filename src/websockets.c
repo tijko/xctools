@@ -116,6 +116,8 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     if (!jreq)
         return 1; 
 
+    jreq->wsi = wsi;
+
     struct json_response *jrsp = make_json_request(jreq);
     if (!jrsp)
         return 1;

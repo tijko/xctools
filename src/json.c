@@ -67,11 +67,21 @@ struct json_request *convert_json_request(char *raw_json_req)
 struct json_object *convert_dbus_response(struct json_response *jrsp)
 {
     struct json_object *jobj = json_object_new_object();
-    
     json_object_object_add(jobj, "id", json_object_new_int(jrsp->id));
     json_object_object_add(jobj, "type", json_object_new_string(jrsp->type));
-    json_object_object_add(jobj, "response-to", 
-                           json_object_new_string(jrsp->response_to));
+
+    if (jrsp->response_to != NULL) {
+        json_object_object_add(jobj, "response-to", 
+                               json_object_new_string(jrsp->response_to));
+    } else {
+        json_object_object_add(jobj, "interface", 
+                               json_object_new_string(jrsp->iface));
+        json_object_object_add(jobj, "path", 
+                               json_object_new_string(jrsp->path));
+        json_object_object_add(jobj, "member", 
+                               json_object_new_string(jrsp->meth));
+    }
+
     json_object_object_add(jobj, "args", jrsp->args);
 
     return jobj;

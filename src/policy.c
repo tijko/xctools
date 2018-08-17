@@ -1,6 +1,5 @@
 #include "../rpc-broker.h"
 
-
 // create separate structures for each vm, where the /etc rules come first
 // followed by its own domain-specific rules?
 //

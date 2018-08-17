@@ -16,33 +16,35 @@
 #include "rpc-broker.h"
 
 
-void *tester(void *conn_obj)
+void *signal_subscription(void *sub)
 {
-    DBusConnection *conn = (DBusConnection *) conn_obj;
+    struct broker_signal *bsig = (struct broker_signal *) sub;
+    DBusConnection *conn = bsig->conn;
     dbus_connection_flush(conn);
 
     while (1) {
-        sleep(1);
-        dbus_connection_read_write(conn, 0);
+
+        sleep(2);
+        dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
         DBusMessage *msg = dbus_connection_pop_message(conn);
 
-        if (!msg)
+        if (!msg || dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
             continue;
-        else if (dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
-            printf("Not a signal?\n");
-        else {
-            if (dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR)
-                DBUS_BROKER_WARNING("<signal error received>%s", "");
-            else {
 
-                printf("Sender: %s\n", dbus_message_get_sender(msg));
-                DBUS_BROKER_EVENT("<signal received!>%s", "");
-                struct json_response *jrsp = init_jrsp();
-                load_json_response(msg, jrsp);
-                char *reply = prepare_json_reply(jrsp);
-                lws_ring_insert(ring, reply, 1);
-            }
-        }
+        DBUS_BROKER_EVENT("<signal received!>%s", "");
+        struct json_response *jrsp = init_jrsp();
+        jrsp->response_to = NULL;
+        jrsp->type = "signal";
+        jrsp->id = rand() % 4096;
+        load_json_response(msg, jrsp);
+        jrsp->iface = dbus_message_get_interface(msg);
+        jrsp->meth = dbus_message_get_member(msg);
+        jrsp->path = dbus_message_get_path(msg);
+        char *reply = prepare_json_reply(jrsp);
+        printf("Signal-reply: %s\n", reply);
+        lws_ring_insert(ring, reply, 1);
+        lws_callback_on_writable(bsig->wsi);
+        msg = NULL;
     }
 
     return NULL;
@@ -206,7 +208,6 @@ struct json_response *make_json_request(struct json_request *jreq)
 
     DBusConnection *conn = jreq->conn;
 
-    /* XXX debug
     printf("ID: %d Destination: %s Path: %s Iface: %s Member: %s ",
             jreq->id, jreq->dmsg->dest, jreq->dmsg->path, jreq->dmsg->iface, jreq->dmsg->method);
     for (int i=0; i < jreq->dmsg->arg_number; i++) {
@@ -232,6 +233,7 @@ struct json_response *make_json_request(struct json_request *jreq)
         }
     }
     printf("\n");
+    /* XXX debug
     */
 
     dbus_connection_flush(conn);
@@ -250,20 +252,24 @@ struct json_response *make_json_request(struct json_request *jreq)
     DBusMessage *msg = make_dbus_call(conn, jreq->dmsg);
 
     //cleanup
-    if (!msg || dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) 
-        //DBUS_BROKER_WARNING("response to <%d> request failed", jreq->id); 
+    if (!msg || dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) { 
+        DBUS_BROKER_WARNING("response to <%d> request failed", jreq->id); 
         return NULL;
+    }
 
     load_json_response(msg, jrsp);
 
     if (strcmp("AddMatch", jreq->dmsg->method) == 0) { 
-        pthread_t test_thr;
-        pthread_create(&test_thr, NULL, tester, conn);
+        pthread_t signal_thr;
+        struct broker_signal *bsig = malloc(sizeof *bsig);
+        bsig->conn = conn;
+        bsig->wsi = jreq->wsi;
+        pthread_create(&signal_thr, NULL, signal_subscription, bsig);
     } 
 
-    /* XXX PRINT off arguments from response
     if (jrsp)
         printf("response-to %s %s\n", jrsp->response_to, json_object_to_json_string(jrsp->args));
+    /* XXX PRINT off arguments from response
     */
 
     return jrsp;

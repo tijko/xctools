@@ -1,5 +1,6 @@
 #include "../rpc-broker.h"
 
+
 xmlNodePtr find_xml_property(char *target, char *property, xmlNodePtr node)
 {
     if (node == NULL)
