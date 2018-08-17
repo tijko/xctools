@@ -8,7 +8,7 @@ PV = "0+git${SRCPV}"
 SRCREV = "${AUTOREV}"
 SRC_URI = "git://github.com/tijko/rpc-broker;protocol=https;branch=master"
 
-S = "${WORKDIR}/git/rpc-broker"
+S = "${WORKDIR}/git/"
 
 EXTRA_OECONF += ""
 EXTRA_OEMAKE += ""
