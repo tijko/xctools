@@ -22,7 +22,8 @@ void *signal_subscription(void *sub)
     DBusConnection *conn = bsig->conn;
     dbus_connection_flush(conn);
 
-    while (1) {
+    while (dbus_connection_is_connected(conn) &&
+           wsi->socket_is_permanently_unusable > 0) {
 
         sleep(2);
         dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
@@ -46,6 +47,8 @@ void *signal_subscription(void *sub)
         lws_callback_on_writable(bsig->wsi);
         msg = NULL;
     }
+
+    printf("Signal Thread EXITED!\n");
 
     return NULL;
 }
