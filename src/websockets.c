@@ -95,7 +95,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     int client = lws_get_socket_fd(wsi);
 
     if (getpeername(client, (struct sockaddr *) &addr, &client_len) < 0) {
-        DBUS_BROKER_WARNING("function call failed <%s>", "getpeername");
+        DBUS_BROKER_WARNING("getpeername call failed <%d>", client);
         return 1;
     }
 /*

@@ -22,8 +22,8 @@ void *signal_subscription(void *sub)
     DBusConnection *conn = bsig->conn;
     dbus_connection_flush(conn);
 
-    while (dbus_connection_is_connected(conn) &&
-           wsi->socket_is_permanently_unusable > 0) {
+    while (dbus_connection_get_is_connected(conn) &&
+           bsig->wsi->socket_is_permanently_unusable > 0) {
 
         sleep(2);
         dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
@@ -130,7 +130,7 @@ int init_request(int client, struct policy *dbus_policy)
 
     if ((ret = getpeername(client, (struct sockaddr *) &client_addr, 
                                                        &client_len)) < 0) {
-        DBUS_BROKER_WARNING("function call failed <%s>", "getpeername");
+        DBUS_BROKER_WARNING("getpeername call failed <%d>", client);
         free(dreq);
         goto request_done; 
     }
