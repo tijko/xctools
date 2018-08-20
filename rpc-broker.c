@@ -20,20 +20,19 @@ void *signal_subscription(void *sub)
 {
     struct broker_signal *bsig = (struct broker_signal *) sub;
     DBusConnection *conn = bsig->conn;
-    dbus_connection_flush(conn);
+    //dbus_connection_flush(conn);
 
-    while (dbus_connection_get_is_connected(conn) &&
-           bsig->wsi->socket_is_permanently_unusable > 0) {
+    while (dbus_connection_get_is_connected(conn)) { 
 
-        sleep(2);
+        sleep(1);
         dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
         DBusMessage *msg = dbus_connection_pop_message(conn);
 
         if (!msg || dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
             continue;
 
-        DBUS_BROKER_EVENT("<signal received!>%s", "");
         struct json_response *jrsp = init_jrsp();
+
         jrsp->response_to = NULL;
         jrsp->type = "signal";
         jrsp->id = rand() % 4096;
@@ -41,15 +40,18 @@ void *signal_subscription(void *sub)
         jrsp->iface = dbus_message_get_interface(msg);
         jrsp->meth = dbus_message_get_member(msg);
         jrsp->path = dbus_message_get_path(msg);
+
         char *reply = prepare_json_reply(jrsp);
-        printf("Signal-reply: %s\n", reply);
+
         lws_ring_insert(ring, reply, 1);
         lws_callback_on_writable(bsig->wsi);
         msg = NULL;
+        // free jrsp
+        dbus_connection_flush(conn);
     }
 
-    printf("Signal Thread EXITED!\n");
-
+    // free bsig
+    // close conn
     return NULL;
 }
 
@@ -114,7 +116,7 @@ struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
 
     const char *member = dbus_message_get_member(dbus_msg);
     dmsg->method = member ? member : "NULL";
-
+    // free msg
     return dmsg;
 }
 
@@ -128,11 +130,10 @@ int init_request(int client, struct policy *dbus_policy)
     v4v_addr_t client_addr;
     size_t client_len = sizeof(client_addr);
 
-    if ((ret = getpeername(client, (struct sockaddr *) &client_addr, 
-                                                       &client_len)) < 0) {
-        DBUS_BROKER_WARNING("getpeername call failed <%d>", client);
+    if ((ret = v4v_getpeername(client, &client_addr)) < 0) {
+        DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
         free(dreq);
-        goto request_done; 
+        goto request_done;
     }
 
     dreq->domid = client_addr.domain;
@@ -211,6 +212,7 @@ struct json_response *make_json_request(struct json_request *jreq)
 
     DBusConnection *conn = jreq->conn;
 
+    /* XXX debug
     printf("ID: %d Destination: %s Path: %s Iface: %s Member: %s ",
             jreq->id, jreq->dmsg->dest, jreq->dmsg->path, jreq->dmsg->iface, jreq->dmsg->method);
     for (int i=0; i < jreq->dmsg->arg_number; i++) {
@@ -236,7 +238,6 @@ struct json_response *make_json_request(struct json_request *jreq)
         }
     }
     printf("\n");
-    /* XXX debug
     */
 
     dbus_connection_flush(conn);
@@ -270,9 +271,9 @@ struct json_response *make_json_request(struct json_request *jreq)
         pthread_create(&signal_thr, NULL, signal_subscription, bsig);
     } 
 
+    /* XXX PRINT off arguments from response
     if (jrsp)
         printf("response-to %s %s\n", jrsp->response_to, json_object_to_json_string(jrsp->args));
-    /* XXX PRINT off arguments from response
     */
 
     return jrsp;
@@ -345,7 +346,6 @@ void run(struct dbus_broker_args *args)
 
         DBUS_BROKER_EVENT("<Client has made a connection> [Dom: %d Client: %d]",
                             server->peer.domain, client);
-
         init_request(client, dbus_broker_policy);
     }
 

@@ -148,9 +148,9 @@ struct json_response {
     int id;
     char *response_to;
     char *type;        // set as bitfield?
-    char *path;
-    char *iface;
-    char *meth;
+    const char *path;
+    const char *iface;
+    const char *meth;
     char *arg_sig;
     struct json_object *args;
 };

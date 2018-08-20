@@ -37,6 +37,7 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
         case LWS_CALLBACK_SERVER_WRITEABLE: {
 
             sem_wait(memory_lock);
+
             if (lws_ring_get_count_waiting_elements(ring, NULL) > 0) {
                 char *rsp = (char *) lws_ring_get_element(ring, NULL);
                 memcpy(user + LWS_SEND_BUFFER_PRE_PADDING, rsp, strlen(rsp));
@@ -47,6 +48,7 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
                 lws_ring_consume(ring, NULL, NULL, 1); 
                 lws_callback_on_writable(wsi);
             }
+
             sem_post(memory_lock);
 
             break;
@@ -110,7 +112,6 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     }
 */
 
-    // XXX need to hand-off struct lws wsi for call-back
     struct json_request *jreq = convert_json_request(raw_req);
 
     if (!jreq)
@@ -119,10 +120,11 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     jreq->wsi = wsi;
 
     struct json_response *jrsp = make_json_request(jreq);
+    // free jreq
     if (!jrsp)
         return 1;
-
     char *reply = prepare_json_reply(jrsp);
+    // free jrsp
     lws_ring_insert(ring, reply, 1);
     // finish clean-up of structs...
 
