@@ -248,3 +248,5 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp);
 char *prepare_json_reply(struct json_response *jrsp);
 
 struct json_response *init_jrsp(void);
+//
+void stubdom_check(int domid);

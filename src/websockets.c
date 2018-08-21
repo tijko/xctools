@@ -96,22 +96,13 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     socklen_t client_len = sizeof(addr);
     int client = lws_get_socket_fd(wsi);
 
-    if (getpeername(client, (struct sockaddr *) &addr, &client_len) < 0) {
+    if (v4v_getpeername(client, &addr) < 0) {
         DBUS_BROKER_WARNING("getpeername call failed <%d>", client);
         return 1;
     }
-/*
-    struct xs_handle *t = xs_open(XS_OPEN_READONLY);
-    if (!t) 
-        printf("XENSTORE-FAIL!\n");
-    else {
-        // query domain
-        char *path = xs_get_domain_path(t, addr.domain);
-        printf("Domain: %s\n", path);
-        free(path);
-    }
-*/
-
+    //
+    stubdom_check(addr.domain);
+    //
     struct json_request *jreq = convert_json_request(raw_req);
 
     if (!jreq)

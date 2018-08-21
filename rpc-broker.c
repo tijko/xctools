@@ -120,6 +120,32 @@ struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
     return dmsg;
 }
 
+void stubdom_check(int domid)
+{
+    struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
+
+    size_t len = 1;
+
+    if (!xsh) { 
+        printf("XENSTORE-FAIL!\n");
+        return;
+    }
+
+    char *path = xs_get_domain_path(xsh, domid);
+    path = realloc(path, sizeof(char) * strlen(path) + 7); 
+    strcat(path, "/target");
+
+    xs_transaction_t xst = xs_transaction_start(xsh);
+
+    if (!xs_read(xsh, xst, path, &len))
+        printf("%s not stubdom\n", path); 
+    else
+        printf("%s is stubdom\n", path);
+
+    xs_transaction_end(xsh, xst, false);
+    free(path);
+}
+
 int init_request(int client, struct policy *dbus_policy)
 {
     int ret;
@@ -137,17 +163,9 @@ int init_request(int client, struct policy *dbus_policy)
     }
 
     dreq->domid = client_addr.domain;
-/*
-    struct xs_handle *t = xs_open(XS_OPEN_READONLY);
-    if (!t) 
-        printf("XENSTORE-FAIL!\n");
-    else {
-        // query domain
-        char *path = xs_get_domain_path(t, dreq->domid);
-        printf("Domain: %s\n", path);
-        free(path);
-    }
-*/
+    //
+    stubdom_check(dreq->domid);
+    //
     dreq->dom_rules = build_domain_policy(dreq->domid, dbus_policy); 
 
     ret = pthread_create(&dbus_req_thread, NULL, 
