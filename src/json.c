@@ -216,11 +216,10 @@ void free_json_response(struct json_response *jrsp)
     if (jrsp->arg_sig) {
         struct json_object *array = jrsp->args;
         for (int i=0; i < strlen(jrsp->arg_sig); i++) {
-            struct json_object *arg = json_object_get_idx(array, i);
+            struct json_object *arg = json_object_array_get_idx(array, i);
             json_object_put(arg);            
         }
 
-        free(jrsp->arg_sig);
         json_object_put(array);
     }
 

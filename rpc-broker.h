@@ -251,7 +251,7 @@ char *prepare_json_reply(struct json_response *jrsp);
 
 struct json_response *init_jrsp(void);
 
-void stubdom_check(int domid);
+int stubdom_check(int domid);
 
 struct rule *create_rule(char *rule);
 

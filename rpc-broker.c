@@ -295,8 +295,8 @@ void run(struct dbus_broker_args *args)
     srand48(time(NULL));
     dbus_broker_policy = build_policy(args->rule_file);
 
-    struct rules *head = dbus_broker_policy->domain_rules;
     /* XXX test 
+    struct rules *head = dbus_broker_policy->domain_rules;
     while (head) {
         printf("UUID: %s\n", head->uuid);
         struct rule **rule_list = head->rule_list;
