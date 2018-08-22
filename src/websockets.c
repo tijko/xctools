@@ -13,6 +13,7 @@ char *prepare_json_reply(struct json_response *jrsp)
     snprintf(reply, WS_RING_BUFFER_MEMBER_SIZE - 1, "%s", 
              json_object_to_json_string(jobj));
 
+    // put json-object
     return reply;
 }
 
@@ -22,15 +23,13 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
     switch (reason) {
 
         case LWS_CALLBACK_RECEIVE: {
-            //
+            
             sem_wait(memory_lock);
             memset(user, '\0', WS_USER_MEM_SIZE); 
             memcpy(user, in, len);
-
             if (ws_request_handler(wsi, user) == 0)
                 lws_callback_on_writable(wsi);
             sem_post(memory_lock);
-            //
             break;
         }
 
@@ -100,7 +99,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
         DBUS_BROKER_WARNING("getpeername call failed <%d>", client);
         return 1;
     }
-    //
+    // 
     stubdom_check(addr.domain);
     //
     struct json_request *jreq = convert_json_request(raw_req);
@@ -114,10 +113,11 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     // free jreq
     if (!jrsp)
         return 1;
+
     char *reply = prepare_json_reply(jrsp);
-    // free jrsp
+
+    free_json_response(jrsp);
     lws_ring_insert(ring, reply, 1);
-    // finish clean-up of structs...
 
     return 0;
 }

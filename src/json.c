@@ -207,3 +207,23 @@ int parse_json_args(struct json_object *jarray, struct json_request *jreq)
 
     return 0;
 }
+
+void free_json_response(struct json_response *jrsp)
+{
+    if (jrsp->response_to)
+        free(jrsp->response_to);
+
+    if (jrsp->arg_sig) {
+        struct json_object *array = jrsp->args;
+        for (int i=0; i < strlen(jrsp->arg_sig); i++) {
+            struct json_object *arg = json_object_get_idx(array, i);
+            json_object_put(arg);            
+        }
+
+        free(jrsp->arg_sig);
+        json_object_put(array);
+    }
+
+    free(jrsp);
+}
+

@@ -19,7 +19,6 @@ void *signal_subscription(void *sub)
 {
     struct broker_signal *bsig = (struct broker_signal *) sub;
     DBusConnection *conn = bsig->conn;
-    //dbus_connection_flush(conn);
 
     while (dbus_connection_get_is_connected(conn)) { 
 
@@ -31,10 +30,9 @@ void *signal_subscription(void *sub)
             continue;
 
         struct json_response *jrsp = init_jrsp();
-
+        free(jrsp->response_to);
         jrsp->response_to = NULL;
-        jrsp->type = "signal";
-        jrsp->id = rand() % 4096;
+        snprintf(jrsp->type, 7, "signal");
         load_json_response(msg, jrsp);
         jrsp->iface = dbus_message_get_interface(msg);
         jrsp->meth = dbus_message_get_member(msg);
@@ -45,12 +43,13 @@ void *signal_subscription(void *sub)
         lws_ring_insert(ring, reply, 1);
         lws_callback_on_writable(bsig->wsi);
         msg = NULL;
-        // free jrsp
+        free_json_response(jrsp);
         dbus_connection_flush(conn);
     }
 
-    // free bsig
-    // close conn
+    dbus_connection_close(conn);
+    free(bsig);
+
     return NULL;
 }
 
@@ -119,27 +118,25 @@ struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
     return dmsg;
 }
 
-void stubdom_check(int domid)
+int stubdom_check(int domid)
 {
     struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
 
     size_t len = 1;
 
-    if (!xsh) { 
-        printf("XENSTORE-FAIL!\n");
-        return;
-    }
+    if (!xsh) 
+        return -1;
 
     char *path = xs_get_domain_path(xsh, domid);
     path = realloc(path, sizeof(char) * strlen(path) + 7); 
     strcat(path, "/target");
 
-    if (!xs_read(xsh, XBT_NULL, path, &len))
-        printf("%s not stubdom -> %s\n", path, strerror(errno)); 
-    else
-        printf("%s is stubdom\n", path);
+    int ret = xs_read(xsh, XBT_NULL, path, &len);
 
     free(path);
+    xs_close(xsh);
+
+    return ret;
 }
 
 int init_request(int client, struct policy *dbus_policy)
@@ -269,9 +266,9 @@ struct json_response *make_json_request(struct json_request *jreq)
     snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, "%d", jreq->id);
     DBusMessage *msg = make_dbus_call(conn, jreq->dmsg);
 
-    //cleanup
     if (!msg || dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) { 
         DBUS_BROKER_WARNING("response to <%d> request failed", jreq->id); 
+        free_json_response(jrsp);
         return NULL;
     }
 
@@ -299,6 +296,7 @@ void run(struct dbus_broker_args *args)
     dbus_broker_policy = build_policy(args->rule_file);
 
     struct rules *head = dbus_broker_policy->domain_rules;
+    /* XXX test 
     while (head) {
         printf("UUID: %s\n", head->uuid);
         struct rule **rule_list = head->rule_list;
@@ -306,7 +304,6 @@ void run(struct dbus_broker_args *args)
             printf("    %s\n", rule_list[i]->rule_string);
         head = head->next;
     }
-    /* XXX test 
     */ 
 
     // XXX lock-test->

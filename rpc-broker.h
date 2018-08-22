@@ -13,12 +13,11 @@
 #include <syslog.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-//
 #include <xenstore.h>
-//
+
 struct lws_ring *ring;
 sem_t *memory_lock;
-//
+
 
 #define DBUS_BROKER_ERROR(call)                                       \
     do {                                                              \
@@ -102,7 +101,6 @@ struct dbus_request {
     struct rule **dom_rules;
 };
 
-// linked-list of per-domain rule(s)
 struct rules {
     int domid;
     int count;
@@ -252,9 +250,12 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp);
 char *prepare_json_reply(struct json_response *jrsp);
 
 struct json_response *init_jrsp(void);
-//
+
 void stubdom_check(int domid);
-//
+
 struct rule *create_rule(char *rule);
-//
+
 struct rules *get_etc_rules(const char *rule_filename);
+
+void free_json_response(struct json_response *jrsp);
+

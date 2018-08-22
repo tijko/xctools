@@ -59,8 +59,6 @@ struct rule *create_rule(char *rule)
     while (token) {
         
         char *field = strtok_r(NULL, delimiter, &ruleptr);
-        printf("Token: %s\n", token);
-        printf("Field: %s\n\n", field);
 
         switch (token[0]) {
 
@@ -109,8 +107,7 @@ struct rule *create_rule(char *rule)
             }
 
             default:
-                // free return-null
-                printf("Token not found: %s\n", token);
+                DBUS_BROKER_WARNING("Unrecognized Rule-Token: %s", token);
                 break;
         }
 
@@ -210,8 +207,7 @@ struct rules *get_etc_rules(const char *rule_filename)
 
     int idx = 0;
 
-    while (rule_token != NULL) {
-        printf("TEST-TOKEN: %s\n", rule_token);
+    while (rule_token) {
         if (isalpha(rule_token[0])) {
             etc_rules->rule_list = realloc(etc_rules->rule_list, 
                                            sizeof(struct rule *) * (idx + 1));
