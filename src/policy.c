@@ -43,6 +43,86 @@ struct rule **build_domain_policy(int domid, struct policy *dbus_policy)
     return req_list;
 }
 
+struct rule *create_rule(char *rule)
+{
+    struct rule *current = calloc(1, sizeof(struct rule));
+    current->rule_string = strdup(rule);
+
+    char *ruleptr;
+    char *delimiter = " ";
+    char *token = strtok_r(rule, delimiter, &ruleptr);
+
+    current->policy = token[0] == 'a' ? 1 : 0;
+
+    token = strtok_r(NULL, delimiter, &ruleptr);
+ 
+    while (token) {
+        
+        char *field = strtok_r(NULL, delimiter, &ruleptr);
+        printf("Token: %s\n", token);
+        printf("Field: %s\n\n", field);
+
+        switch (token[0]) {
+
+            case ('d'): {
+
+                if (token[1] == 'e')
+                    current->dest = strdup(field);
+                else {
+                    current->domtype = 1;
+                    current->domname = strdup(field);
+                }
+
+                break;
+            }
+
+            case ('s'): {
+                current->stubdom = 1;
+                break;
+            }
+
+            case ('i'): {
+
+                if (token[1] == 'n')
+                    current->iface = strdup(field);
+                else {
+                    size_t boolean_length = strlen(token) + strlen(field) + 1;
+                    char *boolean_rule = malloc(sizeof(char) * boolean_length); 
+                    snprintf(boolean_rule, boolean_length - 1, "%s %s",
+                             token, field);
+                    current->if_bool = boolean_rule; 
+                    token = strtok_r(NULL, delimiter, &ruleptr);
+                    current->if_bool_flag = token[0] == 't' ? 1 : 0;
+                }
+                
+                break;
+            }
+
+            case ('p'): {
+                current->path = strdup(field);                
+                break;
+            }
+
+            case ('m'): {
+                current->member = strdup(field);
+                break;
+            }
+
+            default:
+                // free return-null
+                printf("Token not found: %s\n", token);
+                break;
+        }
+
+        token = strtok_r(NULL, delimiter, &ruleptr);
+    }
+
+    return current;
+}
+
+// Have this re-used for policy-file aswell...
+// db-rule-query is making a dbus-request and spitting out the string of next
+// rule found 
 int get_rules(DBusConnection *conn, struct rules *domain_rules)
 {
     int rule_count = 0;
@@ -53,12 +133,13 @@ int get_rules(DBusConnection *conn, struct rules *domain_rules)
         domain_rules->rule_list = realloc(domain_rules->rule_list, 
                                           sizeof(struct rule *) * 
                                                 (rule_count + 1)); 
-
-        domain_rules->rule_list[rule_count] = malloc(sizeof(struct rule));
         rule = db_rule_query(conn, domain_rules->uuid, rule_count);
+        
+        if (rule) {
+            struct rule *current = create_rule(rule);
+            domain_rules->rule_list[rule_count++] = current;
+        } 
 
-        if (rule)
-            domain_rules->rule_list[rule_count++]->rule_string = rule;
     } while (rule != NULL);
 
     domain_rules->count = rule_count;
@@ -103,6 +184,46 @@ void free_policy(struct policy *dbus_policy)
     free_rules(dbus_policy->domain_rules);
     free_rules(dbus_policy->etc_rules);
     free(dbus_policy);
+}
+
+struct rules *get_etc_rules(const char *rule_filename)
+{
+    struct stat policy_stat;
+    if (stat(rule_filename, &policy_stat) < 0)
+        return NULL;
+
+    size_t policy_size = policy_stat.st_size;
+    char *policy = malloc(sizeof(char) * policy_size + 1);
+
+    int policy_fd = open(rule_filename, O_RDONLY);
+
+    int rbytes = read(policy_fd, policy, policy_size);
+    close(policy_fd);
+
+    policy[rbytes] = '\0';
+    char *newline = "\n";
+    char *fileptr;
+    char *rule_token = strtok_r(policy, newline, &fileptr);
+
+    struct rules *etc_rules = malloc(sizeof(struct rules));
+    etc_rules->rule_list = NULL;
+
+    int idx = 0;
+
+    while (rule_token != NULL) {
+        printf("TEST-TOKEN: %s\n", rule_token);
+        if (isalpha(rule_token[0])) {
+            etc_rules->rule_list = realloc(etc_rules->rule_list, 
+                                           sizeof(struct rule *) * (idx + 1));
+            char *line = strdup(rule_token);
+            etc_rules->rule_list[idx++] = create_rule(line);
+        }
+
+        rule_token = strtok_r(NULL, newline, &fileptr);
+    }
+
+    etc_rules->count = idx;
+    return etc_rules;
 }
 
 struct policy *build_policy(const char *rule_filename)
@@ -157,51 +278,7 @@ struct policy *build_policy(const char *rule_filename)
         dbus_message_iter_next(&sub);
     }
 
-// split-off 
-    dbus_policy->etc_rules = NULL;
-    struct stat policy_stat;
-    if (stat(rule_filename, &policy_stat) < 0)
-        goto return_policy;
-
-    size_t policy_size = policy_stat.st_size;
-    char *policy = malloc(sizeof(char) * policy_size + 1);
-
-    int policy_fd = open(rule_filename, O_RDONLY);
-
-    if (policy_fd < 0)
-        goto free_etc;
-
-    int rbytes = read(policy_fd, policy, policy_size);
-    close(policy_fd);
-
-    policy[rbytes] = '\0';
-
-    char *rule_token = strtok(policy, "\n");
-
-    struct rules *etc_rules = malloc(sizeof(struct rules));
-    etc_rules->rule_list = NULL;
-
-    int idx = 0;
-
-    while (rule_token != NULL) {
-
-        etc_rules->rule_list = realloc(etc_rules->rule_list, 
-                                       sizeof(struct rule *) * (idx + 1));
-        etc_rules->rule_list[idx] = malloc(sizeof(struct rule));
-
-        if (rule_token[0] != '#')
-            etc_rules->rule_list[idx++]->rule_string = rule_token;
-
-        rule_token = strtok(NULL, "\n");
-    }
-
-    etc_rules->count = idx;
-    dbus_policy->etc_rules = etc_rules;
-
-free_etc:
-    free(policy);
-
-return_policy:
+    dbus_policy->etc_rules = get_etc_rules(rule_filename);
 
     return dbus_policy;
 }

@@ -1,5 +1,4 @@
 #define _GNU_SOURCE
-#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
@@ -135,14 +134,11 @@ void stubdom_check(int domid)
     path = realloc(path, sizeof(char) * strlen(path) + 7); 
     strcat(path, "/target");
 
-    xs_transaction_t xst = xs_transaction_start(xsh);
-
-    if (!xs_read(xsh, xst, path, &len))
-        printf("%s not stubdom\n", path); 
+    if (!xs_read(xsh, XBT_NULL, path, &len))
+        printf("%s not stubdom -> %s\n", path, strerror(errno)); 
     else
         printf("%s is stubdom\n", path);
 
-    xs_transaction_end(xsh, xst, false);
     free(path);
 }
 
@@ -302,7 +298,6 @@ void run(struct dbus_broker_args *args)
     srand48(time(NULL));
     dbus_broker_policy = build_policy(args->rule_file);
 
-    /* XXX test 
     struct rules *head = dbus_broker_policy->domain_rules;
     while (head) {
         printf("UUID: %s\n", head->uuid);
@@ -311,6 +306,7 @@ void run(struct dbus_broker_args *args)
             printf("    %s\n", rule_list[i]->rule_string);
         head = head->next;
     }
+    /* XXX test 
     */ 
 
     // XXX lock-test->

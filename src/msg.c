@@ -11,7 +11,6 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
 
     for (int i=0; rulelist[i]; i++) {
         char *rule = rulelist[i]->rule_string;
-        // check rule?
         if (!strstr(rule, dest))
             continue;
 

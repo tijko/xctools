@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include <ctype.h>
 #include <dbus/dbus.h>
 #include <json.h>
 #include <libwebsockets.h>
@@ -111,14 +112,17 @@ struct rules {
 };
 
 struct rule {
-    int policy:1; 
-    int if_bool_flag:1; 
-    char *dest;
-    char *path;
-    char *iface;
-    char *member;
-    char *if_bool;
-    char *rule_string;
+    int policy:1;         // allow/deny 
+    int stubdom:1;        // stubdom rule
+    int domtype:1;        // rule has dom-type specific
+    int if_bool_flag:1;   // the if-boolean is true/false
+    char *dest;           // can be NULL
+    char *path;           // can be NULL
+    char *iface;          // can be NULL
+    char *member;         // can be NULL
+    char *if_bool;        // the if-boolean condition (eg "if dom-store write true")
+    char *domname;        // dom-type name
+    char *rule_string;    // the entirety of the rule...
 };
 
 struct dbus_message {
@@ -250,3 +254,7 @@ char *prepare_json_reply(struct json_response *jrsp);
 struct json_response *init_jrsp(void);
 //
 void stubdom_check(int domid);
+//
+struct rule *create_rule(char *rule);
+//
+struct rules *get_etc_rules(const char *rule_filename);
