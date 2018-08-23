@@ -159,7 +159,7 @@ struct rule *create_rule(char *rule)
         printf("%s\n", current->domname);
     else
         printf("None\n");
-     
+	printf("Rule: %s\n\n", current->rule_string);     
     return current;
 }
 
