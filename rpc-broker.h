@@ -109,6 +109,7 @@ struct rules {
     struct rule **rule_list;
 };
 
+// add type-qualifiers
 struct rule {
     int policy:1;         // allow/deny 
     int stubdom:1;        // stubdom rule
@@ -124,6 +125,10 @@ struct rule {
 };
 
 struct dbus_message {
+    // set bit-field for stubdom?
+    // set a field for domtype (or grab in filter (domid needed))?
+    // on a similar note, the xenclient-db attributes for if-boolean 
+    // conditions
     const char *dest;
     const char *iface;
     const char *path;

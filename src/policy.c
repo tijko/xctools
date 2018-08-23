@@ -45,6 +45,8 @@ struct rule **build_domain_policy(int domid, struct policy *dbus_policy)
 
 struct rule *create_rule(char *rule)
 {
+    // How-to interact with "out-any" 
+    // (i think Jed mentioned to ignore it for now)
     struct rule *current = calloc(1, sizeof(struct rule));
     current->rule_string = strdup(rule);
 
@@ -107,6 +109,15 @@ struct rule *create_rule(char *rule)
             }
 
             default:
+                // the 4(?) single cases...
+                // "deny all"
+                // "allow all"
+                // the above, is just the policy bit-field set with all others
+                // as null...this will carry-over that blanket policy
+                // when testing a request against all standing rules...
+                // "deny out-any"
+                // "allow out-any"
+                // filter warning for to not log these
                 DBUS_BROKER_WARNING("Unrecognized Rule-Token: %s", token);
                 break;
         }
@@ -114,6 +125,41 @@ struct rule *create_rule(char *rule)
         token = strtok_r(NULL, delimiter, &ruleptr);
     }
 
+    printf("Rule-Policy: %d\n", current->policy);
+    printf("Stubdom    : %d\n", current->stubdom);
+    printf("Domtype    : %d\n", current->domtype);
+    printf("If-bool    : %d\n", current->if_bool_flag);
+    printf("Destination: ");
+    if (current->dest)
+        printf("%s\n", current->dest);
+    else
+        printf("None\n");
+    printf("Path       : ");
+    if (current->path)
+        printf("%s\n", current->path);
+    else
+        printf("None\n");
+    printf("Interface  : ");
+    if (current->iface)
+        printf("%s\n", current->iface);
+    else
+        printf("None\n");
+    printf("Method     : ");
+    if (current->member)
+        printf("%s\n", current->member);
+    else
+        printf("None\n");
+    printf("Condition  : ");
+    if (current->if_bool)
+        printf("%s\n", current->if_bool);
+    else
+        printf("None\n");
+    printf("Domname    : ");
+    if (current->domname)
+        printf("%s\n", current->domname);
+    else
+        printf("None\n");
+     
     return current;
 }
 
