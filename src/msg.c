@@ -23,6 +23,9 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
     }
 
     char req_msg[1024];
+    if (!dmsg->path)
+        dmsg->path = "/";
+
     snprintf(req_msg, 1023, "Dom: %d [Dest: %s Path: %s Iface: %s Meth: %s]",
                       domid, dmsg->dest, dmsg->path, dmsg->iface, dmsg->method);
     

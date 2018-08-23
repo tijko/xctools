@@ -109,12 +109,14 @@ struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
     struct dbus_message *dmsg = malloc(sizeof *dmsg);
     dmsg->dest = dbus_message_get_destination(dbus_msg);
 
+    const char *path = dbus_message_get_path(dbus_msg);
+    dmsg->path = path ? path : "/";
+
     const char *iface = dbus_message_get_interface(dbus_msg);
     dmsg->iface = iface ? iface : "NULL";
 
     const char *member = dbus_message_get_member(dbus_msg);
     dmsg->method = member ? member : "NULL";
-    // free msg
     return dmsg;
 }
 
