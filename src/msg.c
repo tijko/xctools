@@ -69,6 +69,7 @@ int exchange(int rsock, int ssock,
 int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
 {
     DBusConnection *conn;
+    char *uuid, *arg;
 
     if (((policy_rule->stubdom && stubdom_check(domid) < 1))             || 
         (policy_rule->dest && strcmp(policy_rule->dest, dmsg->dest))     ||
@@ -80,11 +81,12 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
     if (policy_rule->if_bool) {
 
         conn = create_dbus_connection();
-        char *arg;
-        char *base = DBUS_REQ_ARG(arg, "%d", domid);
-        char *req = DBUS_REQ_ARG(arg, "/vm/00000000-0000-0000-00000000000%s/%s",
-                                 base, policy_rule->if_bool);
-        char *attr_cond = db_query(conn, req);
+
+        DBUS_REQ_ARG(uuid, "%d", domid);
+        DBUS_REQ_ARG(arg, "/vm/00000000-0000-0000-00000000000%s/%s",
+                                 uuid, policy_rule->if_bool);
+
+        char *attr_cond = db_query(conn, arg);
     
         if (!attr_cond || (attr_cond[0] == 't' && 
                            policy_rule->if_bool_flag == 0) ||
@@ -96,9 +98,10 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
     if (policy_rule->domname) {
 
         conn = create_dbus_connection();
-        char *arg;
-        char *base = DBUS_REQ_ARG(arg, "%d", domid);
-        char *uuid = DBUS_REQ_ARG(arg, "/vm/00000000-0000-0000-00000000000%s/type", base);
+
+        DBUS_REQ_ARG(uuid, "%d", domid);
+        DBUS_REQ_ARG(arg, "/vm/00000000-0000-0000-00000000000%s/type", uuid);
+
         char *dom_type = db_query(conn, arg);
 
         if (!dom_type || strcmp(policy_rule->domname, dom_type))
