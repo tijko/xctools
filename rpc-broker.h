@@ -111,10 +111,10 @@ struct rules {
 
 // add type-qualifiers
 struct rule {
-    int policy:1;         // allow/deny 
-    int stubdom:1;        // stubdom rule
-    int domtype:1;        // rule has dom-type specific
-    int if_bool_flag:1;   // the if-boolean is true/false
+    int policy;         // allow/deny 
+    int stubdom;        // stubdom rule
+    int domtype;        // rule has dom-type specific
+    int if_bool_flag;   // the if-boolean is true/false
     char *dest;           // can be NULL
     char *path;           // can be NULL
     char *iface;          // can be NULL

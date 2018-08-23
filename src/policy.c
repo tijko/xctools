@@ -86,8 +86,8 @@ struct rule *create_rule(char *rule)
                 if (token[1] == 'n')
                     current->iface = strdup(field);
                 else {
-                    size_t boolean_length = strlen(token) + strlen(field) + 1;
-                    char *boolean_rule = malloc(sizeof(char) * boolean_length); 
+                    //size_t boolean_length = strlen(token) + strlen(field) + 1;
+                    char *boolean_rule = malloc(sizeof(char) * 256); 
                     snprintf(boolean_rule, boolean_length - 1, "%s %s",
                              token, field);
                     current->if_bool = boolean_rule; 
