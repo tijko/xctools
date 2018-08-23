@@ -23,13 +23,13 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
     }
 
     char req_msg[1024];
-    snprintf(req_msg, 1023, "%s Dom: %d [Dest: %s Path: %s Iface: %s Meth: %s]",
-                      domid, dmsg->dest, dmsg->path, dmsg->iface, dmsg->member);
+    snprintf(req_msg, 1023, "Dom: %d [Dest: %s Path: %s Iface: %s Meth: %s]",
+                      domid, dmsg->dest, dmsg->path, dmsg->iface, dmsg->method);
     
     if (policy == 0)
         DBUS_BROKER_WARNING("%s <%s>", req_msg, "Dropped request");
     else
-        DBUS_BROKER_EVENT("%s <%s>", req_msg "Passed request");
+        DBUS_BROKER_EVENT("%s <%s>", req_msg, "Passed request");
 
     return policy;
 }
@@ -77,9 +77,10 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
     if (policy_rule->if_bool) {
 
         conn = create_dbus_connection();
-        char *base = DBUS_REQ_ARG("%d", domid);
-        char *req = DBUS_REQ_ARG("/vm/00000000-0000-0000-00000000000%s/%s", 
-                                   base, policy_rule->if_bool);
+        char *arg;
+        char *base = DBUS_REQ_ARG(arg, "%d", domid);
+        char *req = DBUS_REQ_ARG(arg, "/vm/00000000-0000-0000-00000000000%s/%s",
+                                 base, policy_rule->if_bool);
         char *attr_cond = db_query(conn, req);
     
         if (!attr_cond || (attr_cond[0] == 't' && 
@@ -92,11 +93,10 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
     if (policy_rule->domname) {
 
         conn = create_dbus_connection();
-        char *base = DBUS_REQ_ARG("%d", domid);
-        char *uuid = DBUS_REQ_ARG("/vm/00000000-0000-0000-00000000000%s/type", base);
-        free(base);
-        char *dom_type = db_query(conn, uuid)
-        free(uuid);
+        char *arg;
+        char *base = DBUS_REQ_ARG(arg, "%d", domid);
+        char *uuid = DBUS_REQ_ARG(arg, "/vm/00000000-0000-0000-00000000000%s/type", base);
+        char *dom_type = db_query(conn, arg);
 
         if (!dom_type || strcmp(policy_rule->domname, dom_type))
             return 0;

@@ -38,7 +38,7 @@ sem_t *memory_lock;
 #define DBUS_BROKER_WARNING(fmt, ...) DBUS_LOG(LOG_WARNING, fmt, __VA_ARGS__)
 #define DBUS_BROKER_EVENT(fmt, ...)   DBUS_LOG(LOG_INFO, fmt, __VA_ARGS__)
 
-#define DBUS_REQ_ARG(buf, fmt, ...) asprintf(&buf, fmt, __VA_ARGS__);
+#define DBUS_REQ_ARG(buf, fmt, ...) ({ asprintf(&buf, fmt, __VA_ARGS__); })
 
 #define BROKER_DEFAULT_PORT 5555
 #define BROKER_UI_PORT      8080
