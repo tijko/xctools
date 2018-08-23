@@ -38,6 +38,8 @@ sem_t *memory_lock;
 #define DBUS_BROKER_WARNING(fmt, ...) DBUS_LOG(LOG_WARNING, fmt, __VA_ARGS__)
 #define DBUS_BROKER_EVENT(fmt, ...)   DBUS_LOG(LOG_INFO, fmt, __VA_ARGS__)
 
+#define DBUS_REQ_ARG(buf, fmt, ...) asprintf(&buf, fmt, __VA_ARGS__);
+
 #define BROKER_DEFAULT_PORT 5555
 #define BROKER_UI_PORT      8080
         
@@ -200,7 +202,7 @@ void *broker_message(void *request);
 
 int connect_to_system_bus(void);
 
-char *db_rule_query(DBusConnection *conn, char *uuid, int rule_number);
+char *db_query(DBusConnection *conn, char *arg);
 
 void *dbus_request(void *_req);
 

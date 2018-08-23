@@ -65,35 +65,44 @@ int exchange(int rsock, int ssock,
 
 int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
 {
-    // on dom-type make-dbus-call with uuid vm defined? xenclient-db
-    // on if-boolean make-dbus-call (gets all attributes?) xenclient-db
-    // if dmsg makes it thru return policy_rule
-    if (policy_rule->stubdom && stubdom_check(domid) < 1) 
-        return 0;    
+    DBusConnection *conn;
 
-    if (policy_rule->dest && strcmp(policy_rule->dest, dmsg->dest))
-        return 0;
-
-    if (policy_rule->path && strcmp(policy_rule->path, dmsg->path))
-        return 0;
-
-    if (policy_rule->iface && strcmp(policy_rule->iface, dmsg->iface))
-        return 0;
-
-    if (policy_rule->member && strcmp(policy_rule->member, dmsg->method))
+    if (((policy_rule->stubdom && stubdom_check(domid) < 1))             || 
+        (policy_rule->dest && strcmp(policy_rule->dest, dmsg->dest))     ||
+        (policy_rule->path && strcmp(policy_rule->path, dmsg->path))     ||
+        (policy_rule->iface && strcmp(policy_rule->iface, dmsg->iface))  ||
+        (policy_rule->member && strcmp(policy_rule->member, dmsg->method)))
         return 0;
 
     if (policy_rule->if_bool) {
-        // look-up "if-boolean token (set field for condition)
-        // xenclient-db attribute look-up (dbus-make-call --> db)
-        // if conditions doesn't exist
-        // or condition value don't match return 0
+
+        conn = create_dbus_connection();
+        char *base = DBUS_REQ_ARG("%d", domid);
+        char *req = DBUS_REQ_ARG("/vm/00000000-0000-0000-00000000000%s/%s", 
+                                   base, policy_rule->if_bool);
+        char *attr_cond = db_query(conn, req);
+    
+        if (!attr_cond || (attr_cond[0] == 't' && 
+                           policy_rule->if_bool_flag == 0) ||
+                          (attr_cond[0] == 'f' &&
+                           policy_rule->if_bool_flag == 1))
+            return 0;
     }
 
     if (policy_rule->domname) {
-        // make xenclient-db lookup name of domid
-        // make-dbus-call
-        // return 0 if don't match
+
+        conn = create_dbus_connection();
+        char *base = DBUS_REQ_ARG("%d", domid);
+        char *uuid = DBUS_REQ_ARG("/vm/00000000-0000-0000-00000000000%s/type", base);
+        free(base);
+        char *dom_type = db_query(conn, uuid)
+        free(uuid);
+
+        if (!dom_type || strcmp(policy_rule->domname, dom_type))
+            return 0;
+
+        if (dom_type);
+            free(dom_type);
     }
 
     return policy_rule->policy;

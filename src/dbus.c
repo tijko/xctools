@@ -175,33 +175,31 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
     return msg;
 }
 
-char *db_rule_query(DBusConnection *conn, char *uuid, int rule_number)
+char *db_query(DBusConnection *conn, char *arg)
 {
-    char *rule = malloc(sizeof(char) * RULE_MAX_LENGTH);
-    char *rule_stub = "/vm/%s/rpc-firewall-rules/%d";
-
-    snprintf(rule, RULE_MAX_LENGTH - 1, rule_stub, uuid, rule_number);
+    char *reply = malloc(sizeof(char) * RULE_MAX_LENGTH);
 
     struct dbus_message *dmsg = calloc(sizeof *dmsg + sizeof(char *), 1);
     dbus_default(dmsg);
     dmsg->method = DBUS_READ;
-    dmsg->args[0] = (void *) rule;
+    dmsg->args[0] = (void *) arg;
 
     DBusMessage *msg = make_dbus_call(conn, dmsg);
-    free(rule);
     free(dmsg);
 
     DBusMessageIter iter;
     if (!dbus_message_iter_init(msg, &iter)) 
         return NULL;
 
-    dbus_message_iter_get_basic(&iter, &rule);
+    dbus_message_iter_get_basic(&iter, &reply);
     dbus_message_unref(msg);
 
-    if (rule[0] == '\0')
+    if (reply[0] == '\0') {
+        free(reply);
         return NULL;
+    }
 
-    return strdup(rule);
+    return reply;
 }
 
 char *dbus_introspect(struct json_request *jreq)

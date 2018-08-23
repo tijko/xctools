@@ -153,9 +153,6 @@ struct rule *create_rule(char *rule)
     return current;
 }
 
-// Have this re-used for policy-file aswell...
-// db-rule-query is making a dbus-request and spitting out the string of next
-// rule found 
 int get_rules(DBusConnection *conn, struct rules *domain_rules)
 {
     int rule_count = 0;
@@ -166,8 +163,11 @@ int get_rules(DBusConnection *conn, struct rules *domain_rules)
         domain_rules->rule_list = realloc(domain_rules->rule_list, 
                                           sizeof(struct rule *) * 
                                                 (rule_count + 1)); 
-        rule = db_rule_query(conn, domain_rules->uuid, rule_count);
-        
+        char *arg;
+        DBUS_REQ_ARG(arg, "/vm/%s/rpc-firewall-rules/%d", 
+                     domain_rules->uuid, rule_count);
+        rule = db_query(conn, arg);
+        free(arg); 
         if (rule) {
             struct rule *current = create_rule(rule);
             // test if rule is Null
