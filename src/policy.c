@@ -68,10 +68,8 @@ struct rule *create_rule(char *rule)
 
                 if (token[1] == 'e')
                     current->dest = strdup(field);
-                else {
-                    current->domtype = 1;
+                else 
                     current->domname = strdup(field);
-                }
 
                 break;
             }
@@ -86,11 +84,7 @@ struct rule *create_rule(char *rule)
                 if (token[1] == 'n')
                     current->iface = strdup(field);
                 else {
-                    //size_t boolean_length = strlen(token) + strlen(field) + 1;
-                    char *boolean_rule = malloc(sizeof(char) * 256); 
-                    snprintf(boolean_rule, boolean_length - 1, "%s %s",
-                             token, field);
-                    current->if_bool = boolean_rule; 
+                    current->if_bool = strdup(field); 
                     token = strtok_r(NULL, delimiter, &ruleptr);
                     current->if_bool_flag = token[0] == 't' ? 1 : 0;
                 }
@@ -109,15 +103,9 @@ struct rule *create_rule(char *rule)
             }
 
             default:
-                // the 4(?) single cases...
-                // "deny all"
-                // "allow all"
-                // the above, is just the policy bit-field set with all others
-                // as null...this will carry-over that blanket policy
-                // when testing a request against all standing rules...
-                // "deny out-any"
-                // "allow out-any"
                 // filter warning for to not log these
+                // if ignoring all out-any (and possibly errant rules)
+                // free up the structure and pass as null in the contion
                 DBUS_BROKER_WARNING("Unrecognized Rule-Token: %s", token);
                 break;
         }
@@ -125,6 +113,7 @@ struct rule *create_rule(char *rule)
         token = strtok_r(NULL, delimiter, &ruleptr);
     }
 
+    /*
     printf("Rule-Policy: %d\n", current->policy);
     printf("Stubdom    : %d\n", current->stubdom);
     printf("Domtype    : %d\n", current->domtype);
@@ -160,6 +149,7 @@ struct rule *create_rule(char *rule)
     else
         printf("None\n");
 	printf("Rule: %s\n\n", current->rule_string);     
+    */
     return current;
 }
 
@@ -180,6 +170,7 @@ int get_rules(DBusConnection *conn, struct rules *domain_rules)
         
         if (rule) {
             struct rule *current = create_rule(rule);
+            // test if rule is Null
             domain_rules->rule_list[rule_count++] = current;
         } 
 
@@ -258,6 +249,7 @@ struct rules *get_etc_rules(const char *rule_filename)
             etc_rules->rule_list = realloc(etc_rules->rule_list, 
                                            sizeof(struct rule *) * (idx + 1));
             char *line = strdup(rule_token);
+            // test if rule is Null
             etc_rules->rule_list[idx++] = create_rule(line);
         }
 

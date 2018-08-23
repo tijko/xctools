@@ -111,10 +111,9 @@ struct rules {
 
 // add type-qualifiers
 struct rule {
-    int policy;         // allow/deny 
-    int stubdom;        // stubdom rule
-    int domtype;        // rule has dom-type specific
-    int if_bool_flag;   // the if-boolean is true/false
+    int policy;           // allow/deny 
+    int stubdom;          // stubdom rule
+    int if_bool_flag;     // the if-boolean is true/false
     char *dest;           // can be NULL
     char *path;           // can be NULL
     char *iface;          // can be NULL
@@ -125,10 +124,7 @@ struct rule {
 };
 
 struct dbus_message {
-    // set bit-field for stubdom?
-    // set a field for domtype (or grab in filter (domid needed))?
-    // on a similar note, the xenclient-db attributes for if-boolean 
-    // conditions
+    // go thru re-name "dest" to destination (iface...)
     const char *dest;
     const char *iface;
     const char *path;
@@ -213,9 +209,6 @@ int exchange(int rsock, int ssock,
              ssize_t (*snd)(int, const void *, size_t, int),
              struct dbus_request *req);
 
-int filter(const char *dest, const char *iface, 
-           const char *member, char *rule);
-
 // split-up according to functional relation
 int get_rules(DBusConnection *conn, struct rules *policy_rules);
 
@@ -264,3 +257,4 @@ struct rules *get_etc_rules(const char *rule_filename);
 
 void free_json_response(struct json_response *jrsp);
 
+int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid);
