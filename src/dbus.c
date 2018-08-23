@@ -194,10 +194,8 @@ char *db_query(DBusConnection *conn, char *arg)
     dbus_message_iter_get_basic(&iter, &reply);
     dbus_message_unref(msg);
 
-    if (reply[0] == '\0') {
-        free(reply);
+    if (reply[0] == '\0') 
         return NULL;
-    }
 
     return reply;
 }

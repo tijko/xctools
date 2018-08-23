@@ -167,7 +167,6 @@ int get_rules(DBusConnection *conn, struct rules *domain_rules)
         DBUS_REQ_ARG(arg, "/vm/%s/rpc-firewall-rules/%d", 
                      domain_rules->uuid, rule_count);
         rule = db_query(conn, arg);
-        free(arg); 
         if (rule) {
             struct rule *current = create_rule(rule);
             // test if rule is Null

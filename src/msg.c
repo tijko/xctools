@@ -100,9 +100,6 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
 
         if (!dom_type || strcmp(policy_rule->domname, dom_type))
             return 0;
-
-        if (dom_type);
-            free(dom_type);
     }
 
     return policy_rule->policy;
