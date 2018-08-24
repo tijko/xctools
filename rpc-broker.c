@@ -22,7 +22,6 @@ void *signal_subscription(void *sub)
 
     while (dbus_connection_get_is_connected(conn)) { 
 
-        sleep(1);
         dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
         DBusMessage *msg = dbus_connection_pop_message(conn);
 
@@ -32,7 +31,8 @@ void *signal_subscription(void *sub)
         struct json_response *jrsp = init_jrsp();
         free(jrsp->response_to);
         jrsp->response_to = NULL;
-        snprintf(jrsp->type, 7, "signal");
+        jrsp->type = JSON_RESP_SIG;
+
         load_json_response(msg, jrsp);
         jrsp->iface = dbus_message_get_interface(msg);
         jrsp->meth = dbus_message_get_member(msg);
@@ -42,7 +42,8 @@ void *signal_subscription(void *sub)
 
         lws_ring_insert(ring, reply, 1);
         lws_callback_on_writable(bsig->wsi);
-        msg = NULL;
+
+        dbus_message_unref(msg);
         free_json_response(jrsp);
         dbus_connection_flush(conn);
     }
@@ -124,7 +125,7 @@ int stubdom_check(int domid)
 {
     struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
 
-    size_t len = 1;
+    size_t len = 0;
 
     if (!xsh) 
         return -1;
@@ -133,12 +134,15 @@ int stubdom_check(int domid)
     path = realloc(path, sizeof(char) * strlen(path) + 7); 
     strcat(path, "/target");
 
-    int ret = xs_read(xsh, XBT_NULL, path, &len);
+    void *ret = xs_read(xsh, XBT_NULL, path, &len);
 
+    if (ret)
+       free(ret);
+ 
     free(path);
     xs_close(xsh);
 
-    return ret;
+    return len;
 }
 
 int init_request(int client, struct policy *dbus_policy)
@@ -158,9 +162,6 @@ int init_request(int client, struct policy *dbus_policy)
     }
 
     dreq->domid = client_addr.domain;
-    //
-    stubdom_check(dreq->domid);
-    //
     dreq->dom_rules = build_domain_policy(dreq->domid, dbus_policy); 
 
     ret = pthread_create(&dbus_req_thread, NULL, 
@@ -347,12 +348,10 @@ void run(struct dbus_broker_args *args)
         if (ret < 0)
             DBUS_BROKER_ERROR("select");
 
-        int client;
-
         if (FD_ISSET(default_socket, &server_set) == 0)
             continue;
   
-        client = v4v_accept(default_socket, &server->peer);
+        int client = v4v_accept(default_socket, &server->peer);
         
         if (client < 0)
             DBUS_BROKER_ERROR("v4v_accept");

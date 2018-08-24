@@ -3,7 +3,7 @@
 
 struct json_response *init_jrsp(void)
 {
-    // pass type-of?
+    // pass type-of, with its string to load?
     struct json_response *jrsp = calloc(sizeof *jrsp + 
                                        (sizeof(char *) * JSON_REQ_MAX), 1); 
 

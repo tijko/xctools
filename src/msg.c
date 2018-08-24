@@ -16,9 +16,7 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
     int policy = 0;
 
     for (int i=0; rulelist[i]; i++) {
-
         struct rule *current = rulelist[i];
-
         policy = filter(current, dmsg, domid);
     }
 
@@ -69,43 +67,53 @@ int exchange(int rsock, int ssock,
 int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
 {
     DBusConnection *conn;
-    char *uuid, *arg;
+    char *uuid, *arg, *query;
 
-    if (((policy_rule->stubdom && stubdom_check(domid) < 1))             || 
+    if (((policy_rule->stubdom && is_stubdom(domid) < 1))                || 
         (policy_rule->dest && strcmp(policy_rule->dest, dmsg->dest))     ||
         (policy_rule->path && strcmp(policy_rule->path, dmsg->path))     ||
         (policy_rule->iface && strcmp(policy_rule->iface, dmsg->iface))  ||
         (policy_rule->member && strcmp(policy_rule->member, dmsg->method)))
         return 0;
 
-    if (policy_rule->if_bool) {
-
+    if (policy_rule->if_bool || policy_rule->domname) {
         conn = create_dbus_connection();
+        struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
 
-        DBUS_REQ_ARG(uuid, "%d", domid);
-        DBUS_REQ_ARG(arg, "/vm/00000000-0000-0000-00000000000%s/%s",
-                                 uuid, policy_rule->if_bool);
+        size_t len;
+        char *path = malloc(256);
+        snprintf(path, 255, "/local/domain/%d/vm", domid);
+        uuid = (char *) xs_read(xsh, XBT_NULL, path, &len);
+        printf("UUID: %s\n", uuid);
+        xs_close(xsh);
 
-        char *attr_cond = db_query(conn, arg);
-    
-        if (!attr_cond || (attr_cond[0] == 't' && 
-                           policy_rule->if_bool_flag == 0) ||
-                          (attr_cond[0] == 'f' &&
-                           policy_rule->if_bool_flag == 1))
-            return 0;
-    }
+        if (policy_rule->if_bool) {
+            DBUS_REQ_ARG(arg, "/vm/00000000-0000-0000-%s/%s",
+                                     uuid, policy_rule->if_bool);
 
-    if (policy_rule->domname) {
+            char *attr_cond = db_query(conn, arg);
+        
+            if (!attr_cond || (attr_cond[0] == 't' && 
+                               policy_rule->if_bool_flag == 0) ||
+                              (attr_cond[0] == 'f' &&
+                               policy_rule->if_bool_flag == 1))
+                return 0;
+        }
 
-        conn = create_dbus_connection();
+        if (policy_rule->domname) {
 
-        DBUS_REQ_ARG(uuid, "%d", domid);
-        DBUS_REQ_ARG(arg, "/vm/00000000-0000-0000-00000000000%s/type", uuid);
+            DBUS_REQ_ARG(arg, "/vm/00000000-0000-0000-%s/type", uuid);
 
-        char *dom_type = db_query(conn, arg);
+            char *dom_type = db_query(conn, arg);
 
-        if (!dom_type || strcmp(policy_rule->domname, dom_type))
-            return 0;
+            if (!dom_type || strcmp(policy_rule->domname, dom_type))
+                return 0;
+        }
+
+        if (uuid)
+            free(uuid);
+
+        free(path);
     }
 
     return policy_rule->policy;
