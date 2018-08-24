@@ -121,7 +121,7 @@ struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
     return dmsg;
 }
 
-int stubdom_check(int domid)
+int is_stubdom(int domid)
 {
     struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
 
