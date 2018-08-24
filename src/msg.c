@@ -88,8 +88,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
         xs_close(xsh);
 
         if (policy_rule->if_bool) {
-            DBUS_REQ_ARG(arg, "/vm/00000000-0000-0000-%s/%s",
-                                     uuid, policy_rule->if_bool);
+            DBUS_REQ_ARG(arg, "%s/%s", uuid, policy_rule->if_bool);
 
             char *attr_cond = db_query(conn, arg);
         
@@ -98,11 +97,13 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
                               (attr_cond[0] == 'f' &&
                                policy_rule->if_bool_flag == 1))
                 return 0;
+
+            free(arg);
         }
 
         if (policy_rule->domname) {
 
-            DBUS_REQ_ARG(arg, "/vm/00000000-0000-0000-%s/type", uuid);
+            DBUS_REQ_ARG(arg, "%s/type", uuid);
 
             char *dom_type = db_query(conn, arg);
 

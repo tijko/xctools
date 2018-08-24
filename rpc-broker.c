@@ -22,6 +22,7 @@ void *signal_subscription(void *sub)
 
     while (dbus_connection_get_is_connected(conn)) { 
 
+        sleep(1);
         dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
         DBusMessage *msg = dbus_connection_pop_message(conn);
 
