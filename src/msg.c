@@ -84,7 +84,6 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
         char *path = malloc(256);
         snprintf(path, 255, "/local/domain/%d/vm", domid);
         uuid = (char *) xs_read(xsh, XBT_NULL, path, &len);
-        printf("UUID: %s\n", uuid);
         xs_close(xsh);
 
         if (policy_rule->if_bool) {
