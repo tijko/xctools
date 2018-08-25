@@ -63,10 +63,9 @@ struct rule *create_rule(char *rule)
                 break;
             }
 
-            case ('s'): {
+            case ('s'): 
                 current->stubdom = 1;
                 break;
-            }
 
             case ('i'): {
 
@@ -81,15 +80,16 @@ struct rule *create_rule(char *rule)
                 break;
             }
 
-            case ('p'): {
+            case ('p'): 
                 current->path = strdup(field);                
                 break;
-            }
 
-            case ('m'): {
+            case ('m'): 
                 current->member = strdup(field);
                 break;
-            }
+
+			case ('a'):
+				break;
 
             default:
                 DBUS_BROKER_WARNING("Unrecognized Rule-Token: %s", token);
