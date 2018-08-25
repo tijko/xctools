@@ -13,7 +13,6 @@ char *prepare_json_reply(struct json_response *jrsp)
     snprintf(reply, WS_RING_BUFFER_MEMBER_SIZE - 1, "%s", 
              json_object_to_json_string(jobj));
 
-    // put json-object
     return reply;
 }
 

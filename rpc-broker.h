@@ -88,6 +88,7 @@ sem_t *memory_lock;
 
 #define JSON_REQ_ID_MAX 16
 #define JSON_REQ_MAX   256
+
 #define JSON_RESP_TYPE "response"
 #define JSON_RESP_SIG  "signal"
 #define JSON_RESP_ID   "1"

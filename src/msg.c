@@ -7,12 +7,6 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
     int domid = req->domid;
     struct rule **rulelist = req->dom_rules;
     
-    /*
-     * Former-Method: here was to find an exact match which is technically 
-     * incorrect.  The match could be over-ruled by a policy rule that is
-     * listed in subsequent rules.
-     */
-
     int policy = 0;
 
     for (int i=0; rulelist[i]; i++) {

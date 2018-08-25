@@ -5,7 +5,6 @@ DBusConnection *create_dbus_connection(void)
 {
     DBusError error;
     dbus_error_init(&error);
-
     DBusConnection *conn = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
 
     if (dbus_error_is_set(&error)) 
@@ -40,6 +39,7 @@ void dbus_default(struct dbus_message *dmsg)
     dmsg->iface = DBUS_DB_IFACE;
     dmsg->path = DBUS_BASE_PATH;
     dmsg->arg_number = 1;
+    // do away with magic numbers
     snprintf(dmsg->arg_sig, 2, "s");
 }
 
@@ -164,7 +164,6 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
     dbus_connection_flush(conn);
     dbus_pending_call_block(pc);
     dbus_connection_flush(conn);
-
     dbus_message_unref(msg);
 
     if ((msg = dbus_pending_call_steal_reply(pc)) == NULL) 

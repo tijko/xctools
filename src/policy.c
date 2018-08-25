@@ -1,14 +1,5 @@
 #include "../rpc-broker.h"
 
-// create separate structures for each vm, where the /etc rules come first
-// followed by its own domain-specific rules?
-//
-// Ex:
-//      default = /etc
-//      vm-1    = /etc + dom-1
-//      vm-2    = /etc + dom-2
-//
-//
 
 static inline void copy_rulelist(int count, struct rule **dest, 
                                             struct rule **src)
@@ -45,8 +36,6 @@ struct rule **build_domain_policy(int domid, struct policy *dbus_policy)
 
 struct rule *create_rule(char *rule)
 {
-    // How-to interact with "out-any" 
-    // (i think Jed mentioned to ignore it for now)
     struct rule *current = calloc(1, sizeof(struct rule));
     current->rule_string = strdup(rule);
 
@@ -103,10 +92,10 @@ struct rule *create_rule(char *rule)
             }
 
             default:
-                // filter warning for to not log these
-                // if ignoring all out-any (and possibly errant rules)
-                // free up the structure and pass as null in the contion
                 DBUS_BROKER_WARNING("Unrecognized Rule-Token: %s", token);
+                // free rule fun
+                free(current);
+                current = NULL;
                 break;
         }
 
@@ -114,6 +103,7 @@ struct rule *create_rule(char *rule)
     }
 
     /*
+    */
     printf("Rule-Policy: %d\n", current->policy);
     printf("Stubdom    : %d\n", current->stubdom);
     printf("Domtype    : %d\n", current->domtype);
@@ -149,7 +139,6 @@ struct rule *create_rule(char *rule)
     else
         printf("None\n");
 	printf("Rule: %s\n\n", current->rule_string);     
-    */
     return current;
 }
 
@@ -169,8 +158,8 @@ int get_rules(DBusConnection *conn, struct rules *domain_rules)
         rule = db_query(conn, arg);
         if (rule) {
             struct rule *current = create_rule(rule);
-            // test if rule is Null
-            domain_rules->rule_list[rule_count++] = current;
+            if (current)
+                domain_rules->rule_list[rule_count++] = current;
         } 
 
     } while (rule != NULL);
@@ -249,7 +238,9 @@ struct rules *get_etc_rules(const char *rule_filename)
                                            sizeof(struct rule *) * (idx + 1));
             char *line = strdup(rule_token);
             // test if rule is Null
-            etc_rules->rule_list[idx++] = create_rule(line);
+            struct rule *current = create_rule(line);
+            if (current)
+                etc_rules->rule_list[idx++] = current; 
         }
 
         rule_token = strtok_r(NULL, newline, &fileptr);

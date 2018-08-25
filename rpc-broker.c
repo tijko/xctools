@@ -32,6 +32,7 @@ void *signal_subscription(void *sub)
         struct json_response *jrsp = init_jrsp();
         free(jrsp->response_to);
         jrsp->response_to = NULL;
+        // snprintf
         jrsp->type = JSON_RESP_SIG;
 
         load_json_response(msg, jrsp);
@@ -50,6 +51,7 @@ void *signal_subscription(void *sub)
     }
 
     dbus_connection_close(conn);
+    printf("Exiting Signal...\n");
     free(bsig);
 
     return NULL;
@@ -112,6 +114,7 @@ struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
     dmsg->dest = dbus_message_get_destination(dbus_msg);
 
     const char *path = dbus_message_get_path(dbus_msg);
+    // explicitly set to...
     dmsg->path = path ? path : "/";
 
     const char *iface = dbus_message_get_interface(dbus_msg);
@@ -132,7 +135,7 @@ int is_stubdom(int domid)
         return -1;
 
     char *path = xs_get_domain_path(xsh, domid);
-    path = realloc(path, sizeof(char) * strlen(path) + 7); 
+    path = realloc(path, sizeof(char) * strlen(path) + 8); 
     strcat(path, "/target");
 
     void *ret = xs_read(xsh, XBT_NULL, path, &len);
@@ -228,6 +231,7 @@ struct json_response *make_json_request(struct json_request *jreq)
     DBusConnection *conn = jreq->conn;
 
     /* XXX debug
+    */
     printf("ID: %d Destination: %s Path: %s Iface: %s Member: %s ",
             jreq->id, jreq->dmsg->dest, jreq->dmsg->path, jreq->dmsg->iface, jreq->dmsg->method);
     for (int i=0; i < jreq->dmsg->arg_number; i++) {
@@ -253,7 +257,6 @@ struct json_response *make_json_request(struct json_request *jreq)
         }
     }
     printf("\n");
-    */
 
     dbus_connection_flush(conn);
 
@@ -287,9 +290,9 @@ struct json_response *make_json_request(struct json_request *jreq)
     } 
 
     /* XXX PRINT off arguments from response
+    */
     if (jrsp)
         printf("response-to %s %s\n", jrsp->response_to, json_object_to_json_string(jrsp->args));
-    */
 
     return jrsp;
 }
@@ -300,6 +303,7 @@ void run(struct dbus_broker_args *args)
     dbus_broker_policy = build_policy(args->rule_file);
 
     /* XXX test 
+    */ 
     struct rules *head = dbus_broker_policy->domain_rules;
     while (head) {
         printf("UUID: %s\n", head->uuid);
@@ -308,11 +312,8 @@ void run(struct dbus_broker_args *args)
             printf("    %s\n", rule_list[i]->rule_string);
         head = head->next;
     }
-    */ 
 
-    // XXX lock-test->
     memory_lock = malloc(sizeof(sem_t));
-
     sem_init(memory_lock, 0, 1);
 
     struct dbus_broker_server *server = start_server(BROKER_DEFAULT_PORT);
