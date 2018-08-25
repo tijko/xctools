@@ -106,7 +106,6 @@ struct rule *create_rule(char *rule)
     */
     printf("Rule-Policy: %d\n", current->policy);
     printf("Stubdom    : %d\n", current->stubdom);
-    printf("Domtype    : %d\n", current->domtype);
     printf("If-bool    : %d\n", current->if_bool_flag);
     printf("Destination: ");
     if (current->dest)
