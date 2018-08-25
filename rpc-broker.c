@@ -260,7 +260,7 @@ struct json_response *make_json_request(struct json_request *jreq)
 
     dbus_connection_flush(conn);
 
-    if (strcmp(jreq->meth, "Hello") == 0) {
+    if (strcmp(jreq->dmsg->meth, "Hello") == 0) {
         const char *busname = dbus_bus_get_unique_name(conn);
         jrsp->id = jreq->id;
 
