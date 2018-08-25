@@ -104,6 +104,8 @@ struct rule *create_rule(char *rule)
 
     /*
     */
+	if (!current)
+		return current;
     printf("Rule-Policy: %d\n", current->policy);
     printf("Stubdom    : %d\n", current->stubdom);
     printf("If-bool    : %d\n", current->if_bool_flag);
