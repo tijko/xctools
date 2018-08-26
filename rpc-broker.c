@@ -32,18 +32,20 @@ void *signal_subscription(void *sub)
         struct json_response *jrsp = init_jrsp();
         free(jrsp->response_to);
         jrsp->response_to = NULL;
-        // snprintf
-        jrsp->type = JSON_RESP_SIG;
+        snprintf(jrsp->type, JSON_REQ_ID_MAX - 1, "%s", JSON_RESP_SIG);
 
         load_json_response(msg, jrsp);
+
         jrsp->iface = dbus_message_get_interface(msg);
         jrsp->meth = dbus_message_get_member(msg);
         jrsp->path = dbus_message_get_path(msg);
 
         char *reply = prepare_json_reply(jrsp);
 
+        sem_wait(memory_lock);
         lws_ring_insert(ring, reply, 1);
         lws_callback_on_writable(bsig->wsi);
+        sem_post(memory_lock);
 
         dbus_message_unref(msg);
         free_json_response(jrsp);
@@ -51,7 +53,6 @@ void *signal_subscription(void *sub)
     }
 
     dbus_connection_close(conn);
-    printf("Exiting Signal...\n");
     free(bsig);
 
     return NULL;
@@ -60,13 +61,11 @@ void *signal_subscription(void *sub)
 void *broker_message(void *request)
 {
     struct dbus_request *req = (struct dbus_request *) request;
-
     int client = req->client;
 
     fd_set ex_set;
  
     int srv = connect_to_system_bus();
-
     int bytes = 0;
 
     do {
@@ -80,7 +79,6 @@ void *broker_message(void *request)
 
         if (ret == 0)
             continue;
-
         if (ret < 0)
             DBUS_BROKER_ERROR("select");
 
@@ -110,11 +108,10 @@ struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
         return NULL;
     }
         
-    struct dbus_message *dmsg = malloc(sizeof *dmsg);
+    struct dbus_message *dmsg = calloc(1, sizeof *dmsg);
     dmsg->dest = dbus_message_get_destination(dbus_msg);
 
     const char *path = dbus_message_get_path(dbus_msg);
-    // explicitly set to...
     dmsg->path = path ? path : "/";
 
     const char *iface = dbus_message_get_interface(dbus_msg);
@@ -128,7 +125,6 @@ struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
 int is_stubdom(int domid)
 {
     struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
-
     size_t len = 0;
 
     if (!xsh) 
@@ -231,7 +227,6 @@ struct json_response *make_json_request(struct json_request *jreq)
     DBusConnection *conn = jreq->conn;
 
     /* XXX debug
-    */
     printf("ID: %d Destination: %s Path: %s Iface: %s Member: %s ",
             jreq->id, jreq->dmsg->dest, jreq->dmsg->path, jreq->dmsg->iface, jreq->dmsg->method);
     for (int i=0; i < jreq->dmsg->arg_number; i++) {
@@ -257,10 +252,11 @@ struct json_response *make_json_request(struct json_request *jreq)
         }
     }
     printf("\n");
+    */
 
     dbus_connection_flush(conn);
 
-    if (strcmp(jreq->dmsg->method, "Hello") == 0) {
+    if (jreq->id == 1) {
         const char *busname = dbus_bus_get_unique_name(conn);
         jrsp->id = jreq->id;
 
@@ -290,9 +286,9 @@ struct json_response *make_json_request(struct json_request *jreq)
     } 
 
     /* XXX PRINT off arguments from response
-    */
     if (jrsp)
         printf("response-to %s %s\n", jrsp->response_to, json_object_to_json_string(jrsp->args));
+    */
 
     return jrsp;
 }
@@ -302,8 +298,7 @@ void run(struct dbus_broker_args *args)
     srand48(time(NULL));
     dbus_broker_policy = build_policy(args->rule_file);
 
-    /* XXX test 
-    */ 
+    /* XXX test domain-rules (does not include /etc policy) 
     struct rules *head = dbus_broker_policy->domain_rules;
     while (head) {
         printf("UUID: %s\n", head->uuid);
@@ -312,33 +307,28 @@ void run(struct dbus_broker_args *args)
             printf("    %s\n", rule_list[i]->rule_string);
         head = head->next;
     }
+    */ 
 
     memory_lock = malloc(sizeof(sem_t));
     sem_init(memory_lock, 0, 1);
 
     struct dbus_broker_server *server = start_server(BROKER_DEFAULT_PORT);
-
     DBUS_BROKER_EVENT("<Server has started listening> [Port: %d]",
                         BROKER_DEFAULT_PORT);
 
     int default_socket = server->dbus_socket;
-
     fd_set server_set;
-
     struct lws_context *ws_context = create_ws_context(BROKER_UI_PORT);
 
     if (!ws_context)
         DBUS_BROKER_ERROR("WebSockets-Server");
-
     DBUS_BROKER_EVENT("<WebSockets-Server has started listening> [Port: %d]",
                         BROKER_UI_PORT);
-
     // global state flag?
     while ( 1 ) {
 
         FD_ZERO(&server_set);
         FD_SET(default_socket, &server_set);
-
         lws_service(ws_context, WS_LOOP_TIMEOUT);
 
         struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_TIMEOUT };
@@ -349,12 +339,10 @@ void run(struct dbus_broker_args *args)
 
         if (ret < 0)
             DBUS_BROKER_ERROR("select");
-
         if (FD_ISSET(default_socket, &server_set) == 0)
             continue;
   
         int client = v4v_accept(default_socket, &server->peer);
-        
         if (client < 0)
             DBUS_BROKER_ERROR("v4v_accept");
 

@@ -16,7 +16,6 @@ DBusConnection *create_dbus_connection(void)
 struct dbus_broker_server *start_server(int port)
 {
     struct dbus_broker_server *server = malloc(sizeof *server);
-
     server->dbus_socket = v4v_socket(SOCK_STREAM);
     if (server->dbus_socket < 0)
         DBUS_BROKER_ERROR("v4v_socket");

@@ -6,12 +6,10 @@ struct json_response *init_jrsp(void)
     // pass type-of, with its string to load?
     struct json_response *jrsp = calloc(sizeof *jrsp + 
                                        (sizeof(char *) * JSON_REQ_MAX), 1); 
-
     jrsp->args = json_object_new_array();
     jrsp->response_to = malloc(sizeof(char) * JSON_REQ_ID_MAX);
     jrsp->type = malloc(sizeof(char) * JSON_REQ_ID_MAX);
     jrsp->id = rand() % 4096;
-
     snprintf(jrsp->type, JSON_REQ_ID_MAX, JSON_RESP_TYPE);
 
     return jrsp;
@@ -21,7 +19,6 @@ char *get_json_str_obj(struct json_object *jobj, char *field)
 {
     struct json_object *jfield;
     json_object_object_get_ex(jobj, field, &jfield);
-
     return json_object_get_string(jfield);
 }
 
@@ -30,12 +27,10 @@ struct json_request *convert_json_request(char *raw_json_req)
     struct json_object *jobj = json_tokener_parse(raw_json_req);
     struct json_request *jreq = malloc(sizeof *jreq);
     jreq->dmsg = malloc(sizeof *jreq->dmsg);
-
     jreq->dmsg->dest = get_json_str_obj(jobj, "destination");
     jreq->dmsg->iface = get_json_str_obj(jobj, "interface");
     jreq->dmsg->path = get_json_str_obj(jobj, "path");
     jreq->dmsg->method = get_json_str_obj(jobj, "method");
-    
     jreq->conn = create_dbus_connection();
 
     if (!jobj) {
@@ -58,7 +53,6 @@ struct json_request *convert_json_request(char *raw_json_req)
     struct json_object *jint;
     json_object_object_get_ex(jobj, "id", &jint);
     jreq->id = json_object_get_int(jint);
-
     json_object_put(jint);
     
     return jreq;
@@ -83,7 +77,6 @@ struct json_object *convert_dbus_response(struct json_response *jrsp)
     }
 
     json_object_object_add(jobj, "args", jrsp->args);
-
     return jobj;
 }
 
@@ -176,7 +169,6 @@ static inline void append_dbus_message_arg(int type, int idx, void **args,
 int parse_json_args(struct json_object *jarray, struct json_request *jreq)
 {
     struct dbus_message *dmsg = jreq->dmsg;
-
     char *signature = dbus_introspect(jreq);
 
     if (!signature) {
@@ -201,7 +193,6 @@ int parse_json_args(struct json_object *jarray, struct json_request *jreq)
         
         dmsg->json_sig[i] = json_arg_to_dbus_type(jtype);       
         append_dbus_message_arg(*signature, i, dmsg->args, jarg);
-
         signature++;
     }
 

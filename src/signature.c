@@ -5,9 +5,7 @@ xmlNodePtr find_xml_property(char *target, char *property, xmlNodePtr node)
 {
     if (node == NULL)
         return NULL;
-
     char *name = xmlGetProp(node, property);
-
     if (name && !strcmp(name, target))
         return xmlFirstElementChild(node);
 
@@ -32,7 +30,6 @@ int retrieve_xml_signature(char *xml_dump, char *args,
 
     xmlNodePtr iface_node = find_xml_property(iface, XML_NAME_PROPERTY, 
                                               xmlFirstElementChild(root));
-
     if (iface_node == NULL) {
         error = "interface";
         goto xml_error;
@@ -40,7 +37,6 @@ int retrieve_xml_signature(char *xml_dump, char *args,
 
     xmlNodePtr method_node = find_xml_property(method, XML_NAME_PROPERTY, 
                                                iface_node);
-
     if (method_node == NULL) {
         error = "method";
         goto xml_error;
@@ -49,9 +45,7 @@ int retrieve_xml_signature(char *xml_dump, char *args,
     char *name = xmlGetProp(method_node, XML_DIRECTION_PROPERTY);
 
     while (name && !strcmp(name, "in")) {
-
         char *type = xmlGetProp(method_node, "type");
-
         if (type)
             args[idx++] = type[0];
 
@@ -92,7 +86,6 @@ void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter)
     while (dbus_message_iter_get_arg_type(iter) != DBUS_TYPE_INVALID) {
 
         char *key = malloc(sizeof(char) * DBUS_ARG_LEN);
-
         DBusMessageIter sub;
         dbus_message_iter_recurse(iter, &sub);
         dbus_message_iter_get_basic(&sub, &key);
@@ -107,7 +100,6 @@ void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
 {
     int type;
     void *arg = malloc(sizeof(char) * DBUS_ARG_LEN);
-
     DBusMessageIter sub;
  
     while ((type = dbus_message_iter_get_arg_type(iter)) != DBUS_TYPE_INVALID) {

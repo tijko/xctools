@@ -5,8 +5,9 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
 {
     // dbus-request only for domid and dom-rules
     int domid = req->domid;
-    struct rule **rulelist = req->dom_rules;
     
+    struct rule **rulelist = req->dom_rules;
+    // etc-policy rules first or last?    
     int policy = 0;
 
     for (int i=0; rulelist[i]; i++) {
@@ -35,7 +36,6 @@ int exchange(int rsock, int ssock,
              struct dbus_request *req)
 {
     char buf[DBUS_MSG_LEN];
-
     int rbytes = rcv(rsock, buf, DBUS_MSG_LEN, 0);
 
     // why 8-bytes?
@@ -82,7 +82,6 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
 
         if (policy_rule->if_bool) {
             DBUS_REQ_ARG(arg, "%s/%s", uuid, policy_rule->if_bool);
-
             char *attr_cond = db_query(conn, arg);
         
             if (!attr_cond || (attr_cond[0] == 't' && 
@@ -95,11 +94,8 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
         }
 
         if (policy_rule->domname) {
-
             DBUS_REQ_ARG(arg, "%s/type", uuid);
-
             char *dom_type = db_query(conn, arg);
-
             if (!dom_type || strcmp(policy_rule->domname, dom_type))
                 return 0;
         }

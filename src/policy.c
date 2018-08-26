@@ -12,23 +12,30 @@ static inline void copy_rulelist(int count, struct rule **dest,
 
 struct rule **build_domain_policy(int domid, struct policy *dbus_policy)
 {
-    struct rules *etc_rules = dbus_policy->etc_rules;
-    int etc_count = etc_rules->count;
-    struct rule **req_list = malloc(sizeof(struct rule *) * etc_count + 1);
-    copy_rulelist(etc_count, req_list, etc_rules->rule_list);
-    req_list[etc_count] = NULL;
-
+    struct rule **req_list = NULL;
     struct rules *dom_rules = dbus_policy->domain_rules;
 
     while (dom_rules && dom_rules->domid != domid)
         dom_rules = dom_rules->next;
 
+    int dom_count = 0;
+
     if (dom_rules) {
-        int dom_count = dom_rules->count;
+        dom_count = dom_rules->count;
+        req_list = realloc(req_list, sizeof(struct rule *) * (dom_count + 1));
+        copy_rulelist(dom_count, req_list, dom_rules->rule_list);
+        req_list[dom_count] = NULL;
+    }
+
+    
+    struct rules *etc_rules = dbus_policy->etc_rules;
+
+    if (etc_rules) {
+        int etc_count = etc_rules->count;
         req_list = realloc(req_list, sizeof(struct rule *) * 
-                           (etc_count + dom_count + 1));
-        copy_rulelist(dom_count, &(req_list[etc_count]), dom_rules->rule_list);
-        req_list[etc_count + dom_count] = NULL;
+                          (dom_count + etc_count + 1));
+        copy_rulelist(etc_count, &(req_list[dom_count]), etc_rules->rule_list);
+        req_list[etc_count] = NULL;
     }
 
     return req_list;
@@ -44,7 +51,6 @@ struct rule *create_rule(char *rule)
     char *token = strtok_r(rule, delimiter, &ruleptr);
 
     current->policy = token[0] == 'a' ? 1 : 0;
-
     token = strtok_r(NULL, delimiter, &ruleptr);
  
     while (token) {
@@ -103,7 +109,6 @@ struct rule *create_rule(char *rule)
     }
 
     /*
-    */
 	if (!current)
 		return current;
     printf("Rule-Policy: %d\n", current->policy);
@@ -140,6 +145,7 @@ struct rule *create_rule(char *rule)
     else
         printf("None\n");
 	printf("Rule: %s\n\n", current->rule_string);     
+    */
     return current;
 }
 
