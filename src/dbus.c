@@ -35,7 +35,7 @@ struct dbus_broker_server *start_server(int port)
 void dbus_default(struct dbus_message *dmsg)
 {
     dmsg->dest = DBUS_DB_DEST;
-    dmsg->iface = DBUS_DB_IFACE;
+    dmsg->interface = DBUS_DB_IFACE;
     dmsg->path = DBUS_BASE_PATH;
     dmsg->arg_number = 1;
     // do away with magic numbers
@@ -111,7 +111,7 @@ static inline void append_variant(DBusMessageIter *iter, int type, void *data)
 DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 {
     DBusMessage *msg = dbus_message_new_method_call(dmsg->dest, dmsg->path,
-                                                    dmsg->iface, dmsg->member);
+                                                    dmsg->interface, dmsg->member);
     DBusError error;
     dbus_error_init(&error);
 
@@ -203,7 +203,7 @@ char *dbus_introspect(struct json_request *jreq)
     struct dbus_message *dmsg = calloc(1, sizeof *dmsg);
 
     dmsg->dest = jreq->dmsg->dest;
-    dmsg->iface = DBUS_INTRO_IFACE;
+    dmsg->interface = DBUS_INTRO_IFACE;
     dmsg->member = DBUS_INTRO_METH;
     dmsg->path = jreq->dmsg->path;
     dmsg->arg_number = 0;
@@ -222,7 +222,7 @@ char *dbus_introspect(struct json_request *jreq)
     dbus_message_iter_get_basic(&iter, &reply);
 
     char *signature = calloc(1, sizeof(char) * 16);
-    if (retrieve_xml_signature(reply, signature, jreq->dmsg->iface, 
+    if (retrieve_xml_signature(reply, signature, jreq->dmsg->interface, 
                                                  jreq->dmsg->member) < 1)
         signature[0] = '\0';
 
