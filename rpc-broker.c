@@ -22,7 +22,7 @@ void *dbus_signal(void *subscriber)
 
     while (dbus_connection_get_is_connected(conn)) { 
 
-        sem_wait(memory_lock);
+        sleep(1);
         dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
         DBusMessage *msg = dbus_connection_pop_message(conn);
 
@@ -42,6 +42,7 @@ void *dbus_signal(void *subscriber)
 
         char *reply = prepare_json_reply(jrsp);
 
+        sem_wait(memory_lock);
         lws_ring_insert(ring, reply, 1);
         lws_callback_on_writable(bsig->wsi);
         sem_post(memory_lock);
