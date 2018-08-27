@@ -15,9 +15,9 @@
 #include "rpc-broker.h"
 
 
-void *signal_subscription(void *sub)
+void *dbus_signal(void *subscriber)
 {
-    struct broker_signal *bsig = (struct broker_signal *) sub;
+    struct broker_signal *bsig = (struct broker_signal *) subscriber;
     DBusConnection *conn = bsig->conn;
 
     while (dbus_connection_get_is_connected(conn)) { 
@@ -282,7 +282,7 @@ struct json_response *make_json_request(struct json_request *jreq)
         struct broker_signal *bsig = malloc(sizeof *bsig);
         bsig->conn = conn;
         bsig->wsi = jreq->wsi;
-        pthread_create(&signal_thr, NULL, signal_subscription, bsig);
+        pthread_create(&signal_thr, NULL, dbus_signal, bsig);
     } 
 
     /* XXX PRINT off arguments from response
