@@ -111,7 +111,7 @@ static inline void append_variant(DBusMessageIter *iter, int type, void *data)
 DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 {
     DBusMessage *msg = dbus_message_new_method_call(dmsg->dest, dmsg->path,
-                                                    dmsg->iface, dmsg->method);
+                                                    dmsg->iface, dmsg->member);
     DBusError error;
     dbus_error_init(&error);
 
@@ -179,7 +179,7 @@ char *db_query(DBusConnection *conn, char *arg)
 
     struct dbus_message *dmsg = calloc(sizeof *dmsg + sizeof(char *), 1);
     dbus_default(dmsg);
-    dmsg->method = DBUS_READ;
+    dmsg->member = DBUS_READ;
     dmsg->args[0] = (void *) arg;
 
     DBusMessage *msg = make_dbus_call(conn, dmsg);
@@ -204,7 +204,7 @@ char *dbus_introspect(struct json_request *jreq)
 
     dmsg->dest = jreq->dmsg->dest;
     dmsg->iface = DBUS_INTRO_IFACE;
-    dmsg->method = DBUS_INTRO_METH;
+    dmsg->member = DBUS_INTRO_METH;
     dmsg->path = jreq->dmsg->path;
     dmsg->arg_number = 0;
     dmsg->arg_sig[0] = '\0';
@@ -223,7 +223,7 @@ char *dbus_introspect(struct json_request *jreq)
 
     char *signature = calloc(1, sizeof(char) * 16);
     if (retrieve_xml_signature(reply, signature, jreq->dmsg->iface, 
-                                                 jreq->dmsg->method) < 1)
+                                                 jreq->dmsg->member) < 1)
         signature[0] = '\0';
 
     return signature;

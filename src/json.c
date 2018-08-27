@@ -28,9 +28,9 @@ struct json_request *convert_json_request(char *raw_json_req)
     struct json_request *jreq = malloc(sizeof *jreq);
     jreq->dmsg = malloc(sizeof *jreq->dmsg);
     jreq->dmsg->dest = get_json_str_obj(jobj, "destination");
-    jreq->dmsg->iface = get_json_str_obj(jobj, "interface");
+    jreq->dmsg->interface = get_json_str_obj(jobj, "interface");
     jreq->dmsg->path = get_json_str_obj(jobj, "path");
-    jreq->dmsg->method = get_json_str_obj(jobj, "method");
+    jreq->dmsg->member = get_json_str_obj(jobj, "member");
     jreq->conn = create_dbus_connection();
 
     if (!jobj) {
@@ -69,11 +69,11 @@ struct json_object *convert_dbus_response(struct json_response *jrsp)
                                json_object_new_string(jrsp->response_to));
     } else {
         json_object_object_add(jobj, "interface", 
-                               json_object_new_string(jrsp->iface));
+                               json_object_new_string(jrsp->interface));
         json_object_object_add(jobj, "path", 
                                json_object_new_string(jrsp->path));
         json_object_object_add(jobj, "member", 
-                               json_object_new_string(jrsp->meth));
+                               json_object_new_string(jrsp->member));
     }
 
     json_object_object_add(jobj, "args", jrsp->args);

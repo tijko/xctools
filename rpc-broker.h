@@ -120,7 +120,7 @@ struct rule {
     int if_bool_flag;     // the if-boolean is true/false
     char *dest;           // can be NULL
     char *path;           // can be NULL
-    char *iface;          // can be NULL
+    char *interface;          // can be NULL
     char *member;         // can be NULL
     char *if_bool;        // the if-boolean condition (eg "if dom-store write true")
     char *domname;        // dom-type name
@@ -128,11 +128,11 @@ struct rule {
 };
 
 struct dbus_message {
-    // go thru re-name "dest" to destination (iface...)
+    // go thru re-name "dest" to destination (interface...)
     const char *dest;
-    const char *iface;
+    const char *interface;
     const char *path;
-    const char *method;
+    const char *member;
     // struct argument {
     //   void *data;
     //   char dbus_type;
@@ -156,8 +156,8 @@ struct json_response {
     char *response_to;
     char *type;        // set as bitfield?
     const char *path;
-    const char *iface;
-    const char *meth;
+    const char *interface;
+    const char *member;
     char *arg_sig;
     struct json_object *args;
 };
@@ -240,7 +240,7 @@ xmlNodePtr find_xml_property(char *target, const char *property,
                              xmlNodePtr node);
 
 int retrieve_xml_signature(const char *xml_dump, char *args,
-                           char *iface, char *method);
+                           char *interface, char *member);
 
 void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter);
 

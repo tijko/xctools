@@ -74,7 +74,7 @@ struct rule *create_rule(char *rule)
             case ('i'): {
 
                 if (token[1] == 'n')
-                    current->iface = strdup(field);
+                    current->interface = strdup(field);
                 else {
                     current->if_bool = strdup(field); 
                     token = strtok_r(NULL, delimiter, &ruleptr);
@@ -123,8 +123,8 @@ struct rule *create_rule(char *rule)
     else
         printf("None\n");
     printf("Interface  : ");
-    if (current->iface)
-        printf("%s\n", current->iface);
+    if (current->interface)
+        printf("%s\n", current->interface);
     else
         printf("None\n");
     printf("Method     : ");
@@ -265,7 +265,7 @@ struct policy *build_policy(const char *rule_filename)
     struct dbus_message *dmsg = calloc(1, sizeof *dmsg);
 
     dbus_default(dmsg);
-    dmsg->method = DBUS_LIST;
+    dmsg->member = DBUS_LIST;
     dmsg->args[0] = (void *) DBUS_VM_PATH;
 
     DBusMessage *vms = make_dbus_call(conn, dmsg);

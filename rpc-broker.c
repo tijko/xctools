@@ -36,8 +36,8 @@ void *dbus_signal(void *subscriber)
 
         load_json_response(msg, jrsp);
 
-        jrsp->iface = dbus_message_get_interface(msg);
-        jrsp->meth = dbus_message_get_member(msg);
+        jrsp->interface = dbus_message_get_interface(msg);
+        jrsp->member = dbus_message_get_member(msg);
         jrsp->path = dbus_message_get_path(msg);
 
         char *reply = prepare_json_reply(jrsp);
@@ -74,7 +74,6 @@ void *broker_message(void *request)
         FD_SET(srv, &ex_set);
 
         struct timeval tv = { .tv_sec=1, .tv_usec=0 };
-        // set a timeout on the number of times select is able to be called
         int ret = select(srv + 1, &ex_set, NULL, NULL, &tv);
 
         if (ret == 0)
@@ -82,7 +81,6 @@ void *broker_message(void *request)
         if (ret < 0)
             DBUS_BROKER_ERROR("select");
 
-        // exchange is passed list
         if (FD_ISSET(srv, &ex_set)) 
             bytes = exchange(srv, client, recv, v4v_send, req);
         else
@@ -100,6 +98,7 @@ struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
 {
     DBusError error;
     dbus_error_init(&error);
+
     DBusMessage *dbus_msg = dbus_message_demarshal(msg, len, &error);
 
     if (dbus_error_is_set(&error)) {
@@ -114,11 +113,11 @@ struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
     const char *path = dbus_message_get_path(dbus_msg);
     dmsg->path = path ? path : "/";
 
-    const char *iface = dbus_message_get_interface(dbus_msg);
-    dmsg->iface = iface ? iface : "NULL";
+    const char *interface = dbus_message_get_interface(dbus_msg);
+    dmsg->interface = interface ? interface : "NULL";
 
     const char *member = dbus_message_get_member(dbus_msg);
-    dmsg->method = member ? member : "NULL";
+    dmsg->member = member ? member : "NULL";
     return dmsg;
 }
 
@@ -158,7 +157,7 @@ int init_request(int client, struct policy *dbus_policy)
     if ((ret = v4v_getpeername(client, &client_addr)) < 0) {
         DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
         free(dreq);
-        goto request_done;
+        return ret;
     }
 
     dreq->domid = client_addr.domain;
@@ -166,8 +165,6 @@ int init_request(int client, struct policy *dbus_policy)
 
     ret = pthread_create(&dbus_req_thread, NULL, 
                         (void *(*)(void *)) broker_message, (void *) dreq);
-
-request_done:
 
     return ret;
 }
@@ -205,8 +202,10 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
     struct json_object *args = jrsp->args;
 
     if (jrsp->arg_sig && jrsp->arg_sig[0] == 'a') {
+
         dbus_message_iter_recurse(&iter, &sub);
         iter = sub;
+
         if (jrsp->arg_sig[1] == 'a' || 
             jrsp->arg_sig[1] == 'o' || 
             jrsp->arg_sig[1] == 's' ||
@@ -228,7 +227,7 @@ struct json_response *make_json_request(struct json_request *jreq)
 
     /* XXX debug
     printf("ID: %d Destination: %s Path: %s Iface: %s Member: %s ",
-            jreq->id, jreq->dmsg->dest, jreq->dmsg->path, jreq->dmsg->iface, jreq->dmsg->method);
+            jreq->id, jreq->dmsg->dest, jreq->dmsg->path, jreq->dmsg->interface, jreq->dmsg->member);
     for (int i=0; i < jreq->dmsg->arg_number; i++) {
         switch (jreq->dmsg->arg_sig[i]) {
             case ('i'):
@@ -277,7 +276,7 @@ struct json_response *make_json_request(struct json_request *jreq)
 
     load_json_response(msg, jrsp);
 
-    if (strcmp("AddMatch", jreq->dmsg->method) == 0) { 
+    if (strcmp("AddMatch", jreq->dmsg->member) == 0) { 
         pthread_t signal_thr;
         struct broker_signal *bsig = malloc(sizeof *bsig);
         bsig->conn = conn;
@@ -317,11 +316,14 @@ void run(struct dbus_broker_args *args)
                         BROKER_DEFAULT_PORT);
 
     int default_socket = server->dbus_socket;
+
     fd_set server_set;
+
     struct lws_context *ws_context = create_ws_context(BROKER_UI_PORT);
 
     if (!ws_context)
         DBUS_BROKER_ERROR("WebSockets-Server");
+
     DBUS_BROKER_EVENT("<WebSockets-Server has started listening> [Port: %d]",
                         BROKER_UI_PORT);
     // global state flag?
@@ -339,10 +341,12 @@ void run(struct dbus_broker_args *args)
 
         if (ret < 0)
             DBUS_BROKER_ERROR("select");
+
         if (FD_ISSET(default_socket, &server_set) == 0)
             continue;
   
         int client = v4v_accept(default_socket, &server->peer);
+
         if (client < 0)
             DBUS_BROKER_ERROR("v4v_accept");
 

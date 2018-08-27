@@ -18,7 +18,7 @@ xmlNodePtr find_xml_property(char *target, const char *property,
 }
 
 int retrieve_xml_signature(const char *xml_dump, char *args, 
-                           char *iface, char *method)
+                           char *interface, char *member)
 {
     int idx = 0;
     char *error = NULL;
@@ -31,31 +31,31 @@ int retrieve_xml_signature(const char *xml_dump, char *args,
         goto xml_error;
     }
 
-    xmlNodePtr iface_node = find_xml_property(iface, XML_NAME_PROPERTY, 
+    xmlNodePtr interface_node = find_xml_property(interface, XML_NAME_PROPERTY, 
                                               xmlFirstElementChild(root));
-    if (iface_node == NULL) {
+    if (interface_node == NULL) {
         error = "interface";
         goto xml_error;
     }
 
-    xmlNodePtr method_node = find_xml_property(method, XML_NAME_PROPERTY, 
-                                               iface_node);
-    if (method_node == NULL) {
-        error = "method";
+    xmlNodePtr member_node = find_xml_property(member, XML_NAME_PROPERTY, 
+                                               interface_node);
+    if (member_node == NULL) {
+        error = "member";
         goto xml_error;
     }
 
-    const unsigned char *name = xmlGetProp(method_node, XML_DIRECTION_PROPERTY);
+    const unsigned char *name = xmlGetProp(member_node, XML_DIRECTION_PROPERTY);
 
     while (name && !strcmp(name, "in")) {
 
-        char *type = xmlGetProp(method_node, "type");
+        char *type = xmlGetProp(member_node, "type");
 
         if (type)
             args[idx++] = type[0];
 
-        method_node = xmlNextElementSibling(method_node);
-        name = xmlGetProp(method_node, XML_DIRECTION_PROPERTY);
+        member_node = xmlNextElementSibling(member_node);
+        name = xmlGetProp(member_node, XML_DIRECTION_PROPERTY);
     }
 
 xml_error:

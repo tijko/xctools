@@ -21,7 +21,7 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
         dmsg->path = "/";
 
     snprintf(req_msg, 1023, "Dom: %d [Dest: %s Path: %s Iface: %s Meth: %s]",
-                      domid, dmsg->dest, dmsg->path, dmsg->iface, dmsg->method);
+                      domid, dmsg->dest, dmsg->path, dmsg->interface, dmsg->member);
     
     if (policy == 0)
         DBUS_BROKER_WARNING("%s <%s>", req_msg, "Dropped request");
@@ -67,8 +67,9 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
     if (((policy_rule->stubdom && is_stubdom(domid) < 1))                || 
         (policy_rule->dest && strcmp(policy_rule->dest, dmsg->dest))     ||
         (policy_rule->path && strcmp(policy_rule->path, dmsg->path))     ||
-        (policy_rule->iface && strcmp(policy_rule->iface, dmsg->iface))  ||
-        (policy_rule->member && strcmp(policy_rule->member, dmsg->method)))
+        (policy_rule->interface && strcmp(policy_rule->interface, 
+                                                 dmsg->interface))       ||
+        (policy_rule->member && strcmp(policy_rule->member, dmsg->member)))
         return 0;
 
     if (policy_rule->if_bool || policy_rule->domname) {
