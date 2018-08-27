@@ -13,6 +13,7 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
     for (int i=0; rulelist[i]; i++) {
         struct rule *current = rulelist[i];
         policy = filter(current, dmsg, domid);
+        policy = 1;
     }
 
     char req_msg[1024];

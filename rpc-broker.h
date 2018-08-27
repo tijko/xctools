@@ -78,7 +78,7 @@ sem_t *memory_lock;
 #define WS_USER_MEM_SIZE 8192  // the amount memory that is allocated for user
                                // for each ws-callback
                                //
-#define WS_LOOP_TIMEOUT  2000  // length of time each service of the websocket 
+#define WS_LOOP_TIMEOUT  200   // length of time each service of the websocket 
                                // event-loop (millisecs)
 
 #define DBUS_BROKER_TIMEOUT 100
