@@ -236,9 +236,10 @@ struct dbus_broker_server *start_server(int port);
 
 char *dbus_introspect(struct json_request *jreq);
 
-xmlNodePtr find_xml_property(char *target, char *property, xmlNodePtr node);
+xmlNodePtr find_xml_property(char *target, const char *property, 
+                             xmlNodePtr node);
 
-int retrieve_xml_signature(char *xml_dump, char *args,
+int retrieve_xml_signature(const char *xml_dump, char *args,
                            char *iface, char *method);
 
 void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter);

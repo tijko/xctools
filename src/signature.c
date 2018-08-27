@@ -1,11 +1,14 @@
 #include "../rpc-broker.h"
 
 
-xmlNodePtr find_xml_property(char *target, char *property, xmlNodePtr node)
+xmlNodePtr find_xml_property(char *target, const char *property, 
+                             xmlNodePtr node)
 {
     if (node == NULL)
         return NULL;
-    char *name = xmlGetProp(node, property);
+
+    const xmlChar *name = xmlGetProp(node, property);
+
     if (name && !strcmp(name, target))
         return xmlFirstElementChild(node);
 
@@ -14,7 +17,7 @@ xmlNodePtr find_xml_property(char *target, char *property, xmlNodePtr node)
     return node;
 }
 
-int retrieve_xml_signature(char *xml_dump, char *args, 
+int retrieve_xml_signature(const char *xml_dump, char *args, 
                            char *iface, char *method)
 {
     int idx = 0;
@@ -42,10 +45,12 @@ int retrieve_xml_signature(char *xml_dump, char *args,
         goto xml_error;
     }
 
-    char *name = xmlGetProp(method_node, XML_DIRECTION_PROPERTY);
+    const unsigned char *name = xmlGetProp(method_node, XML_DIRECTION_PROPERTY);
 
     while (name && !strcmp(name, "in")) {
+
         char *type = xmlGetProp(method_node, "type");
+
         if (type)
             args[idx++] = type[0];
 

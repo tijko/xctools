@@ -148,11 +148,11 @@ int init_request(int client, struct policy *dbus_policy)
 {
     int ret;
     pthread_t dbus_req_thread;
+
     struct dbus_request *dreq = malloc(sizeof *dreq);
     dreq->client = client;
 
     v4v_addr_t client_addr;
-    size_t client_len = sizeof(client_addr);
 
     if ((ret = v4v_getpeername(client, &client_addr)) < 0) {
         DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));

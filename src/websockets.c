@@ -82,7 +82,6 @@ struct lws_context *create_ws_context(int port)
 int ws_request_handler(struct lws *wsi, char *raw_req)
 {
     v4v_addr_t addr;
-    socklen_t client_len = sizeof(addr);
     int client = lws_get_socket_fd(wsi);
 
     if (v4v_getpeername(client, &addr) < 0) {
