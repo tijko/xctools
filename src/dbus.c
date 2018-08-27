@@ -59,6 +59,76 @@ int connect_to_system_bus(void)
     return srv;
 }
 
+void *dbus_signal(void *subscriber)
+{
+    struct broker_signal *bsig = (struct broker_signal *) subscriber;
+    DBusConnection *conn = bsig->conn;
+
+    while (dbus_connection_get_is_connected(conn)) { 
+
+        sleep(1);
+        dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
+        DBusMessage *msg = dbus_connection_pop_message(conn);
+
+        if (!msg || dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
+            continue;
+
+        struct json_response *jrsp = init_jrsp();
+        free(jrsp->response_to);
+        jrsp->response_to = NULL;
+        snprintf(jrsp->type, JSON_REQ_ID_MAX - 1, "%s", JSON_RESP_SIG);
+
+        load_json_response(msg, jrsp);
+
+        jrsp->interface = dbus_message_get_interface(msg);
+        jrsp->member = dbus_message_get_member(msg);
+        jrsp->path = dbus_message_get_path(msg);
+
+        char *reply = prepare_json_reply(jrsp);
+
+        sem_wait(memory_lock);
+        lws_ring_insert(ring, reply, 1);
+        lws_callback_on_writable(bsig->wsi);
+        sem_post(memory_lock);
+
+        dbus_message_unref(msg);
+        free_json_response(jrsp);
+        dbus_connection_flush(conn);
+    }
+
+    dbus_connection_close(conn);
+    free(bsig);
+
+    return NULL;
+}
+
+struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
+{
+    DBusError error;
+    dbus_error_init(&error);
+
+    DBusMessage *dbus_msg = dbus_message_demarshal(msg, len, &error);
+
+    if (dbus_error_is_set(&error)) {
+        DBUS_BROKER_WARNING("<De-Marshal failed> [Length: %d] error: %s",
+                              len, error.message);
+        return NULL;
+    }
+        
+    struct dbus_message *dmsg = calloc(1, sizeof *dmsg);
+    dmsg->dest = dbus_message_get_destination(dbus_msg);
+
+    const char *path = dbus_message_get_path(dbus_msg);
+    dmsg->path = path ? path : "/";
+
+    const char *interface = dbus_message_get_interface(dbus_msg);
+    dmsg->interface = interface ? interface : "NULL";
+
+    const char *member = dbus_message_get_member(dbus_msg);
+    dmsg->member = member ? member : "NULL";
+    return dmsg;
+}
+
 static inline void append_variant(DBusMessageIter *iter, int type, void *data)
 {
     DBusMessageIter sub;

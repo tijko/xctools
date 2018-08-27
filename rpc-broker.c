@@ -15,49 +15,6 @@
 #include "rpc-broker.h"
 
 
-void *dbus_signal(void *subscriber)
-{
-    struct broker_signal *bsig = (struct broker_signal *) subscriber;
-    DBusConnection *conn = bsig->conn;
-
-    while (dbus_connection_get_is_connected(conn)) { 
-
-        sleep(1);
-        dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
-        DBusMessage *msg = dbus_connection_pop_message(conn);
-
-        if (!msg || dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
-            continue;
-
-        struct json_response *jrsp = init_jrsp();
-        free(jrsp->response_to);
-        jrsp->response_to = NULL;
-        snprintf(jrsp->type, JSON_REQ_ID_MAX - 1, "%s", JSON_RESP_SIG);
-
-        load_json_response(msg, jrsp);
-
-        jrsp->interface = dbus_message_get_interface(msg);
-        jrsp->member = dbus_message_get_member(msg);
-        jrsp->path = dbus_message_get_path(msg);
-
-        char *reply = prepare_json_reply(jrsp);
-
-        sem_wait(memory_lock);
-        lws_ring_insert(ring, reply, 1);
-        lws_callback_on_writable(bsig->wsi);
-        sem_post(memory_lock);
-
-        dbus_message_unref(msg);
-        free_json_response(jrsp);
-        dbus_connection_flush(conn);
-    }
-
-    dbus_connection_close(conn);
-    free(bsig);
-
-    return NULL;
-}
-
 void *broker_message(void *request)
 {
     struct dbus_request *req = (struct dbus_request *) request;
@@ -92,33 +49,6 @@ void *broker_message(void *request)
 
     // set errno in void *
     return NULL;
-}
-
-struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
-{
-    DBusError error;
-    dbus_error_init(&error);
-
-    DBusMessage *dbus_msg = dbus_message_demarshal(msg, len, &error);
-
-    if (dbus_error_is_set(&error)) {
-        DBUS_BROKER_WARNING("<De-Marshal failed> [Length: %d] error: %s",
-                              len, error.message);
-        return NULL;
-    }
-        
-    struct dbus_message *dmsg = calloc(1, sizeof *dmsg);
-    dmsg->dest = dbus_message_get_destination(dbus_msg);
-
-    const char *path = dbus_message_get_path(dbus_msg);
-    dmsg->path = path ? path : "/";
-
-    const char *interface = dbus_message_get_interface(dbus_msg);
-    dmsg->interface = interface ? interface : "NULL";
-
-    const char *member = dbus_message_get_member(dbus_msg);
-    dmsg->member = member ? member : "NULL";
-    return dmsg;
 }
 
 int is_stubdom(int domid)
@@ -192,121 +122,10 @@ void sigint_handler(int signal)
     exit(0);
 }
 
-void load_json_response(DBusMessage *msg, struct json_response *jrsp)
-{
-    DBusMessageIter iter, sub;
-    dbus_message_iter_init(msg, &iter);
-
-    jrsp->arg_sig = dbus_message_iter_get_signature(&iter);
-
-    struct json_object *args = jrsp->args;
-
-    if (jrsp->arg_sig && jrsp->arg_sig[0] == 'a') {
-
-        dbus_message_iter_recurse(&iter, &sub);
-        iter = sub;
-
-        if (jrsp->arg_sig[1] == 'a' || 
-            jrsp->arg_sig[1] == 'o' || 
-            jrsp->arg_sig[1] == 's' ||
-            jrsp->arg_sig[1] == 'i') {
-            struct json_object *array = json_object_new_array();
-            json_object_array_add(jrsp->args, array);
-            args = array;
-        }
-    }
-
-    parse_signature(args, NULL, &iter);
-}
-
-struct json_response *make_json_request(struct json_request *jreq)
-{
-    struct json_response *jrsp = init_jrsp();
-
-    DBusConnection *conn = jreq->conn;
-
-    /* XXX debug
-    printf("ID: %d Destination: %s Path: %s Iface: %s Member: %s ",
-            jreq->id, jreq->dmsg->dest, jreq->dmsg->path, jreq->dmsg->interface, jreq->dmsg->member);
-    for (int i=0; i < jreq->dmsg->arg_number; i++) {
-        switch (jreq->dmsg->arg_sig[i]) {
-            case ('i'):
-                printf(" Int: %d ", *(int *) jreq->dmsg->args[i]);
-                break;
-            case ('u'):
-                printf(" Uint: %u ", *(uint32_t *) jreq->dmsg->args[i]);
-                break;
-            case ('s'):
-                printf(" String: %s ", (char *) jreq->dmsg->args[i]);
-                break;
-            case ('b'):
-                printf(" Boolean ");
-                break;
-            case ('v'):
-                printf(" Variant ");
-                break;
-            default:
-                printf("Fall-through: %c\n", jreq->dmsg->arg_sig[i]);
-                break;
-        }
-    }
-    printf("\n");
-    */
-
-    dbus_connection_flush(conn);
-
-    if (jreq->id == 1) {
-        const char *busname = dbus_bus_get_unique_name(conn);
-        jrsp->id = jreq->id;
-
-        snprintf(jrsp->response_to, JSON_REQ_ID_MAX, JSON_RESP_ID);
-        jrsp->arg_sig = "s";
-        json_object_array_add(jrsp->args, json_object_new_string(busname));
-        return jrsp;
-    }
-    
-    snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, "%d", jreq->id);
-    DBusMessage *msg = make_dbus_call(conn, jreq->dmsg);
-
-    if (!msg || dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) { 
-        DBUS_BROKER_WARNING("response to <%d> request failed", jreq->id); 
-        free_json_response(jrsp);
-        return NULL;
-    }
-
-    load_json_response(msg, jrsp);
-
-    if (strcmp("AddMatch", jreq->dmsg->member) == 0) { 
-        pthread_t signal_thr;
-        struct broker_signal *bsig = malloc(sizeof *bsig);
-        bsig->conn = conn;
-        bsig->wsi = jreq->wsi;
-        pthread_create(&signal_thr, NULL, dbus_signal, bsig);
-    } 
-
-    /* XXX PRINT off arguments from response
-    if (jrsp)
-        printf("response-to %s %s\n", jrsp->response_to, json_object_to_json_string(jrsp->args));
-    */
-
-    return jrsp;
-}
-
-void run(struct dbus_broker_args *args)
+static void run(struct dbus_broker_args *args)
 {
     srand48(time(NULL));
     dbus_broker_policy = build_policy(args->rule_file);
-
-    /* XXX test domain-rules (does not include /etc policy) 
-    struct rules *head = dbus_broker_policy->domain_rules;
-    while (head) {
-        printf("UUID: %s\n", head->uuid);
-        struct rule **rule_list = head->rule_list;
-        for (int i=0; i < head->count; i++) 
-            printf("    %s\n", rule_list[i]->rule_string);
-        head = head->next;
-    }
-    */ 
 
     memory_lock = malloc(sizeof(sem_t));
     sem_init(memory_lock, 0, 1);
@@ -326,8 +145,10 @@ void run(struct dbus_broker_args *args)
 
     DBUS_BROKER_EVENT("<WebSockets-Server has started listening> [Port: %d]",
                         BROKER_UI_PORT);
-    // global state flag?
-    while ( 1 ) {
+
+    dbus_broker_running = 1;
+
+    while (dbus_broker_running) {
 
         FD_ZERO(&server_set);
         FD_SET(default_socket, &server_set);

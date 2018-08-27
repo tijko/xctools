@@ -15,9 +15,6 @@
 #include <sys/un.h>
 #include <xenstore.h>
 
-struct lws_ring *ring;
-sem_t *memory_lock;
-
 
 #define DBUS_BROKER_ERROR(call)                                       \
     do {                                                              \
@@ -93,6 +90,31 @@ sem_t *memory_lock;
 #define JSON_RESP_SIG  "signal"
 #define JSON_RESP_ID   "1"
 
+// Global variables
+struct lws_ring *ring;
+sem_t *memory_lock;
+int dbus_broker_running;
+struct policy *dbus_broker_policy;
+
+struct broker_signal {
+    DBusConnection *conn;
+    struct lws *wsi;
+};
+
+struct policy {
+    int vm_number;
+    struct rules *etc_rules;
+    struct rules *domain_rules;
+};
+
+struct dbus_broker_args {
+    bool logging;
+    bool verbose;
+    char *bus_name;
+	char *logging_file;
+	char *rule_file;
+};
+
 struct dbus_broker_server {
     int dbus_socket;
 	v4v_addr_t addr;
@@ -128,7 +150,6 @@ struct rule {
 };
 
 struct dbus_message {
-    // go thru re-name "dest" to destination (interface...)
     const char *dest;
     const char *interface;
     const char *path;
@@ -162,6 +183,14 @@ struct json_response {
     struct json_object *args;
 };
 
+// rpc-broker.c
+void *broker_message(void *request);
+int init_request(int client, struct policy *dbus_policy);
+int is_stubdom(int domid);
+void print_usage(void);
+void sigint_handler(int signal);
+
+
 struct json_request *convert_json_request(char *raw_json_req);
 struct json_response *make_json_request(struct json_request *jreq);
 struct json_object *convert_dbus_response(struct json_response *jrsp);
@@ -171,27 +200,6 @@ int parse_json_args(struct json_object *jarray, struct json_request *jreq);
 void add_jobj(struct json_object *args, char *key, struct json_object *jobj);
 void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter);
 
-struct broker_signal {
-    DBusConnection *conn;
-    struct lws *wsi;
-};
-
-struct policy {
-    int vm_number;
-    struct rules *etc_rules;
-    struct rules *domain_rules;
-};
-
-struct dbus_broker_args {
-    bool logging;
-    bool verbose;
-    char *bus_name;
-	char *logging_file;
-	char *rule_file;
-};
-
-struct policy *dbus_broker_policy;
-
 void free_rule_list(struct rule **rule_list);
 void free_rules(struct rules *policy_rules);
 void free_policy(struct policy *dbus_policy);
@@ -199,8 +207,6 @@ void free_policy(struct policy *dbus_policy);
 struct policy *build_policy(const char *rule_filename);
 
 int broker(struct dbus_message *dmsg, struct dbus_request *req);
-
-void *broker_message(void *request);
 
 int connect_to_system_bus(void);
 
@@ -216,15 +222,8 @@ int exchange(int rsock, int ssock,
 // split-up according to functional relation
 int get_rules(DBusConnection *conn, struct rules *policy_rules);
 
-int init_request(int client, struct policy *dbus_policy);
-
-void print_usage(void);
-
-void sigint_handler(int signal);
 
 int ws_request_handler(struct lws *wsi, char *raw_req);
-
-void run(struct dbus_broker_args *args);
 
 DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg);
 
@@ -254,7 +253,6 @@ char *prepare_json_reply(struct json_response *jrsp);
 
 struct json_response *init_jrsp(void);
 
-int is_stubdom(int domid);
 
 struct rule *create_rule(char *rule);
 

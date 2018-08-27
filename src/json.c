@@ -15,11 +15,77 @@ struct json_response *init_jrsp(void)
     return jrsp;
 }
 
+struct json_response *make_json_request(struct json_request *jreq)
+{
+    struct json_response *jrsp = init_jrsp();
+
+    DBusConnection *conn = jreq->conn;
+    dbus_connection_flush(conn);
+
+    if (jreq->id == 1) {
+        const char *busname = dbus_bus_get_unique_name(conn);
+        jrsp->id = jreq->id;
+
+        snprintf(jrsp->response_to, JSON_REQ_ID_MAX, JSON_RESP_ID);
+        jrsp->arg_sig = "s";
+        json_object_array_add(jrsp->args, json_object_new_string(busname));
+        return jrsp;
+    }
+    
+    snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, "%d", jreq->id);
+    DBusMessage *msg = make_dbus_call(conn, jreq->dmsg);
+
+    if (!msg || dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) { 
+        DBUS_BROKER_WARNING("response to <%d> request failed", jreq->id); 
+        free_json_response(jrsp);
+        return NULL;
+    }
+
+    load_json_response(msg, jrsp);
+
+    if (strcmp("AddMatch", jreq->dmsg->member) == 0) { 
+        pthread_t signal_thr;
+        struct broker_signal *bsig = malloc(sizeof *bsig);
+        bsig->conn = conn;
+        bsig->wsi = jreq->wsi;
+        pthread_create(&signal_thr, NULL, dbus_signal, bsig);
+    } 
+
+    return jrsp;
+}
+
 char *get_json_str_obj(struct json_object *jobj, char *field)
 {
     struct json_object *jfield;
     json_object_object_get_ex(jobj, field, &jfield);
     return json_object_get_string(jfield);
+}
+
+void load_json_response(DBusMessage *msg, struct json_response *jrsp)
+{
+    DBusMessageIter iter, sub;
+    dbus_message_iter_init(msg, &iter);
+
+    jrsp->arg_sig = dbus_message_iter_get_signature(&iter);
+
+    struct json_object *args = jrsp->args;
+
+    if (jrsp->arg_sig && jrsp->arg_sig[0] == 'a') {
+
+        dbus_message_iter_recurse(&iter, &sub);
+        iter = sub;
+
+        if (jrsp->arg_sig[1] == 'a' || 
+            jrsp->arg_sig[1] == 'o' || 
+            jrsp->arg_sig[1] == 's' ||
+            jrsp->arg_sig[1] == 'i') {
+            struct json_object *array = json_object_new_array();
+            json_object_array_add(jrsp->args, array);
+            args = array;
+        }
+    }
+
+    parse_signature(args, NULL, &iter);
 }
 
 struct json_request *convert_json_request(char *raw_json_req)
