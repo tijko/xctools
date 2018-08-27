@@ -263,4 +263,4 @@ void free_json_response(struct json_response *jrsp);
 
 int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid);
 
-void dbus_signal(void *subscriber);
+void *dbus_signal(void *subscriber);
