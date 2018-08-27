@@ -96,7 +96,7 @@ struct json_request *convert_json_request(char *raw_json_req)
     jreq->dmsg->dest = get_json_str_obj(jobj, "destination");
     jreq->dmsg->interface = get_json_str_obj(jobj, "interface");
     jreq->dmsg->path = get_json_str_obj(jobj, "path");
-    jreq->dmsg->member = get_json_str_obj(jobj, "member");
+    jreq->dmsg->member = get_json_str_obj(jobj, "method");
     jreq->conn = create_dbus_connection();
 
     if (!jobj) {
