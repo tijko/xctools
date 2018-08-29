@@ -1,7 +1,7 @@
 #include "../rpc-broker.h"
 
 
-xmlNodePtr find_xml_property(char *target, const char *property, 
+xmlNodePtr find_xml_property(char *target, const xmlChar *property, 
                              xmlNodePtr node)
 {
     if (node == NULL)
@@ -9,7 +9,7 @@ xmlNodePtr find_xml_property(char *target, const char *property,
 
     const xmlChar *name = xmlGetProp(node, property);
 
-    if (name && !strcmp(name, target))
+    if (name && !strcmp((const char *) name, target))
         return xmlFirstElementChild(node);
 
     node = find_xml_property(target, property, xmlNextElementSibling(node));

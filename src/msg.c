@@ -60,7 +60,7 @@ int exchange(int rsock, int ssock,
 int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
 {
     DBusConnection *conn;
-    char *uuid, *arg, *query;
+    char *uuid, *arg;
 
     if (((policy_rule->stubdom && is_stubdom(domid) < 1))                || 
         (policy_rule->dest && strcmp(policy_rule->dest, dmsg->dest))     ||
