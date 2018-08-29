@@ -80,8 +80,8 @@
 
 #define DBUS_BROKER_TIMEOUT 100
 
-#define XML_NAME_PROPERTY      "name"
-#define XML_DIRECTION_PROPERTY "direction"
+static const xmlChar *XML_NAME_PROPERTY      = "name";
+static const xmlChar *XML_DIRECTION_PROPERTY = "direction";
 
 #define JSON_REQ_ID_MAX 16
 #define JSON_REQ_MAX   256
@@ -111,8 +111,8 @@ struct dbus_broker_args {
     bool logging;
     bool verbose;
     char *bus_name;
-	char *logging_file;
-	char *rule_file;
+    char *logging_file;
+    char *rule_file;
 };
 
 struct dbus_broker_server {

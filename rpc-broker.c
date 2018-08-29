@@ -177,6 +177,7 @@ static void run(struct dbus_broker_args *args)
     }
 
     free(server);
+    free(memory_lock);
     free_policy(dbus_broker_policy);
     close(default_socket);
 
@@ -245,7 +246,7 @@ int main(int argc, char *argv[])
         .rule_file=rule_file,
     };
 
-    struct sigaction sa = { .sa_handler=sigint_handler};
+    struct sigaction sa = { .sa_handler=sigint_handler };
 
     if (sigaction(SIGINT, &sa, NULL) < 0)
         DBUS_BROKER_ERROR("sigaction");

@@ -7,7 +7,9 @@ struct json_response *init_jrsp(void)
     struct json_response *jrsp = calloc(sizeof *jrsp + 
                                        (sizeof(char *) * JSON_REQ_MAX), 1); 
     jrsp->args = json_object_new_array();
+    // buffer
     jrsp->response_to = malloc(sizeof(char) * JSON_REQ_ID_MAX);
+    // buffer
     jrsp->type = malloc(sizeof(char) * JSON_REQ_ID_MAX);
     jrsp->id = rand() % 4096;
     snprintf(jrsp->type, JSON_REQ_ID_MAX, JSON_RESP_TYPE);
@@ -92,6 +94,7 @@ struct json_request *convert_json_request(char *raw_json_req)
 {
     struct json_object *jobj = json_tokener_parse(raw_json_req);
     struct json_request *jreq = malloc(sizeof *jreq);
+    // un-needed alloc
     jreq->dmsg = malloc(sizeof *jreq->dmsg);
     jreq->dmsg->dest = get_json_str_obj(jobj, "destination");
     jreq->dmsg->interface = get_json_str_obj(jobj, "interface");

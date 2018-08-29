@@ -133,8 +133,8 @@ static inline void append_variant(DBusMessageIter *iter, int type, void *data)
 {
     DBusMessageIter sub;
 
-    char *dbus_sig;
-    int dbus_type;
+    char *dbus_sig = NULL;
+    int dbus_type = DBUS_TYPE_INVALID;
 
     switch (type) {
 
@@ -167,6 +167,9 @@ static inline void append_variant(DBusMessageIter *iter, int type, void *data)
             DBUS_BROKER_WARNING("Unrecognized DBus Variant <%d>", type);
             break;
     }
+
+    if (dbus_type == DBUS_TYPE_INVALID)
+        return;
 
     dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, dbus_sig, &sub);
 
