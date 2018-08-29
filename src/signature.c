@@ -45,7 +45,7 @@ int retrieve_xml_signature(const char *xml_dump, char *args,
         goto xml_error;
     }
 
-    const unsigned char *name = xmlGetProp(member_node, XML_DIRECTION_PROPERTY);
+    const char *name = xmlGetProp(member_node, XML_DIRECTION_PROPERTY);
 
     while (name && !strcmp(name, XML_IN_FIELD)) {
 

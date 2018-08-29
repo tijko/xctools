@@ -82,8 +82,9 @@
 
 static const xmlChar XML_NAME_PROPERTY[]      = "name";
 static const xmlChar XML_DIRECTION_PROPERTY[] = "direction";
-static const xmlChar XML_IN_FIELD[]           = "in";
-static const xmlChar XML_TYPE_FIELD[]         = "type";
+
+static const char XML_IN_FIELD[]           = "in";
+static const char XML_TYPE_FIELD[]         = "type";
 
 #define JSON_REQ_ID_MAX 16
 #define JSON_REQ_MAX   256
