@@ -244,7 +244,7 @@ char *dbus_introspect(struct json_request *jreq);
 xmlNodePtr find_xml_property(char *target, const xmlChar *property, 
                              xmlNodePtr node);
 
-int retrieve_xml_signature(const char *xml_dump, char *args,
+int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
                            const char *interface, const char *member);
 
 void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter);
