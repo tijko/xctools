@@ -1,7 +1,7 @@
 #include "../rpc-broker.h"
 
 
-xmlNodePtr find_xml_property(char *target, const xmlChar *property, 
+xmlNodePtr find_xml_property(const char *target, const xmlChar *property, 
                              xmlNodePtr node)
 {
     if (node == NULL)
@@ -47,7 +47,7 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
 
     const xmlChar *name = xmlGetProp(member_node, XML_DIRECTION_PROPERTY);
 
-    while (name && !strcmp(name, XML_IN_FIELD)) {
+    while (name && !strcmp((const char *) name, XML_IN_FIELD)) {
 
         const xmlChar *type = xmlGetProp(member_node, XML_TYPE_FIELD);
 
