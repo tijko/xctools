@@ -80,8 +80,8 @@
 
 #define DBUS_BROKER_TIMEOUT 100
 
-static const xmlChar *XML_NAME_PROPERTY      = "name";
-static const xmlChar *XML_DIRECTION_PROPERTY = "direction";
+static const xmlChar XML_NAME_PROPERTY[]      = "name";
+static const xmlChar XML_DIRECTION_PROPERTY[] = "direction";
 
 #define JSON_REQ_ID_MAX 16
 #define JSON_REQ_MAX   256
@@ -242,7 +242,7 @@ xmlNodePtr find_xml_property(char *target, const char *property,
                              xmlNodePtr node);
 
 int retrieve_xml_signature(const char *xml_dump, char *args,
-                           char *interface, char *member);
+                           const char *interface, const char *member);
 
 void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter);
 

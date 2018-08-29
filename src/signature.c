@@ -18,7 +18,7 @@ xmlNodePtr find_xml_property(char *target, const char *property,
 }
 
 int retrieve_xml_signature(const char *xml_dump, char *args, 
-                           char *interface, char *member)
+                           const char *interface, const char *member)
 {
     int idx = 0;
     char *error = NULL;
