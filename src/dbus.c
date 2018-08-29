@@ -243,6 +243,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
     return msg;
 }
 
+// pass-in char buffer
 char *db_query(DBusConnection *conn, char *arg)
 {
     char *reply = malloc(sizeof(char) * RULE_MAX_LENGTH);

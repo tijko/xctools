@@ -131,7 +131,10 @@ struct rules {
     int domid;
     int count;
     char *uuid;
+    // same as below
     struct rules *next;
+    // create as array with set limit
+    // when building, while (rule-str && idx < limit)
     struct rule **rule_list;
 };
 

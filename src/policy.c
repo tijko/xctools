@@ -160,6 +160,8 @@ int get_rules(DBusConnection *conn, struct rules *domain_rules)
         char *arg;
         DBUS_REQ_ARG(arg, "/vm/%s/rpc-firewall-rules/%d", 
                      domain_rules->uuid, rule_count);
+        // could pass dom->list->rule->str[]
+        // in favor of alloc
         rule = db_query(conn, arg);
         if (rule) {
             struct rule *current = create_rule(rule);
@@ -262,13 +264,13 @@ struct policy *build_policy(const char *rule_filename)
     if (!conn) 
         return NULL;
 
-    struct dbus_message *dmsg = calloc(1, sizeof *dmsg);
+    struct dbus_message dmsg;
 
-    dbus_default(dmsg);
-    dmsg->member = DBUS_LIST;
-    dmsg->args[0] = (void *) DBUS_VM_PATH;
+    dbus_default(&dmsg);
+    dmsg.member = DBUS_LIST;
+    dmsg.args[0] = (void *) DBUS_VM_PATH;
 
-    DBusMessage *vms = make_dbus_call(conn, dmsg);
+    DBusMessage *vms = make_dbus_call(conn, &dmsg);
     if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) {
         DBUS_BROKER_WARNING("<No policy in place> %s", "");
         return NULL;

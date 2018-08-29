@@ -16,6 +16,7 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
         policy = 1;
     }
 
+    // Pass to LOG-BROKER
     char req_msg[1024];
     if (!dmsg->path)
         dmsg->path = "/";
