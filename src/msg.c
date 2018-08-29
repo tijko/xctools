@@ -3,11 +3,9 @@
 
 int broker(struct dbus_message *dmsg, struct dbus_request *req)
 {
-    // dbus-request only for domid and dom-rules
     int domid = req->domid;
     
     struct rule **rulelist = req->dom_rules;
-    // etc-policy rules first or last?    
     int policy = 0;
 
     for (int i=0; rulelist[i]; i++) {
@@ -16,7 +14,6 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
         policy = 1;
     }
 
-    // Pass to LOG-BROKER
     char req_msg[1024];
     if (!dmsg->path)
         dmsg->path = "/";
@@ -78,8 +75,8 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
         struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
 
         size_t len;
-        char *path = malloc(256);
         snprintf(path, 255, "/local/domain/%d/vm", domid);
+        char path[256];
         uuid = (char *) xs_read(xsh, XBT_NULL, path, &len);
         xs_close(xsh);
 
@@ -105,8 +102,6 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
 
         if (uuid)
             free(uuid);
-
-        free(path);
     }
 
     return policy_rule->policy;

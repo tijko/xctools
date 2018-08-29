@@ -106,44 +106,6 @@ struct rule *create_rule(char *rule)
         token = strtok_r(NULL, delimiter, &ruleptr);
     }
 
-    /*
-	if (!current)
-		return current;
-    printf("Rule-Policy: %d\n", current->policy);
-    printf("Stubdom    : %d\n", current->stubdom);
-    printf("If-bool    : %d\n", current->if_bool_flag);
-    printf("Destination: ");
-    if (current->dest)
-        printf("%s\n", current->dest);
-    else
-        printf("None\n");
-    printf("Path       : ");
-    if (current->path)
-        printf("%s\n", current->path);
-    else
-        printf("None\n");
-    printf("Interface  : ");
-    if (current->interface)
-        printf("%s\n", current->interface);
-    else
-        printf("None\n");
-    printf("Method     : ");
-    if (current->member)
-        printf("%s\n", current->member);
-    else
-        printf("None\n");
-    printf("Condition  : ");
-    if (current->if_bool)
-        printf("%s\n", current->if_bool);
-    else
-        printf("None\n");
-    printf("Domname    : ");
-    if (current->domname)
-        printf("%s\n", current->domname);
-    else
-        printf("None\n");
-	printf("Rule: %s\n\n", current->rule_string);     
-    */
     return current;
 }
 
@@ -244,7 +206,6 @@ struct rules *get_etc_rules(const char *rule_filename)
             etc_rules->rule_list = realloc(etc_rules->rule_list, 
                                            sizeof(struct rule *) * (idx + 1));
             char *line = strdup(rule_token);
-            // test if rule is Null
             struct rule *current = create_rule(line);
             if (current)
                 etc_rules->rule_list[idx++] = current; 
@@ -290,7 +251,6 @@ struct policy *build_policy(const char *rule_filename)
         void *arg = malloc(sizeof(char) * VM_UUID_LEN);
         dbus_message_iter_get_basic(&sub, &arg);
 
-// add-link
         if (current == NULL) {
             current = malloc(sizeof *current);
             dbus_policy->domain_rules = current;
@@ -302,7 +262,6 @@ struct policy *build_policy(const char *rule_filename)
         current->next = NULL;
         current->uuid = arg;
         current->domid = strtol(arg + DOMID_SECTION, NULL, 10);
-// re-use connection (return struct to next link-list)
         if (get_rules(conn, current))
             DBUS_BROKER_WARNING("<Error parsing rules> %s", "");
 
