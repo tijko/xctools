@@ -45,11 +45,11 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
         goto xml_error;
     }
 
-    const char *name = xmlGetProp(member_node, XML_DIRECTION_PROPERTY);
+    const xmlChar *name = xmlGetProp(member_node, XML_DIRECTION_PROPERTY);
 
     while (name && !strcmp(name, XML_IN_FIELD)) {
 
-        char *type = xmlGetProp(member_node, XML_TYPE_FIELD);
+        const xmlChar *type = xmlGetProp(member_node, XML_TYPE_FIELD);
 
         if (type)
             args[idx++] = type[0];
