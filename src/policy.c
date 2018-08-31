@@ -114,8 +114,6 @@ void free_rules(struct rules *policy_rules)
 
 void free_policy(struct policy *dbus_policy)
 {
-    free_rules(dbus_policy->domain_rules);
-    free_rules(dbus_policy->etc_rules);
     free(dbus_policy);
 }
 

@@ -126,19 +126,20 @@ void sigint_handler(int signal)
 static void run(struct dbus_broker_args *args)
 {
     srand48(time(NULL));
-    // If a linked-list is used for the "domain" specific rule-policies
-    // this means that the references need to be allocate foreach subsequent
-    // domains.  Remove linked list implementation and replace with an array
-    // 
     dbus_broker_policy = build_policy(args->rule_file);
 
     if (!dbus_broker_policy)
         DBUS_BROKER_ERROR("build-policy");
-    // print-out against the domain-rules...
-    // vm-count
-    // foreach vm
-    //   print(rule)
-    //     print(rulelist)
+
+    printf("Policy VM-number: <%d>\n", dbus_broker_policy->vm_number);
+    for (int i=0; i < dbus_broker_policy->vm_number; i++) {
+        struct rules current = domain_rules[i];
+        printf("Domain %s rule-count: <%d>\n", current.uuid, current.count);
+        for (int j=0; j < current.count; j++) {
+            struct rule this = current.rule_list[j];
+            printf("Rule: %s\n", this.rule_string);
+        }
+    }
 
     memory_lock = malloc(sizeof(sem_t));
     sem_init(memory_lock, 0, 1);
