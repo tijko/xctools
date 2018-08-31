@@ -128,9 +128,7 @@ struct rules {
     int domid;
     int count;
     char *uuid;
-    // create as array with set limit
-    // when building, while (rule-str && idx < limit)
-    struct rule rule_list[MAX_RULES];
+    struct rule *rule_list[MAX_RULES];
 };
 
 // Differentiate between the /etc file rules and domain specific xenclient.db
@@ -142,8 +140,8 @@ struct rules {
 #define MAX_DOMAINS 1024
 struct policy {
     int vm_number;
-    struct rules etc_rules;    
-    struct rules domain_rules[MAX_DOMAINS];  
+    struct rules *etc_rules;    
+    struct rules *domain_rules[MAX_DOMAINS];  
 };
 
 struct dbus_request {
@@ -221,8 +219,6 @@ void free_rule_list(struct rule **rule_list);
 void free_rules(struct rules *policy_rules);
 void free_policy(struct policy *dbus_policy);
  
-struct policy *build_policy(const char *rule_filename);
-
 int broker(struct dbus_message *dmsg, struct dbus_request *req);
 
 int connect_to_system_bus(void);
@@ -274,3 +270,6 @@ void free_json_response(struct json_response *jrsp);
 int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid);
 
 void *dbus_signal(void *subscriber);
+
+struct policy *build_policy(const char *rule_filename);
+

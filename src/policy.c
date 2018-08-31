@@ -1,8 +1,9 @@
 #include "../rpc-broker.h"
 
 
-static inline void create_rule(char *rule, struct rule *current)
+static inline struct rule *create_rule(char *rule)
 {
+    struct rule *current = malloc(sizeof *current);
     current->rule_string = strdup(rule);
 
     char *ruleptr;
@@ -66,9 +67,11 @@ static inline void create_rule(char *rule, struct rule *current)
 
         token = strtok_r(NULL, delimiter, &ruleptr);
     }
+
+    return current;
 }
 
-int get_rules(DBusConnection *conn, struct rules *domain_rules)
+static inline void get_rules(DBusConnection *conn, struct rules *domain_rules)
 {
     for (int rule_idx=0; rule_idx < MAX_RULES; rule_idx++) {
 
@@ -76,16 +79,68 @@ int get_rules(DBusConnection *conn, struct rules *domain_rules)
         DBUS_REQ_ARG(arg, "/vm/%s/rpc-firewall-rules/%d", 
                      domain_rules->uuid, rule_idx);
 
-        char *rule = db_query(conn, arg);
+        char *rulestring = db_query(conn, arg);
 
         if (!rule)
             break;
 
-        create_rule(rule, &(domain_rules->rule_list[rule_idx]));
+        struct rule *policy_rule = create_rule(rulestring); 
+
+        if (!policy_rule)
+            break;
+
+        domain_rules->rule_list[rule_idx] = policy_rule;
         domain_rules->count++;
     } 
+}
 
-    return 0;
+struct policy *build_policy(const char *rule_filename)
+{
+    DBusConnection *conn = create_dbus_connection();
+   
+    if (!conn) 
+        return NULL;
+
+    struct dbus_message dmsg;
+
+    dbus_default(&dmsg);
+    dmsg.member = DBUS_LIST;
+    dmsg.args[0] = (void *) DBUS_VM_PATH;
+
+    DBusMessage *vms = make_dbus_call(conn, &dmsg);
+
+    if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) {
+        DBUS_BROKER_WARNING("<No policy in place> %s", "");
+        return NULL;
+    }
+
+    struct policy *dbus_policy = calloc(1, sizeof *dbus_policy);
+
+    DBusMessageIter iter, sub;
+    dbus_message_iter_init(vms, &iter);
+    dbus_message_iter_recurse(&iter, &sub); 
+
+    for (int dom_idx=0; 
+             dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_INVALID;
+             dom_idx++) {
+
+        void *arg = malloc(sizeof(char) * VM_UUID_LEN);
+        dbus_message_iter_get_basic(&sub, &arg);
+
+        dbus_policy->domain_rules[dom_idx] = malloc(sizeof(struct rules));
+        struct rules *current = dbus_policy->domain_rules[dom_idx];
+        current->uuid = arg;
+        current->domid = strtol(arg + DOMID_SECTION, NULL, 10);
+
+        get_rules(conn, current);
+
+        dbus_message_iter_next(&sub);
+        dbus_policy->vm_number++;
+    }
+
+    // XXX
+    //dbus_policy->etc_rules = get_etc_rules(rule_filename);
+    return dbus_policy;
 }
 
 void free_rule_list(struct rule **rule_list)
@@ -156,57 +211,5 @@ struct rules *get_etc_rules(const char *rule_filename)
 */
     etc_rules->count = idx;
     return etc_rules;
-}
-
-struct policy *build_policy(const char *rule_filename)
-{
-    DBusConnection *conn = create_dbus_connection();
-
-    if (!conn) 
-        return NULL;
-
-    struct dbus_message dmsg;
-
-    dbus_default(&dmsg);
-    dmsg.member = DBUS_LIST;
-    dmsg.args[0] = (void *) DBUS_VM_PATH;
-
-    DBusMessage *vms = make_dbus_call(conn, &dmsg);
-
-    if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) {
-        DBUS_BROKER_WARNING("<No policy in place> %s", "");
-        return NULL;
-    }
-
-    DBusMessageIter iter, sub;
-    dbus_message_iter_init(vms, &iter);
-    dbus_message_iter_recurse(&iter, &sub); 
-
-    struct policy *dbus_policy = calloc(1, sizeof *dbus_policy);
-
-    for (int dom_idx=0; 
-             dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_INVALID;
-             dom_idx++) {
-
-        void *arg = malloc(sizeof(char) * VM_UUID_LEN);
-        dbus_message_iter_get_basic(&sub, &arg);
-
-        struct rules current = dbus_policy->domain_rules[dom_idx];
-        current.uuid = arg;
-        current.domid = strtol(arg + DOMID_SECTION, NULL, 10);
-
-        if (get_rules(conn, &current))
-            DBUS_BROKER_WARNING("<Error parsing rules> %s", "");
-
-        dbus_message_iter_next(&sub);
-        dbus_policy->vm_number++;
-    }
-
-    // Pass the &etc_rules as a reference...
-    // using direct memory addresses in place of allocation
-    // XXX
-    //dbus_policy->etc_rules = get_etc_rules(rule_filename);
-
-    return dbus_policy;
 }
 

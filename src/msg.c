@@ -4,18 +4,6 @@
 int broker(struct dbus_message *dmsg, struct dbus_request *req)
 {
     int domid = req->domid;
-/* XXX    
-    struct rule **rulelist = req->dom_rules;
-    int policy = 0;
-
-    for (int i=0; rulelist[i]; i++) {
-        struct rule *current = rulelist[i];
-        int rule_policy = filter(current, dmsg, domid);
-        policy = rule_policy != -1 ? rule_policy : policy;
-        policy = 1;
-    }
-*/
-    // XXX
     int policy = 1;
     char req_msg[1024];
     if (!dmsg->path)

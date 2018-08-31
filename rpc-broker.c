@@ -128,16 +128,13 @@ static void run(struct dbus_broker_args *args)
     srand48(time(NULL));
     dbus_broker_policy = build_policy(args->rule_file);
 
-    if (!dbus_broker_policy)
-        DBUS_BROKER_ERROR("build-policy");
-
     printf("Policy VM-number: <%d>\n", dbus_broker_policy->vm_number);
     for (int i=0; i < dbus_broker_policy->vm_number; i++) {
-        struct rules current = domain_rules[i];
-        printf("Domain %s rule-count: <%d>\n", current.uuid, current.count);
-        for (int j=0; j < current.count; j++) {
-            struct rule this = current.rule_list[j];
-            printf("Rule: %s\n", this.rule_string);
+        struct rules current = dbus_broker_policy->domain_rules[i];
+        printf("Domain %s rule-count: <%d>\n", current->uuid, current->count);
+        for (int j=0; j < current->count; j++) {
+            struct rule this = current->rule_list[j];
+            printf("Rule: %s\n", this->rule_string);
         }
     }
 
