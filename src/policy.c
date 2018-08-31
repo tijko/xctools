@@ -1,48 +1,5 @@
 #include "../rpc-broker.h"
 
-// Mark for removal?
-// this creates a new copy with the etc & domain rules combined into one
-// joint list to filter over in the dbus-request
-// alternatively in the dbus-request allow for the handling function to 
-// iterate thru the etc rule array and then search itself for the domain
-// rule array (if any) in the request-thread.
-static inline void copy_rulelist(int count, struct rule **dest, 
-                                            struct rule **src)
-{
-    for (int i=0; i < count; i++) {
-        dest[i] = malloc(sizeof(struct rule));
-        memcpy(dest[i], src[i], sizeof(struct rule));
-    }
-}
-
-struct rule **build_domain_policy(int domid, struct policy *dbus_policy)
-{
-    struct rule **req_list = NULL;
-    struct rules *etc_rules = dbus_policy->etc_rules;
-    int etc_count = 0;
-
-    if (etc_rules) {
-        etc_count = etc_rules->count;
-        req_list = realloc(req_list, sizeof(struct rule *) * etc_count + 1);
-        copy_rulelist(etc_count, req_list, etc_rules->rule_list);
-        req_list[etc_count] = NULL;
-    }
-
-    struct rules *dom_rules = dbus_policy->domain_rules;
-
-    while (dom_rules && dom_rules->domid != domid)
-        dom_rules = dom_rules->next;
-
-    if (dom_rules) {
-        int dom_count = dom_rules->count;
-        req_list = realloc(req_list, sizeof(struct rule *) * 
-                          (etc_count + dom_count + 1));
-        copy_rulelist(dom_count, &(req_list[etc_count]), dom_rules->rule_list);
-        req_list[dom_count + etc_count] = NULL;
-    }
-
-    return req_list;
-}
 
 static inline void create_rule(char *rule, struct rule *current)
 {

@@ -259,8 +259,6 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
 
 void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter);
 
-struct rule **build_domain_policy(int domid, struct policy *dbus_policy);
-
 struct lws_context *create_ws_context(int port);
 
 void load_json_response(DBusMessage *msg, struct json_response *jrsp);
