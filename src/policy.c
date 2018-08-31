@@ -1,6 +1,11 @@
 #include "../rpc-broker.h"
 
-
+// Mark for removal?
+// this creates a new copy with the etc & domain rules combined into one
+// joint list to filter over in the dbus-request
+// alternatively in the dbus-request allow for the handling function to 
+// iterate thru the etc rule array and then search itself for the domain
+// rule array (if any) in the request-thread.
 static inline void copy_rulelist(int count, struct rule **dest, 
                                             struct rule **src)
 {
@@ -39,9 +44,8 @@ struct rule **build_domain_policy(int domid, struct policy *dbus_policy)
     return req_list;
 }
 
-struct rule *create_rule(char *rule)
+static inline void create_rule(char *rule, struct rule *current)
 {
-    struct rule *current = calloc(1, sizeof(struct rule));
     current->rule_string = strdup(rule);
 
     char *ruleptr;
@@ -105,35 +109,24 @@ struct rule *create_rule(char *rule)
 
         token = strtok_r(NULL, delimiter, &ruleptr);
     }
-
-    return current;
 }
 
 int get_rules(DBusConnection *conn, struct rules *domain_rules)
 {
-    int rule_count = 0;
-    char *rule = NULL;
-    domain_rules->rule_list = NULL;
+    for (int rule_idx=0; rule_idx < MAX_RULES; rule_idx++) {
 
-    do { 
-        domain_rules->rule_list = realloc(domain_rules->rule_list, 
-                                          sizeof(struct rule *) * 
-                                                (rule_count + 1)); 
         char *arg;
         DBUS_REQ_ARG(arg, "/vm/%s/rpc-firewall-rules/%d", 
                      domain_rules->uuid, rule_count);
-        // could pass dom->list->rule->str[]
-        // in favor of alloc
-        rule = db_query(conn, arg);
-        if (rule) {
-            struct rule *current = create_rule(rule);
-            if (current)
-                domain_rules->rule_list[rule_count++] = current;
-        } 
 
-    } while (rule != NULL);
+        char *rule = db_query(conn, arg);
 
-    domain_rules->count = rule_count;
+        if (!rule)
+            break;
+
+        create_rule(rule, &(domain_rules->rule_list[rule_idx]));
+        domain_rules->count++;
+    } 
 
     return 0;
 }
@@ -177,9 +170,11 @@ void free_policy(struct policy *dbus_policy)
     free(dbus_policy);
 }
 
+// Etc specific structure...
 struct rules *get_etc_rules(const char *rule_filename)
 {
     struct stat policy_stat;
+
     if (stat(rule_filename, &policy_stat) < 0)
         return NULL;
 
@@ -197,23 +192,21 @@ struct rules *get_etc_rules(const char *rule_filename)
     char *rule_token = strtok_r(policy, newline, &fileptr);
 
     struct rules *etc_rules = malloc(sizeof(struct rules));
-    etc_rules->rule_list = NULL;
 
     int idx = 0;
-
+/*
     while (rule_token) {
         if (isalpha(rule_token[0])) {
-            etc_rules->rule_list = realloc(etc_rules->rule_list, 
-                                           sizeof(struct rule *) * (idx + 1));
             char *line = strdup(rule_token);
-            struct rule *current = create_rule(line);
-            if (current)
-                etc_rules->rule_list[idx++] = current; 
+            // re-defined...
+            //create_rule(line);
+            //if (current)
+            //    etc_rules->rule_list[idx++] = current; 
         }
 
         rule_token = strtok_r(NULL, newline, &fileptr);
     }
-
+*/
     etc_rules->count = idx;
     return etc_rules;
 }
@@ -232,6 +225,7 @@ struct policy *build_policy(const char *rule_filename)
     dmsg.args[0] = (void *) DBUS_VM_PATH;
 
     DBusMessage *vms = make_dbus_call(conn, &dmsg);
+
     if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) {
         DBUS_BROKER_WARNING("<No policy in place> %s", "");
         return NULL;
@@ -241,34 +235,30 @@ struct policy *build_policy(const char *rule_filename)
     dbus_message_iter_init(vms, &iter);
     dbus_message_iter_recurse(&iter, &sub); 
 
-    struct policy *dbus_policy = malloc(sizeof *dbus_policy);
-    dbus_policy->domain_rules = NULL;
-    dbus_policy->etc_rules = NULL;
-    struct rules *current = NULL;
+    struct policy *dbus_policy = calloc(1, sizeof *dbus_policy);
 
-    while (dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_INVALID) {
+    for (int dom_idx=0; 
+             dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_INVALID;
+             dom_idx++) {
 
         void *arg = malloc(sizeof(char) * VM_UUID_LEN);
         dbus_message_iter_get_basic(&sub, &arg);
 
-        if (current == NULL) {
-            current = malloc(sizeof *current);
-            dbus_policy->domain_rules = current;
-        } else {
-            current->next = malloc(sizeof(struct rules));
-            current = current->next;
-        }
+        struct rules current = dbus_policy->domain_rules[dom_idx];
+        current.uuid = arg;
+        current.domid = strtol(arg + DOMID_SECTION, NULL, 10);
 
-        current->next = NULL;
-        current->uuid = arg;
-        current->domid = strtol(arg + DOMID_SECTION, NULL, 10);
-        if (get_rules(conn, current))
+        if (get_rules(conn, &current))
             DBUS_BROKER_WARNING("<Error parsing rules> %s", "");
 
         dbus_message_iter_next(&sub);
+        dbus_policy->vm_number++;
     }
 
-    dbus_policy->etc_rules = get_etc_rules(rule_filename);
+    // Pass the &etc_rules as a reference...
+    // using direct memory addresses in place of allocation
+    // XXX
+    //dbus_policy->etc_rules = get_etc_rules(rule_filename);
 
     return dbus_policy;
 }

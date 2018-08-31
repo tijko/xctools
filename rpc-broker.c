@@ -91,7 +91,8 @@ int init_request(int client, struct policy *dbus_policy)
     }
 
     dreq->domid = client_addr.domain;
-    dreq->dom_rules = build_domain_policy(dreq->domid, dbus_policy); 
+// XXX hold-off on re-building "domain-policy"
+//    dreq->dom_rules = build_domain_policy(dreq->domid, dbus_policy); 
 
     ret = pthread_create(&dbus_req_thread, NULL, 
                         (void *(*)(void *)) broker_message, (void *) dreq);
@@ -125,7 +126,19 @@ void sigint_handler(int signal)
 static void run(struct dbus_broker_args *args)
 {
     srand48(time(NULL));
+    // If a linked-list is used for the "domain" specific rule-policies
+    // this means that the references need to be allocate foreach subsequent
+    // domains.  Remove linked list implementation and replace with an array
+    // 
     dbus_broker_policy = build_policy(args->rule_file);
+
+    if (!dbus_broker_policy)
+        DBUS_BROKER_ERROR("build-policy");
+    // print-out against the domain-rules...
+    // vm-count
+    // foreach vm
+    //   print(rule)
+    //     print(rulelist)
 
     memory_lock = malloc(sizeof(sem_t));
     sem_init(memory_lock, 0, 1);

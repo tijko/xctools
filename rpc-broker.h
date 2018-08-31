@@ -97,6 +97,11 @@ static const char XML_TYPE_FIELD[]         = "type";
 struct lws_ring *ring;
 sem_t *memory_lock;
 int dbus_broker_running;
+// have a global rule-list then in the "run" func assign to this larger 
+// structure
+// 
+// only concerned with the sighup reloading the rules for the etc_rules in
+// struct policy
 struct policy *dbus_broker_policy;
 
 struct broker_signal {
@@ -104,41 +109,28 @@ struct broker_signal {
     struct lws *wsi;
 };
 
+// XXX expanding and re-designing the policy structure
+// Differentiate between the /etc file rules and domain specific xenclient.db
+// rules.  
+// While there are similarities, the number field attributes that are exclusive
+// to one or the other is significantly greater than commonalities.
+// Whatsmore, the /etc file rules are going to be dynamic in the sense that
+// a sighup is triggering a reloading of the structure
+#define MAX_DOMAINS 1024
 struct policy {
     int vm_number;
-    struct rules *etc_rules;
-    struct rules *domain_rules;
+    struct rules etc_rules;    
+    struct rules domain_rules[MAX_DOMAINS];  
 };
 
-struct dbus_broker_args {
-    bool logging;
-    bool verbose;
-    char *bus_name;
-    char *logging_file;
-    char *rule_file;
-};
-
-struct dbus_broker_server {
-    int dbus_socket;
-	v4v_addr_t addr;
-	v4v_addr_t peer;
-};
-
-struct dbus_request {
-    int domid;
-    int client;
-    struct rule **dom_rules;
-};
-
+#define MAX_RULES 1024
 struct rules {
     int domid;
     int count;
     char *uuid;
-    // same as below
-    struct rules *next;
     // create as array with set limit
     // when building, while (rule-str && idx < limit)
-    struct rule **rule_list;
+    struct rule rule_list[MAX_RULES];
 };
 
 // add type-qualifiers
@@ -155,6 +147,12 @@ struct rule {
     char *rule_string;    // the entirety of the rule...
 };
 
+struct dbus_request {
+    int domid;
+    int client;
+    struct rule **dom_rules;
+};
+
 struct dbus_message {
     const char *dest;
     const char *interface;
@@ -169,6 +167,20 @@ struct dbus_message {
     char arg_sig[DBUS_MAX_ARG_LEN];
     char json_sig[DBUS_MAX_ARG_LEN];
     void *args[DBUS_MAX_ARG_LEN];
+};
+
+struct dbus_broker_args {
+    bool logging;
+    bool verbose;
+    char *bus_name;
+    char *logging_file;
+    char *rule_file;
+};
+
+struct dbus_broker_server {
+    int dbus_socket;
+	v4v_addr_t addr;
+	v4v_addr_t peer;
 };
 
 struct json_request {
@@ -228,7 +240,6 @@ int exchange(int rsock, int ssock,
 // split-up according to functional relation
 int get_rules(DBusConnection *conn, struct rules *policy_rules);
 
-
 int ws_request_handler(struct lws *wsi, char *raw_req);
 
 DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg);
@@ -258,9 +269,6 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp);
 char *prepare_json_reply(struct json_response *jrsp);
 
 struct json_response *init_jrsp(void);
-
-
-struct rule *create_rule(char *rule);
 
 struct rules *get_etc_rules(const char *rule_filename);
 
