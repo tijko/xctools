@@ -74,7 +74,7 @@ int get_rules(DBusConnection *conn, struct rules *domain_rules)
 
         char *arg;
         DBUS_REQ_ARG(arg, "/vm/%s/rpc-firewall-rules/%d", 
-                     domain_rules->uuid, rule_count);
+                     domain_rules->uuid, rule_idx);
 
         char *rule = db_query(conn, arg);
 
@@ -109,14 +109,6 @@ void free_rules(struct rules *policy_rules)
     if (policy_rules->uuid)
         free(policy_rules->uuid);
 
-    struct rules *current = policy_rules->next;
-
-    while (current) {
-        free_rule_list(current->rule_list);
-        free_rules(current->next);
-        free(current);
-    }
-    
     free(policy_rules);
 }
 
