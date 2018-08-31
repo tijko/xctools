@@ -10,7 +10,8 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
 
     for (int i=0; rulelist[i]; i++) {
         struct rule *current = rulelist[i];
-        policy = filter(current, dmsg, domid);
+        int rule_policy = filter(current, dmsg, domid);
+        policy = rule_policy != -1 ? rule_policy : policy;
         policy = 1;
     }
 
@@ -68,7 +69,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
         (policy_rule->interface && strcmp(policy_rule->interface, 
                                                  dmsg->interface))       ||
         (policy_rule->member && strcmp(policy_rule->member, dmsg->member)))
-        return 0;
+        return -1;
 
     if (policy_rule->if_bool || policy_rule->domname) {
         conn = create_dbus_connection();
@@ -88,7 +89,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
                                policy_rule->if_bool_flag == 0) ||
                               (attr_cond[0] == 'f' &&
                                policy_rule->if_bool_flag == 1))
-                return 0;
+                return -1;
 
             free(arg);
         }
@@ -97,7 +98,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
             DBUS_REQ_ARG(arg, "%s/type", uuid);
             char *dom_type = db_query(conn, arg);
             if (!dom_type || strcmp(policy_rule->domname, dom_type))
-                return 0;
+                return -1;
         }
 
         if (uuid)
