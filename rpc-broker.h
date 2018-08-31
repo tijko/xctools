@@ -109,30 +109,6 @@ struct broker_signal {
     struct lws *wsi;
 };
 
-// XXX expanding and re-designing the policy structure
-// Differentiate between the /etc file rules and domain specific xenclient.db
-// rules.  
-// While there are similarities, the number field attributes that are exclusive
-// to one or the other is significantly greater than commonalities.
-// Whatsmore, the /etc file rules are going to be dynamic in the sense that
-// a sighup is triggering a reloading of the structure
-#define MAX_DOMAINS 1024
-struct policy {
-    int vm_number;
-    struct rules etc_rules;    
-    struct rules domain_rules[MAX_DOMAINS];  
-};
-
-#define MAX_RULES 1024
-struct rules {
-    int domid;
-    int count;
-    char *uuid;
-    // create as array with set limit
-    // when building, while (rule-str && idx < limit)
-    struct rule rule_list[MAX_RULES];
-};
-
 // add type-qualifiers
 struct rule {
     int policy;           // allow/deny 
@@ -145,6 +121,29 @@ struct rule {
     char *if_bool;        // the if-boolean condition (eg "if dom-store write true")
     char *domname;        // dom-type name
     char *rule_string;    // the entirety of the rule...
+};
+
+#define MAX_RULES 1024
+struct rules {
+    int domid;
+    int count;
+    char *uuid;
+    // create as array with set limit
+    // when building, while (rule-str && idx < limit)
+    struct rule rule_list[MAX_RULES];
+};
+
+// Differentiate between the /etc file rules and domain specific xenclient.db
+// rules.  
+// While there are similarities, the number of field attributes that are 
+// exclusive to one or the other is significantly greater than commonalities.
+// Whatsmore, the /etc file rules are going to be dynamic in the sense that
+// a sighup is triggering a reloading of the structure
+#define MAX_DOMAINS 1024
+struct policy {
+    int vm_number;
+    struct rules etc_rules;    
+    struct rules domain_rules[MAX_DOMAINS];  
 };
 
 struct dbus_request {
