@@ -233,8 +233,6 @@ int exchange(int rsock, int ssock,
              struct dbus_request *req);
 
 // split-up according to functional relation
-int get_rules(DBusConnection *conn, struct rules *policy_rules);
-
 int ws_request_handler(struct lws *wsi, char *raw_req);
 
 DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg);

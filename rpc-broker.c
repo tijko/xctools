@@ -130,10 +130,10 @@ static void run(struct dbus_broker_args *args)
 
     printf("Policy VM-number: <%d>\n", dbus_broker_policy->vm_number);
     for (int i=0; i < dbus_broker_policy->vm_number; i++) {
-        struct rules current = dbus_broker_policy->domain_rules[i];
+        struct rules *current = dbus_broker_policy->domain_rules[i];
         printf("Domain %s rule-count: <%d>\n", current->uuid, current->count);
         for (int j=0; j < current->count; j++) {
-            struct rule this = current->rule_list[j];
+            struct rule *this = current->rule_list[j];
             printf("Rule: %s\n", this->rule_string);
         }
     }

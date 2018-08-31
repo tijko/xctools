@@ -81,7 +81,7 @@ static inline void get_rules(DBusConnection *conn, struct rules *domain_rules)
 
         char *rulestring = db_query(conn, arg);
 
-        if (!rule)
+        if (!rulestring)
             break;
 
         struct rule *policy_rule = create_rule(rulestring); 
@@ -189,6 +189,8 @@ struct rules *get_etc_rules(const char *rule_filename)
     close(policy_fd);
 
     policy[rbytes] = '\0';
+    return NULL;
+/*
     char *newline = "\n";
     char *fileptr;
     char *rule_token = strtok_r(policy, newline, &fileptr);
@@ -196,7 +198,6 @@ struct rules *get_etc_rules(const char *rule_filename)
     struct rules *etc_rules = malloc(sizeof(struct rules));
 
     int idx = 0;
-/*
     while (rule_token) {
         if (isalpha(rule_token[0])) {
             char *line = strdup(rule_token);
@@ -208,8 +209,8 @@ struct rules *get_etc_rules(const char *rule_filename)
 
         rule_token = strtok_r(NULL, newline, &fileptr);
     }
-*/
     etc_rules->count = idx;
     return etc_rules;
+*/
 }
 
