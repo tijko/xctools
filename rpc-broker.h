@@ -128,7 +128,7 @@ struct rules {
     int domid;
     int count;
     char *uuid;
-    struct rule *rule_list[MAX_RULES];
+    struct rule rule_list[MAX_RULES];
 };
 
 // Differentiate between the /etc file rules and domain specific xenclient.db
@@ -141,7 +141,7 @@ struct rules {
 struct policy {
     int vm_number;
     struct rules *etc_rules;    
-    struct rules *domain_rules[MAX_DOMAINS];  
+    struct rules domain_rules[MAX_DOMAINS];  
 };
 
 struct dbus_request {

@@ -1,9 +1,8 @@
 #include "../rpc-broker.h"
 
 
-static inline struct rule *create_rule(char *rule)
+static inline void create_rule(struct rule *current, char *rule)
 {
-    struct rule *current = malloc(sizeof *current);
     current->rule_string = strdup(rule);
 
     char *ruleptr;
@@ -67,8 +66,6 @@ static inline struct rule *create_rule(char *rule)
 
         token = strtok_r(NULL, delimiter, &ruleptr);
     }
-
-    return current;
 }
 
 static inline void get_rules(DBusConnection *conn, struct rules *domain_rules)
@@ -84,12 +81,9 @@ static inline void get_rules(DBusConnection *conn, struct rules *domain_rules)
         if (!rulestring)
             break;
 
-        struct rule *policy_rule = create_rule(rulestring); 
+        struct rule *policy_rule = &(domain_rules->rule_list[rule_idx]);
+        create_rule(policy_rule, rulestring); 
 
-        if (!policy_rule)
-            break;
-
-        domain_rules->rule_list[rule_idx] = policy_rule;
         domain_rules->count++;
     } 
 }
@@ -127,8 +121,7 @@ struct policy *build_policy(const char *rule_filename)
         void *arg = malloc(sizeof(char) * VM_UUID_LEN);
         dbus_message_iter_get_basic(&sub, &arg);
 
-        dbus_policy->domain_rules[dom_idx] = malloc(sizeof(struct rules));
-        struct rules *current = dbus_policy->domain_rules[dom_idx];
+        struct rules *current = &(dbus_policy->domain_rules[dom_idx]);
         current->uuid = arg;
         current->domid = strtol(arg + DOMID_SECTION, NULL, 10);
 
