@@ -81,7 +81,7 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
         if (!rulestring)
             break;
 
-        struct rule *policy_rule = &(dom->rule_list[rule_idx]);
+        struct rule *policy_rule = &(dom->rules[rule_idx]);
         create_rule(policy_rule, rulestring); 
 
         dom->count++;
@@ -121,7 +121,7 @@ struct policy *build_policy(const char *rule_filename)
         void *arg = malloc(sizeof(char) * VM_UUID_LEN);
         dbus_message_iter_get_basic(&sub, &arg);
 
-        struct domain_policy *current = &(dbus_policy->dom[dom_idx]);
+        struct domain_policy *current = &(dbus_policy->domains[dom_idx]);
         current->uuid = arg;
         current->domid = strtol(arg + DOMID_SECTION, NULL, 10);
 
@@ -173,7 +173,7 @@ struct etc_policy *get_etc_policy(const char *rule_filename)
             // re-defined...
             //create_rule(line);
             //if (current)
-            //    etc->rule_list[idx++] = current; 
+            //    etc->rules[idx++] = current; 
         }
 
         rule_token = strtok_r(NULL, newline, &fileptr);

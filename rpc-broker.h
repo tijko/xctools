@@ -144,7 +144,7 @@ struct etc_policy {
 };
 
 struct domain_policy {
-    const int domid;
+    int domid;
     size_t count;
     const char *uuid;
     struct rule rules[MAX_RULES];
