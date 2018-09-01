@@ -7,6 +7,7 @@
 #include <libxml/parser.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -109,16 +110,16 @@ struct broker_signal {
 
 // add type-qualifiers
 struct rule {
-    int policy:1;         // allow/deny 
-    int stubdom:1;        // stubdom rule
-    int if_bool_flag:1;   // the if-boolean is true/false
-    char *destination;    // can be NULL
-    char *path;           // can be NULL
-    char *interface;      // can be NULL
-    char *member;         // can be NULL
-    char *if_bool;        // the if-boolean condition (eg "if dom-store write true")
-    char *domtype;        // dom-type name
-    char *rule_string;    // the entirety of the rule...
+    uint8_t policy:1;         // allow/deny 
+    uint8_t stubdom:1;        // stubdom rule
+    uint8_t if_bool_flag:1;   // the if-boolean is true/false
+    char *destination;        // can be NULL
+    char *path;               // can be NULL
+    char *interface;          // can be NULL
+    char *member;             // can be NULL
+    char *if_bool;            // the if-boolean condition (eg "if dom-store write true")
+    char *domtype;            // dom-type name
+    char *rule_string;        // the entirety of the rule...
 };
 
 #define MAX_RULES 1024
