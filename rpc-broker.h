@@ -38,16 +38,96 @@
 
 #define DBUS_REQ_ARG(buf, fmt, ...) ({ asprintf(&buf, fmt, __VA_ARGS__); })
 
-#define BROKER_DEFAULT_PORT 5555
-#define BROKER_UI_PORT      8080
-        
 #define RULES_FILENAME "/etc/rpc-proxy.rules"
 #define RULES_MAX_LENGTH 256
 #define RULE_MAX_LENGTH  256
 
+struct rule {
+    uint8_t policy:1;
+    uint8_t stubdom:1;
+    uint8_t if_bool_flag:1;
+    const char *destination;
+    const char *path;
+    const char *interface;
+    const char *member;
+    const char *if_bool;
+    const char *domtype;
+    const char *rule_string;
+};
+
+#define MAX_RULES 1024
+#define ETC_MAX_FILE 0xffff
+
+struct etc_policy {
+    const char *filename;
+    const char *filepath;
+    const size_t filesize;
+    const char etc_file[ETC_MAX_FILE];
+    uid_t  file_owner;
+    gid_t  file_group;
+    mode_t file_mode;
+    time_t last_access;
+    time_t last_modify;
+    // file-hash?
+    size_t count;
+    struct rule rules[MAX_RULES];
+};
+
+struct domain_policy {
+    int domid;
+    size_t count;
+    const char *uuid;
+    struct rule rules[MAX_RULES];
+};
+
+#define MAX_DOMAINS 1024
+
+struct policy {
+    size_t vm_number;
+    time_t policy_load_time;
+    size_t allowed_requests;
+    size_t denied_requests;
+    size_t total_requests;
+    struct etc_policy etc;
+    struct domain_policy domains[MAX_DOMAINS];
+};
+
+struct policy *dbus_broker_policy;
+
+// DBus-Broker server
+#define BROKER_DEFAULT_PORT 5555
+#define BROKER_UI_PORT      8080
+        
+struct dbus_broker_server {
+    int dbus_socket;
+	v4v_addr_t addr;
+	v4v_addr_t peer;
+};
+
+#define WS_LOOP_TIMEOUT     200   // length of time each service of the websocket 
+                                  // event-loop (millisecs)
+#define DBUS_BROKER_TIMEOUT 100
+
+// DBus-Broker messages
 #define DBUS_REQ_TIMEOUT 1000
 #define DBUS_MSG_LEN     8192
 #define DBUS_ARG_LEN     1024
+
+struct dbus_message {
+    const char *destination;
+    const char *interface;
+    const char *path;
+    const char *member;
+    // struct argument {
+    //   void *data;
+    //   char dbus_type;
+    //   char actual_type;
+    // };
+    int arg_number;
+    char arg_sig[DBUS_MAX_ARG_LEN];
+    char json_sig[DBUS_MAX_ARG_LEN];
+    void *args[DBUS_MAX_ARG_LEN];
+};
 
 #define DBUS_READ "read"
 #define DBUS_LIST "list"
@@ -75,12 +155,7 @@
 
 #define WS_USER_MEM_SIZE 8192  // the amount memory that is allocated for user
                                // for each ws-callback
-                               //
-#define WS_LOOP_TIMEOUT  200   // length of time each service of the websocket 
-                               // event-loop (millisecs)
-
-#define DBUS_BROKER_TIMEOUT 100
-
+ 
 static const xmlChar XML_NAME_PROPERTY[]      = "name";
 static const xmlChar XML_DIRECTION_PROPERTY[] = "direction";
 
@@ -94,12 +169,12 @@ static const char XML_TYPE_FIELD[]         = "type";
 #define JSON_RESP_SIG  "signal"
 #define JSON_RESP_ID   "1"
 
-// Global variables
 struct lws_ring *ring;
+
 sem_t memory_lock;
+
 int dbus_broker_running;
-// only concerned with the sighup reloading the rules for the etc_rules in
-struct policy *dbus_broker_policy;
+
 
 struct broker_signal {
     DBusConnection *conn;
@@ -108,85 +183,10 @@ struct broker_signal {
     // give timestamp too?
 };
 
-struct rule {
-    uint8_t policy:1;
-    uint8_t stubdom:1;
-    uint8_t if_bool_flag:1;
-    const char *destination;
-    const char *path;
-    const char *interface;
-    const char *member;
-    const char *if_bool;
-    const char *domtype;
-    const char *rule_string;
-};
-
-#define MAX_RULES 1024
-/*
-struct rules {
-    int domid;
-    int count;
-    char *uuid;
-    struct rule rule_list[MAX_RULES];
-};
-*/
-
-struct etc_policy {
-    const char *filename;
-    const char *filepath;
-    const size_t filesize;
-    // file-hash?
-    // raw-bytes of file?
-    // owner?
-    // permissions?
-    // 
-    struct rule rules[MAX_RULES];
-};
-
-struct domain_policy {
-    int domid;
-    size_t count;
-    const char *uuid;
-    struct rule rules[MAX_RULES];
-};
-
-#define MAX_DOMAINS 1024
-
-struct policy {
-    size_t vm_number;
-    time_t policy_load_time;
-    size_t allowed_requests;
-    size_t denied_requests;
-    size_t total_requests;
-    // store other meta data for logging?
-    //
-    struct etc_policy etc;
-    struct domain_policy domains[MAX_DOMAINS];
-
-    //struct rules *etc_rules;    
-    //struct rules domain_rules[MAX_DOMAINS];  
-};
-
 struct dbus_request {
     int domid;
     int client;
     struct rule **dom_rules;
-};
-
-struct dbus_message {
-    const char *destination;
-    const char *interface;
-    const char *path;
-    const char *member;
-    // struct argument {
-    //   void *data;
-    //   char dbus_type;
-    //   char actual_type;
-    // };
-    int arg_number;
-    char arg_sig[DBUS_MAX_ARG_LEN];
-    char json_sig[DBUS_MAX_ARG_LEN];
-    void *args[DBUS_MAX_ARG_LEN];
 };
 
 struct dbus_broker_args {
@@ -195,12 +195,6 @@ struct dbus_broker_args {
     char *bus_name;
     char *logging_file;
     char *rule_file;
-};
-
-struct dbus_broker_server {
-    int dbus_socket;
-	v4v_addr_t addr;
-	v4v_addr_t peer;
 };
 
 struct json_request {
@@ -223,23 +217,29 @@ struct json_response {
 
 // rpc-broker.c
 void *broker_message(void *request);
+
 int init_request(int client, struct policy *dbus_policy);
+
 int is_stubdom(int domid);
+
 void print_usage(void);
+
 void sigint_handler(int signal);
 
-
+// src/json.c
 struct json_request *convert_json_request(char *raw_json_req);
+
 struct json_response *make_json_request(struct json_request *jreq);
+
 struct json_object *convert_dbus_response(struct json_response *jrsp);
+
 struct dbus_message *convert_raw_dbus(const char *msg, size_t len);
 
+//
 int parse_json_args(struct json_object *jarray, struct json_request *jreq);
 void add_jobj(struct json_object *args, char *key, struct json_object *jobj);
 void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter);
 
-void free_policy(struct policy *dbus_policy);
- 
 int broker(struct dbus_message *dmsg, struct dbus_request *req);
 
 int connect_to_system_bus(void);
@@ -281,9 +281,6 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp);
 char *prepare_json_reply(struct json_response *jrsp);
 
 struct json_response *init_jrsp(void);
-
-// this is changing to not return any memory...
-struct etc_policy *get_etc_policy(const char *rule_filename);
 
 void free_json_response(struct json_response *jrsp);
 
