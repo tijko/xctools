@@ -109,15 +109,15 @@ struct broker_signal {
 
 // add type-qualifiers
 struct rule {
-    int policy;           // allow/deny 
-    int stubdom;          // stubdom rule
-    int if_bool_flag;     // the if-boolean is true/false
-    char *destination;           // can be NULL
+    int policy:1;         // allow/deny 
+    int stubdom:1;        // stubdom rule
+    int if_bool_flag:1;   // the if-boolean is true/false
+    char *destination;    // can be NULL
     char *path;           // can be NULL
-    char *interface;          // can be NULL
+    char *interface;      // can be NULL
     char *member;         // can be NULL
     char *if_bool;        // the if-boolean condition (eg "if dom-store write true")
-    char *domname;        // dom-type name
+    char *domtype;        // dom-type name
     char *rule_string;    // the entirety of the rule...
 };
 

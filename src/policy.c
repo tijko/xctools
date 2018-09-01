@@ -23,7 +23,7 @@ static inline void create_rule(struct rule *current, char *rule)
                 if (token[1] == 'e')
                     current->destination = strdup(field);
                 else 
-                    current->domname = strdup(field);
+                    current->domtype = strdup(field);
 
                 break;
             }

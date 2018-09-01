@@ -63,7 +63,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
         (policy_rule->member && strcmp(policy_rule->member, dmsg->member)))
         return -1;
 
-    if (policy_rule->if_bool || policy_rule->domname) {
+    if (policy_rule->if_bool || policy_rule->domtype) {
         conn = create_dbus_connection();
         struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
 
@@ -86,10 +86,10 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
             free(arg);
         }
 
-        if (policy_rule->domname) {
+        if (policy_rule->domtype) {
             DBUS_REQ_ARG(arg, "%s/type", uuid);
             char *dom_type = db_query(conn, arg);
-            if (!dom_type || strcmp(policy_rule->domname, dom_type))
+            if (!dom_type || strcmp(policy_rule->domtype, dom_type))
                 return -1;
         }
 
