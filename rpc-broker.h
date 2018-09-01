@@ -62,7 +62,7 @@ struct etc_policy {
     const char *filename;
     const char *filepath;
     const size_t filesize;
-    const char etc_file[ETC_MAX_FILE];
+    char etc_file[ETC_MAX_FILE];
     uid_t  file_owner;
     gid_t  file_group;
     mode_t file_mode;
@@ -113,6 +113,9 @@ struct dbus_broker_server {
 #define DBUS_MSG_LEN     8192
 #define DBUS_ARG_LEN     1024
 
+#define DBUS_BUS_ADDR_LEN 256
+#define DBUS_MAX_ARG_LEN   16
+
 struct dbus_message {
     const char *destination;
     const char *interface;
@@ -142,9 +145,6 @@ struct dbus_message {
 #define DBUS_BUS_ADDR    "/var/run/dbus/system_bus_socket"
 #define DBUS_INTRO_IFACE "org.freedesktop.DBus.Introspectable"
 #define DBUS_INTRO_METH  "Introspect"
-
-#define DBUS_BUS_ADDR_LEN 256
-#define DBUS_MAX_ARG_LEN   16
 
 #define VM_UUID_LEN   33
 #define DOMID_UUID_LEN 8

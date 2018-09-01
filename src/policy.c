@@ -92,7 +92,7 @@ static inline void get_etc_policy(struct etc_policy *etc,
 {
     struct stat policy_stat;
      
-    if (stat(rule_filename, &policy_stat) < 0)
+    if (stat(rule_filepath, &policy_stat) < 0)
         DBUS_BROKER_WARNING("/etc policy stat of file <%s> failed %s",
                              rule_filepath, strerror(errno));
         return;
@@ -136,7 +136,7 @@ static inline void get_etc_policy(struct etc_policy *etc,
 
     const char *newline = "\n";
     char *fileptr;
-    char *rule_token = strtok_r(policy, newline, &fileptr);
+    char *rule_token = strtok_r(etc->etc_file, newline, &fileptr);
 
     for (int i=0; rule_token && i < MAX_RULES; i++) {
         if (isalpha(rule_token[0])) {

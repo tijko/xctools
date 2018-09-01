@@ -184,7 +184,7 @@ static void run(struct dbus_broker_args *args)
     }
 
     free(server);
-    free_policy(dbus_broker_policy);
+    free(dbus_broker_policy);
     close(default_socket);
 
     lws_context_destroy(ws_context);
