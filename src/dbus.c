@@ -86,10 +86,10 @@ void *dbus_signal(void *subscriber)
 
         char *reply = prepare_json_reply(jrsp);
 
-        sem_wait(memory_lock);
+        sem_wait(&memory_lock);
         lws_ring_insert(ring, reply, 1);
         lws_callback_on_writable(bsig->wsi);
-        sem_post(memory_lock);
+        sem_post(&memory_lock);
 
         dbus_message_unref(msg);
         free_json_response(jrsp);

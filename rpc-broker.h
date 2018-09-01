@@ -95,7 +95,7 @@ static const char XML_TYPE_FIELD[]         = "type";
 
 // Global variables
 struct lws_ring *ring;
-sem_t *memory_lock;
+sem_t memory_lock;
 int dbus_broker_running;
 // only concerned with the sighup reloading the rules for the etc_rules in
 struct policy *dbus_broker_policy;

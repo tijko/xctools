@@ -132,11 +132,10 @@ static void run(struct dbus_broker_args *args)
         struct domain_policy dom = dbus_broker_policy->domains[i];
         printf("Domain: %s\n", dom.uuid);
         for (int j=0; j < dom.count; j++)
-            printf("\t%s\n", dom.rule_list[j].rule_string);
+            printf("\t%s\n", dom.rules[j].rule_string);
     }
 
-    memory_lock = malloc(sizeof(sem_t));
-    sem_init(memory_lock, 0, 1);
+    sem_init(&memory_lock, 0, 1);
 
     struct dbus_broker_server *server = start_server(BROKER_DEFAULT_PORT);
     DBUS_BROKER_EVENT("<Server has started listening> [Port: %d]",
@@ -185,7 +184,6 @@ static void run(struct dbus_broker_args *args)
     }
 
     free(server);
-    free(memory_lock);
     free_policy(dbus_broker_policy);
     close(default_socket);
 
