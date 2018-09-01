@@ -97,16 +97,14 @@ static const char XML_TYPE_FIELD[]         = "type";
 struct lws_ring *ring;
 sem_t *memory_lock;
 int dbus_broker_running;
-// have a global rule-list then in the "run" func assign to this larger 
-// structure
-// 
 // only concerned with the sighup reloading the rules for the etc_rules in
-// struct policy
 struct policy *dbus_broker_policy;
 
 struct broker_signal {
     DBusConnection *conn;
     struct lws *wsi;
+    // track original signal-call
+    // give timestamp too?
 };
 
 // add type-qualifiers
@@ -114,7 +112,7 @@ struct rule {
     int policy;           // allow/deny 
     int stubdom;          // stubdom rule
     int if_bool_flag;     // the if-boolean is true/false
-    char *dest;           // can be NULL
+    char *destination;           // can be NULL
     char *path;           // can be NULL
     char *interface;          // can be NULL
     char *member;         // can be NULL
@@ -124,24 +122,49 @@ struct rule {
 };
 
 #define MAX_RULES 1024
+/*
 struct rules {
     int domid;
     int count;
     char *uuid;
     struct rule rule_list[MAX_RULES];
 };
+*/
 
-// Differentiate between the /etc file rules and domain specific xenclient.db
-// rules.  
-// While there are similarities, the number of field attributes that are 
-// exclusive to one or the other is significantly greater than commonalities.
-// Whatsmore, the /etc file rules are going to be dynamic in the sense that
-// a sighup is triggering a reloading of the structure
+struct etc_policy {
+    const char *filename;
+    const char *filepath;
+    const size_t filesize;
+    // file-hash?
+    // raw-bytes of file?
+    // owner?
+    // permissions?
+    // 
+    struct rule rules[MAX_RULES];
+};
+
+struct domain_policy {
+    const int domid;
+    size_t count;
+    const char *uuid;
+    struct rule rules[MAX_RULES];
+};
+
 #define MAX_DOMAINS 1024
+
 struct policy {
-    int vm_number;
-    struct rules *etc_rules;    
-    struct rules domain_rules[MAX_DOMAINS];  
+    size_t vm_number;
+    time_t policy_load_time;
+    size_t allowed_requests;
+    size_t denied_requests;
+    size_t total_requests;
+    // store other meta data for logging?
+    //
+    struct etc_policy etc;
+    struct domain_policy domains[MAX_DOMAINS];
+
+    //struct rules *etc_rules;    
+    //struct rules domain_rules[MAX_DOMAINS];  
 };
 
 struct dbus_request {
@@ -151,7 +174,7 @@ struct dbus_request {
 };
 
 struct dbus_message {
-    const char *dest;
+    const char *destination;
     const char *interface;
     const char *path;
     const char *member;
@@ -215,8 +238,6 @@ int parse_json_args(struct json_object *jarray, struct json_request *jreq);
 void add_jobj(struct json_object *args, char *key, struct json_object *jobj);
 void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter);
 
-void free_rule_list(struct rule **rule_list);
-void free_rules(struct rules *policy_rules);
 void free_policy(struct policy *dbus_policy);
  
 int broker(struct dbus_message *dmsg, struct dbus_request *req);
@@ -261,7 +282,8 @@ char *prepare_json_reply(struct json_response *jrsp);
 
 struct json_response *init_jrsp(void);
 
-struct rules *get_etc_rules(const char *rule_filename);
+// this is changing to not return any memory...
+struct etc_policy *get_etc_policy(const char *rule_filename);
 
 void free_json_response(struct json_response *jrsp);
 

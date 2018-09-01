@@ -34,7 +34,7 @@ struct dbus_broker_server *start_server(int port)
 
 void dbus_default(struct dbus_message *dmsg)
 {
-    dmsg->dest = DBUS_DB_DEST;
+    dmsg->destination = DBUS_DB_DEST;
     dmsg->interface = DBUS_DB_IFACE;
     dmsg->path = DBUS_BASE_PATH;
     dmsg->arg_number = 1;
@@ -116,7 +116,7 @@ struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
     }
         
     struct dbus_message *dmsg = calloc(1, sizeof *dmsg);
-    dmsg->dest = dbus_message_get_destination(dbus_msg);
+    dmsg->destination = dbus_message_get_destination(dbus_msg);
 
     const char *path = dbus_message_get_path(dbus_msg);
     dmsg->path = path ? path : "/";
@@ -183,8 +183,10 @@ static inline void append_variant(DBusMessageIter *iter, int type, void *data)
 
 DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 {
-    DBusMessage *msg = dbus_message_new_method_call(dmsg->dest, dmsg->path,
-                                                    dmsg->interface, dmsg->member);
+    DBusMessage *msg = dbus_message_new_method_call(dmsg->destination, 
+                                                    dmsg->path,
+                                                    dmsg->interface, 
+                                                    dmsg->member);
     DBusError error;
     dbus_error_init(&error);
 
@@ -276,7 +278,7 @@ char *dbus_introspect(struct json_request *jreq)
 {
     struct dbus_message *dmsg = calloc(1, sizeof *dmsg);
 
-    dmsg->dest = jreq->dmsg->dest;
+    dmsg->destination = jreq->dmsg->destination;
     dmsg->interface = DBUS_INTRO_IFACE;
     dmsg->member = DBUS_INTRO_METH;
     dmsg->path = jreq->dmsg->path;

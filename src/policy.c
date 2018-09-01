@@ -21,7 +21,7 @@ static inline void create_rule(struct rule *current, char *rule)
             case ('d'): {
 
                 if (token[1] == 'e')
-                    current->dest = strdup(field);
+                    current->destination = strdup(field);
                 else 
                     current->domname = strdup(field);
 
@@ -68,23 +68,23 @@ static inline void create_rule(struct rule *current, char *rule)
     }
 }
 
-static inline void get_rules(DBusConnection *conn, struct rules *domain_rules)
+static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
 {
     for (int rule_idx=0; rule_idx < MAX_RULES; rule_idx++) {
 
         char *arg;
         DBUS_REQ_ARG(arg, "/vm/%s/rpc-firewall-rules/%d", 
-                     domain_rules->uuid, rule_idx);
+                     dom->uuid, rule_idx);
 
         char *rulestring = db_query(conn, arg);
 
         if (!rulestring)
             break;
 
-        struct rule *policy_rule = &(domain_rules->rule_list[rule_idx]);
+        struct rule *policy_rule = &(dom->rule_list[rule_idx]);
         create_rule(policy_rule, rulestring); 
 
-        domain_rules->count++;
+        dom->count++;
     } 
 }
 
@@ -121,7 +121,7 @@ struct policy *build_policy(const char *rule_filename)
         void *arg = malloc(sizeof(char) * VM_UUID_LEN);
         dbus_message_iter_get_basic(&sub, &arg);
 
-        struct rules *current = &(dbus_policy->domain_rules[dom_idx]);
+        struct domain_policy *current = &(dbus_policy->dom[dom_idx]);
         current->uuid = arg;
         current->domid = strtol(arg + DOMID_SECTION, NULL, 10);
 
@@ -132,32 +132,8 @@ struct policy *build_policy(const char *rule_filename)
     }
 
     // XXX
-    //dbus_policy->etc_rules = get_etc_rules(rule_filename);
+    //dbus_policy->etc = get_etc_rules(rule_filename);
     return dbus_policy;
-}
-
-void free_rule_list(struct rule **rule_list)
-{
-    struct rule **head = rule_list;
-
-    while (*rule_list) {
-        free((*rule_list)->rule_string);
-        free(*rule_list);
-        rule_list++;
-    }
-
-    free(head);
-}
-
-void free_rules(struct rules *policy_rules)
-{
-    if (!policy_rules)
-        return;
-
-    if (policy_rules->uuid)
-        free(policy_rules->uuid);
-
-    free(policy_rules);
 }
 
 void free_policy(struct policy *dbus_policy)
@@ -166,7 +142,7 @@ void free_policy(struct policy *dbus_policy)
 }
 
 // Etc specific structure...
-struct rules *get_etc_rules(const char *rule_filename)
+struct etc_policy *get_etc_policy(const char *rule_filename)
 {
     struct stat policy_stat;
 
@@ -188,7 +164,7 @@ struct rules *get_etc_rules(const char *rule_filename)
     char *fileptr;
     char *rule_token = strtok_r(policy, newline, &fileptr);
 
-    struct rules *etc_rules = malloc(sizeof(struct rules));
+    struct etc_policy *etc = malloc(sizeof(struct etc_policy));
 
     int idx = 0;
     while (rule_token) {
@@ -197,13 +173,13 @@ struct rules *get_etc_rules(const char *rule_filename)
             // re-defined...
             //create_rule(line);
             //if (current)
-            //    etc_rules->rule_list[idx++] = current; 
+            //    etc->rule_list[idx++] = current; 
         }
 
         rule_token = strtok_r(NULL, newline, &fileptr);
     }
-    etc_rules->count = idx;
-    return etc_rules;
+    etc->count = idx;
+    return etc;
 */
 }
 

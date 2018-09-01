@@ -96,7 +96,7 @@ struct json_request *convert_json_request(char *raw_json_req)
     struct json_request *jreq = malloc(sizeof *jreq);
     // un-needed alloc
     jreq->dmsg = malloc(sizeof *jreq->dmsg);
-    jreq->dmsg->dest = get_json_str_obj(jobj, "destination");
+    jreq->dmsg->destination = get_json_str_obj(jobj, "destination");
     jreq->dmsg->interface = get_json_str_obj(jobj, "interface");
     jreq->dmsg->path = get_json_str_obj(jobj, "path");
     jreq->dmsg->member = get_json_str_obj(jobj, "method");
