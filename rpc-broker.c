@@ -127,14 +127,14 @@ static void run(struct dbus_broker_args *args)
 {
     srand48(time(NULL));
     dbus_broker_policy = build_policy(args->rule_file);
-
+/*
     for (int i=0; i < dbus_broker_policy->vm_number; i++) {
         struct rules domain = dbus_broker_policy->domain_rules[i];
         printf("Domain: %s\n", domain.uuid);
         for (int j=0; j < domain.count; j++)
             printf("\t%s\n", domain.rule_list[j].rule_string);
     }
-
+*/
     memory_lock = malloc(sizeof(sem_t));
     sem_init(memory_lock, 0, 1);
 
