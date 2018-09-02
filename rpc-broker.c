@@ -91,8 +91,6 @@ int init_request(int client, struct policy *dbus_policy)
     }
 
     dreq->domid = client_addr.domain;
-//    dreq->dom_rules = build_domain_policy(dreq->domid, dbus_policy); 
-
     ret = pthread_create(&dbus_req_thread, NULL, 
                         (void *(*)(void *)) broker_message, (void *) dreq);
 

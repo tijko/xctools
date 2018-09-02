@@ -73,11 +73,8 @@ void *dbus_signal(void *subscriber)
             continue;
 
         struct json_response *jrsp = init_jrsp();
-// XXX set null-term
-//        free(jrsp->response_to);
-//        jrsp->response_to = NULL;
-// XXX set null-term
-//        snprintf(jrsp->type, JSON_REQ_ID_MAX - 1, "%s", JSON_RESP_SIG);
+        jrsp->response_to[0] = '\0';
+        snprintf(jrsp->type, JSON_REQ_ID_MAX - 1, "%s", JSON_RESP_SIG);
 
         load_json_response(msg, jrsp);
 
