@@ -197,7 +197,9 @@ struct policy *build_policy(const char *rule_filename)
     }
 
     struct etc_policy *etc = &(dbus_policy->etc);
+    printf("Getting etc policy...\n");
     get_etc_policy(etc, rule_filename);
+    printf("exit etc...\n");
     return dbus_policy;
 }
 
