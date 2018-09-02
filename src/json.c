@@ -51,6 +51,37 @@ struct json_response *make_json_request(struct json_request *jreq)
     return jrsp;
 }
 
+static inline char json_arg_to_dbus_type(int jtype)
+{
+    char dbus_type;
+
+    switch (jtype) {
+
+        case (json_type_boolean):
+            dbus_type = 'b';
+            break;
+
+        case (json_type_int):
+            dbus_type = 'i';
+            break;
+
+        case (json_type_string):
+            dbus_type = 's';
+            break;
+
+        case (json_type_double):
+            dbus_type = 'd';
+            break;
+
+        default:
+            printf("Missed setting jtype\n");
+            dbus_type = 'z';
+            break;
+    }
+
+    return dbus_type;
+}
+
 static inline void append_dbus_message_arg(int type, int idx, void **args,
                                                  struct json_object *jarg)
 {
@@ -232,37 +263,6 @@ void add_jobj(struct json_object *args, char *key, struct json_object *jobj)
         json_object_array_add(args, jobj);
     else
         json_object_object_add(args, key, jobj);
-}
-
-static inline char json_arg_to_dbus_type(int jtype)
-{
-    char dbus_type;
-
-    switch (jtype) {
-
-        case (json_type_boolean):
-            dbus_type = 'b';
-            break;
-
-        case (json_type_int):
-            dbus_type = 'i';
-            break;
-
-        case (json_type_string):
-            dbus_type = 's';
-            break;
-
-        case (json_type_double):
-            dbus_type = 'd';
-            break;
-
-        default:
-            printf("Missed setting jtype\n");
-            dbus_type = 'z';
-            break;
-    }
-
-    return dbus_type;
 }
 
 void free_json_response(struct json_response *jrsp)
