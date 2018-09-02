@@ -21,7 +21,7 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
             int domain_count = domain.count; 
 
             for (int j=0; j < domain_count; j++)
-                policy = filter(&(domain.rules[j]), dmsg);
+                policy = filter(&(domain.rules[j]), dmsg, domid);
 
             break;
         }
