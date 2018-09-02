@@ -38,8 +38,7 @@ void dbus_default(struct dbus_message *dmsg)
     dmsg->interface = DBUS_DB_IFACE;
     dmsg->path = DBUS_BASE_PATH;
     dmsg->arg_number = 1;
-    // do away with magic numbers
-    snprintf(dmsg->arg_sig, 2, "s");
+    snprintf(dmsg->arg_sig, DBUS_MAX_ARG_LEN - 1, "s");
 }
 
 int connect_to_system_bus(void)
@@ -74,9 +73,11 @@ void *dbus_signal(void *subscriber)
             continue;
 
         struct json_response *jrsp = init_jrsp();
-        free(jrsp->response_to);
-        jrsp->response_to = NULL;
-        snprintf(jrsp->type, JSON_REQ_ID_MAX - 1, "%s", JSON_RESP_SIG);
+// XXX set null-term
+//        free(jrsp->response_to);
+//        jrsp->response_to = NULL;
+// XXX set null-term
+//        snprintf(jrsp->type, JSON_REQ_ID_MAX - 1, "%s", JSON_RESP_SIG);
 
         load_json_response(msg, jrsp);
 

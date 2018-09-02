@@ -75,7 +75,7 @@ struct etc_policy {
 };
 
 struct domain_policy {
-    int domid;
+    uint16_t domid;
     size_t count;
     const char *uuid;
     struct rule rules[MAX_RULES];
@@ -99,8 +99,8 @@ struct policy *dbus_broker_policy;
         
 struct dbus_broker_server {
     int dbus_socket;
-	v4v_addr_t addr;
-	v4v_addr_t peer;
+    v4v_addr_t addr;
+    v4v_addr_t peer;
 };
 
 #define WS_LOOP_TIMEOUT     200   // length of time each service of the websocket 
@@ -162,16 +162,15 @@ static const char XML_IN_FIELD[]           = "in";
 static const char XML_TYPE_FIELD[]         = "type";
 
 #define JSON_REQ_ID_MAX 16
+#define JSON_TYPE_MAX   16
 #define JSON_REQ_MAX   256
 
-#define JSON_RESP_TYPE "response"
-#define JSON_RESP_SIG  "signal"
-#define JSON_RESP_ID   "1"
+#define JSON_RESP "response"
+#define JSON_SIG  "signal"
+#define JSON_ID   "1"
 
 struct lws_ring *ring;
-
 sem_t memory_lock;
-
 int dbus_broker_running;
 
 
@@ -183,34 +182,33 @@ struct broker_signal {
 };
 
 struct dbus_request {
-    int domid;
-    int client;
-    struct rule **dom_rules;
+    uint16_t domid;
+    uint16_t client;
 };
 
 struct dbus_broker_args {
     bool logging;
     bool verbose;
-    char *bus_name;
-    char *logging_file;
-    char *rule_file;
+    const char *bus_name;
+    const char *logging_file;
+    const char *rule_file;
 };
 
 struct json_request {
-    int id;
+    uint32_t id;
     DBusConnection *conn;
     struct lws *wsi;
     struct dbus_message *dmsg;
 };
 
 struct json_response {
-    int id;
-    char *response_to;
-    char *type;        // set as bitfield?
+    uint32_t id;
     const char *path;
     const char *interface;
     const char *member;
-    char *arg_sig;
+    char response_to[JSON_REQ_ID_MAX];
+    char type[JSON_TYPE_MAX]; 
+    char arg_sig[DBUS_MAX_ARG_LEN];
     struct json_object *args;
 };
 
@@ -219,7 +217,7 @@ void *broker_message(void *request);
 
 int init_request(int client, struct policy *dbus_policy);
 
-int is_stubdom(int domid);
+int is_stubdom(uint16_t domid);
 
 void print_usage(void);
 
@@ -272,7 +270,7 @@ int exchange(int rsock, int ssock,
              ssize_t (*snd)(int, const void *, size_t, int),
              struct dbus_request *req);
 
-int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid);
+int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid);
 
 
 // src/policy.c

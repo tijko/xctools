@@ -51,7 +51,7 @@ void *broker_message(void *request)
     return NULL;
 }
 
-int is_stubdom(int domid)
+int is_stubdom(uint16_t domid)
 {
     struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
     size_t len = 0;
@@ -91,7 +91,6 @@ int init_request(int client, struct policy *dbus_policy)
     }
 
     dreq->domid = client_addr.domain;
-// XXX hold-off on re-building "domain-policy"
 //    dreq->dom_rules = build_domain_policy(dreq->domid, dbus_policy); 
 
     ret = pthread_create(&dbus_req_thread, NULL, 
@@ -129,9 +128,6 @@ static void run(struct dbus_broker_args *args)
     dbus_broker_policy = build_policy(args->rule_file);
 
     struct etc_policy etc = dbus_broker_policy->etc;
-
-    for (int i=0; i < etc.count; i++) 
-        printf("%s\n", etc.rules[i].rule_string);
 
     sem_init(&memory_lock, 0, 1);
 

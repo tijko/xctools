@@ -140,7 +140,7 @@ static inline void get_etc_policy(struct etc_policy *etc,
     char *rule_token = strtok_r(etc->etc_file, newline, &fileptr);
     int idx = 0;
 
-    while (rule_token &&  idx < MAX_RULES;) {
+    while (rule_token &&  idx < MAX_RULES) {
         if (isalpha(rule_token[0])) {
             char *line = strdup(rule_token);
             struct rule *current = &(etc->rules[idx++]);

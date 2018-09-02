@@ -7,13 +7,8 @@ struct json_response *init_jrsp(void)
     struct json_response *jrsp = calloc(sizeof *jrsp + 
                                        (sizeof(char *) * JSON_REQ_MAX), 1); 
     jrsp->args = json_object_new_array();
-    // buffer
-    jrsp->response_to = malloc(sizeof(char) * JSON_REQ_ID_MAX);
-    // buffer
-    jrsp->type = malloc(sizeof(char) * JSON_REQ_ID_MAX);
     jrsp->id = rand() % 4096;
-    snprintf(jrsp->type, JSON_REQ_ID_MAX, JSON_RESP_TYPE);
-
+    snprintf(jrsp->type, JSON_REQ_ID_MAX, JSON_RESP);
     return jrsp;
 }
 
@@ -28,8 +23,8 @@ struct json_response *make_json_request(struct json_request *jreq)
         const char *busname = dbus_bus_get_unique_name(conn);
         jrsp->id = jreq->id;
 
-        snprintf(jrsp->response_to, JSON_REQ_ID_MAX, JSON_RESP_ID);
-        jrsp->arg_sig = "s";
+        snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, JSON_ID);
+        snprintf(jrsp->arg_sig, DBUS_MAX_ARG_LEN - 1, "s");
         json_object_array_add(jrsp->args, json_object_new_string(busname));
         return jrsp;
     }
@@ -270,9 +265,6 @@ int parse_json_args(struct json_object *jarray, struct json_request *jreq)
 
 void free_json_response(struct json_response *jrsp)
 {
-    if (jrsp->response_to)
-        free(jrsp->response_to);
-
     if (jrsp->arg_sig) {
         struct json_object *array = jrsp->args;
         for (int i=0; i < strlen(jrsp->arg_sig); i++) {

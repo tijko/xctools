@@ -3,9 +3,12 @@
 
 int broker(struct dbus_message *dmsg, struct dbus_request *req)
 {
-    int domid = req->domid;
+    uint16_t domid = req->domid;
+    // filter
     int policy = 1;
+
     char req_msg[1024];
+
     if (!dmsg->path)
         dmsg->path = "/";
 
@@ -49,7 +52,7 @@ int exchange(int rsock, int ssock,
     return rbytes;
 }
 
-int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid)
+int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
 {
     DBusConnection *conn;
     char *uuid, *arg;
