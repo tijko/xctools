@@ -58,7 +58,6 @@ static inline void create_rule(struct rule *current, char *rule)
 
             default:
                 DBUS_BROKER_WARNING("Unrecognized Rule-Token: %s", token);
-                free(current);
                 current = NULL;
                 break;
         }
