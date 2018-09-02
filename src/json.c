@@ -56,7 +56,7 @@ struct json_response *make_json_request(struct json_request *jreq)
     return jrsp;
 }
 
-const char *get_json_str_obj(struct json_object *jobj, char *field)
+static const char *get_json_str_obj(struct json_object *jobj, char *field)
 {
     struct json_object *jfield;
     json_object_object_get_ex(jobj, field, &jfield);

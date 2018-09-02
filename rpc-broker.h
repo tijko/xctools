@@ -126,9 +126,9 @@ struct dbus_message {
     //   char actual_type;
     // };
     size_t arg_number;
-    const char arg_sig[DBUS_MAX_ARG_LEN];
-    const char json_sig[DBUS_MAX_ARG_LEN];
-    const void *args[DBUS_MAX_ARG_LEN];
+    char arg_sig[DBUS_MAX_ARG_LEN];
+    char json_sig[DBUS_MAX_ARG_LEN];
+    void *args[DBUS_MAX_ARG_LEN];
 };
 
 #define DBUS_READ "read"
@@ -225,67 +225,76 @@ void print_usage(void);
 
 void sigint_handler(int signal);
 
-// src/json.c
-struct json_request *convert_json_request(char *raw_json_req);
 
-struct json_response *make_json_request(struct json_request *jreq);
+// src/dbus.c
+DBusConnection *create_dbus_connection(void);
 
-struct json_object *convert_dbus_response(struct json_response *jrsp);
+struct dbus_broker_server *start_server(int port);
 
-struct dbus_message *convert_raw_dbus(const char *msg, size_t len);
-
-//
-int parse_json_args(struct json_object *jarray, struct json_request *jreq);
-void add_jobj(struct json_object *args, char *key, struct json_object *jobj);
-void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter);
-
-int broker(struct dbus_message *dmsg, struct dbus_request *req);
+void dbus_default(struct dbus_message *dmsg);
 
 int connect_to_system_bus(void);
 
+void *dbus_signal(void *subscriber);
+
+struct dbus_message *convert_raw_dbus(const char *msg, size_t len);
+
+DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg);
+
 char *db_query(DBusConnection *conn, char *arg);
 
-void *dbus_request(void *_req);
+char *dbus_introspect(struct json_request *jreq);
+
+
+// src/json.c
+struct json_response *init_jrsp(void);
+
+struct json_response *make_json_request(struct json_request *jreq);
+
+void load_json_response(DBusMessage *msg, struct json_response *jrsp);
+
+struct json_request *convert_json_request(char *raw_json_req);
+
+struct json_object *convert_dbus_response(struct json_response *jrsp);
+
+void add_jobj(struct json_object *args, char *key, struct json_object *jobj);
+
+int parse_json_args(struct json_object *jarray, struct json_request *jreq);
+
+void free_json_response(struct json_response *jrsp);
+
+
+// src/msg.c
+int broker(struct dbus_message *dmsg, struct dbus_request *req);
 
 int exchange(int rsock, int ssock, 
              ssize_t (*rcv)(int, void *, size_t, int),
              ssize_t (*snd)(int, const void *, size_t, int),
              struct dbus_request *req);
 
-// split-up according to functional relation
-int ws_request_handler(struct lws *wsi, char *raw_req);
+int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid);
 
-DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg);
 
-DBusConnection *create_dbus_connection(void);
+// src/policy.c
+struct policy *build_policy(const char *rule_filename);
 
-void dbus_default(struct dbus_message *dmsg);
 
-struct dbus_broker_server *start_server(int port);
-
-char *dbus_introspect(struct json_request *jreq);
-
+// src/signature.c
 xmlNodePtr find_xml_property(const char *target, const xmlChar *property, 
                              xmlNodePtr node);
 
 int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
                            const char *interface, const char *member);
 
+void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter);
+
 void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter);
+
+
+// src/websockets.c
+char *prepare_json_reply(struct json_response *jrsp);
 
 struct lws_context *create_ws_context(int port);
 
-void load_json_response(DBusMessage *msg, struct json_response *jrsp);
-
-char *prepare_json_reply(struct json_response *jrsp);
-
-struct json_response *init_jrsp(void);
-
-void free_json_response(struct json_response *jrsp);
-
-int filter(struct rule *policy_rule, struct dbus_message *dmsg, int domid);
-
-void *dbus_signal(void *subscriber);
-
-struct policy *build_policy(const char *rule_filename);
+int ws_request_handler(struct lws *wsi, char *raw_req);
 
