@@ -55,8 +55,8 @@ struct rule {
     const char *rule_string;
 };
 
-#define MAX_RULES      1024
-#define MAX_DOMAINS    1024
+#define MAX_RULES      512 
+#define MAX_DOMAINS    128
 #define ETC_MAX_FILE 0xffff
 
 struct etc_policy {

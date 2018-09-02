@@ -141,12 +141,16 @@ static inline void get_etc_policy(struct etc_policy *etc,
     for (int i=0; rule_token && i < MAX_RULES; i++) {
         if (isalpha(rule_token[0])) {
             char *line = strdup(rule_token);
-            create_rule(&(etc->rules[i]), line);
+            struct rule *current = &(etc->rules[i]);
+            create_rule(current, line);
+            printf("etc: %s\n", current->rule_string);
             etc->count++;
         }
 
         rule_token = strtok_r(NULL, newline, &fileptr);
     }
+
+    printf("Count: %d\n", etc->count);
 }
 
 struct policy *build_policy(const char *rule_filename)
@@ -192,7 +196,8 @@ struct policy *build_policy(const char *rule_filename)
         dbus_policy->domain_number++;
     }
 
-    get_etc_policy(&(dbus_policy->etc), rule_filename);
+    struct etc_policy *etc = &(dbus_policy->etc);
+    get_etc_policy(etc, rule_filename);
     return dbus_policy;
 }
 
