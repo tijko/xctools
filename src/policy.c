@@ -138,17 +138,19 @@ static inline void get_etc_policy(struct etc_policy *etc,
     const char *newline = "\n";
     char *fileptr;
     char *rule_token = strtok_r(etc->etc_file, newline, &fileptr);
+    int idx = 0;
 
-    for (int i=0; rule_token && i < MAX_RULES; i++) {
+    while (rule_token &&  idx < MAX_RULES;) {
         if (isalpha(rule_token[0])) {
             char *line = strdup(rule_token);
-            struct rule *current = &(etc->rules[i]);
+            struct rule *current = &(etc->rules[idx++]);
             create_rule(current, line);
-            etc->count++;
         }
 
         rule_token = strtok_r(NULL, newline, &fileptr);
     }
+
+    etc->count = idx;
 }
 
 struct policy *build_policy(const char *rule_filename)
