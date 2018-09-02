@@ -125,10 +125,10 @@ struct dbus_message {
     //   char dbus_type;
     //   char actual_type;
     // };
-    int arg_number;
-    char arg_sig[DBUS_MAX_ARG_LEN];
-    char json_sig[DBUS_MAX_ARG_LEN];
-    void *args[DBUS_MAX_ARG_LEN];
+    size_t arg_number;
+    const char arg_sig[DBUS_MAX_ARG_LEN];
+    const char json_sig[DBUS_MAX_ARG_LEN];
+    const void *args[DBUS_MAX_ARG_LEN];
 };
 
 #define DBUS_READ "read"

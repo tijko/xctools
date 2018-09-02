@@ -130,9 +130,8 @@ static void run(struct dbus_broker_args *args)
 
     struct etc_policy etc = dbus_broker_policy->etc;
 
-    for (int i=0; i < etc.count; i++) {
-        printf("%s\n", etc.rules[i].rule_string)
-    }
+    for (int i=0; i < etc.count; i++) 
+        printf("%s\n", etc.rules[i].rule_string);
 
     sem_init(&memory_lock, 0, 1);
 
