@@ -82,7 +82,7 @@ struct domain_policy {
 };
 
 struct policy {
-    size_t vm_number;
+    size_t domain_number;
     time_t policy_load_time;
     size_t allowed_requests;
     size_t denied_requests;
