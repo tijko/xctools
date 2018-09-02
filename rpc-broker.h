@@ -217,7 +217,7 @@ void *broker_message(void *request);
 
 int init_request(int client, struct policy *dbus_policy);
 
-int is_stubdom(uint16_t domid);
+signed int is_stubdom(uint16_t domid);
 
 void print_usage(void);
 
@@ -256,8 +256,6 @@ struct json_request *convert_json_request(char *raw_json_req);
 struct json_object *convert_dbus_response(struct json_response *jrsp);
 
 void add_jobj(struct json_object *args, char *key, struct json_object *jobj);
-
-int parse_json_args(struct json_object *jarray, struct json_request *jreq);
 
 void free_json_response(struct json_response *jrsp);
 

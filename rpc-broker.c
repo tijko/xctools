@@ -51,7 +51,7 @@ void *broker_message(void *request)
     return NULL;
 }
 
-int is_stubdom(uint16_t domid)
+signed int is_stubdom(uint16_t domid)
 {
     struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
     size_t len = 0;

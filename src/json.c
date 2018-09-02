@@ -51,6 +51,53 @@ struct json_response *make_json_request(struct json_request *jreq)
     return jrsp;
 }
 
+static inline void append_dbus_message_arg(int type, int idx, void **args,
+                                                 struct json_object *jarg)
+{
+    // The "argument" array -> `void **args` will be set-up as an array of 
+    // `struct arg` and these types won't need to be declared;
+    // (possibly add union-type in the `struct arg`)
+
+    switch (type) {        
+
+        case ('b'): {
+            int json_bool = json_object_get_boolean(jarg);
+            args[idx] = malloc(sizeof(int));
+            memcpy(args[idx], (void *) &json_bool, sizeof(int));
+            break;
+        }
+
+        case ('u'):
+        case ('i'): {
+            int json_int = json_object_get_int(jarg);
+            args[idx] = malloc(sizeof(int));
+            memcpy(args[idx], (void *) &json_int, sizeof(int));
+            break;
+        }
+
+        case ('s'): {
+            const char *json_str = json_object_get_string(jarg);
+            args[idx] = malloc(sizeof(char) * strlen(json_str) + 1);
+            if (json_str)
+                memcpy(args[idx], (void *) json_str, strlen(json_str) + 1);
+            else
+                ((char *) args[idx])[0] = '\0';
+
+            break;
+        }
+
+        case ('v'): {
+            int jtype = json_object_get_type(jarg);
+            type = json_arg_to_dbus_type(jtype);
+            append_dbus_message_arg(type, idx, args, jarg);
+            break;
+        }
+
+        default:
+            break;
+    }
+}
+
 static const char *get_json_str_obj(struct json_object *jobj, char *field)
 {
     struct json_object *jfield;
@@ -63,7 +110,8 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
     DBusMessageIter iter, sub;
     dbus_message_iter_init(msg, &iter);
 
-    jrsp->arg_sig = dbus_message_iter_get_signature(&iter);
+    snprintf(jrsp->arg_sig, DBUS_MAX_ARG_LEN - 1, "%s", 
+             dbus_message_iter_get_signature(&iter));
 
     struct json_object *args = jrsp->args;
 
@@ -83,6 +131,40 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
     }
 
     parse_signature(args, NULL, &iter);
+}
+
+static signed int parse_json_args(struct json_object *jarray, 
+                                  struct json_request *jreq)
+{
+    struct dbus_message *dmsg = jreq->dmsg;
+    char *signature = dbus_introspect(jreq);
+
+    if (!signature) {
+        DBUS_BROKER_WARNING("dbus-introspect %s", "");
+        return -1;
+    }
+
+    memcpy(dmsg->arg_sig, signature, strlen(signature) + 1);
+    size_t array_length = json_object_array_length(jarray);
+    dmsg->arg_number = array_length;
+
+    for (int i=0; i < array_length; i++) {
+
+        struct json_object *jarg = json_object_array_get_idx(jarray, i);
+        int jtype = json_object_get_type(jarg);
+
+        if (jtype == json_type_null) {
+            dmsg->args[i] = malloc(sizeof(char) * 2);
+            ((char *) dmsg->args[i])[0] = '\0';
+            continue;
+        }
+        
+        dmsg->json_sig[i] = json_arg_to_dbus_type(jtype);       
+        append_dbus_message_arg(*signature, i, dmsg->args, jarg);
+        signature++;
+    }
+
+    return 0;
 }
 
 struct json_request *convert_json_request(char *raw_json_req)
@@ -181,86 +263,6 @@ static inline char json_arg_to_dbus_type(int jtype)
     }
 
     return dbus_type;
-}
-
-static inline void append_dbus_message_arg(int type, int idx, void **args,
-                                                 struct json_object *jarg)
-{
-    // The "argument" array -> `void **args` will be set-up as an array of 
-    // `struct arg` and these types won't need to be declared;
-    // (possibly add union-type in the `struct arg`)
-
-    switch (type) {        
-
-        case ('b'): {
-            int json_bool = json_object_get_boolean(jarg);
-            args[idx] = malloc(sizeof(int));
-            memcpy(args[idx], (void *) &json_bool, sizeof(int));
-            break;
-        }
-
-        case ('u'):
-        case ('i'): {
-            int json_int = json_object_get_int(jarg);
-            args[idx] = malloc(sizeof(int));
-            memcpy(args[idx], (void *) &json_int, sizeof(int));
-            break;
-        }
-
-        case ('s'): {
-            const char *json_str = json_object_get_string(jarg);
-            args[idx] = malloc(sizeof(char) * strlen(json_str) + 1);
-            if (json_str)
-                memcpy(args[idx], (void *) json_str, strlen(json_str) + 1);
-            else
-                ((char *) args[idx])[0] = '\0';
-
-            break;
-        }
-
-        case ('v'): {
-            int jtype = json_object_get_type(jarg);
-            type = json_arg_to_dbus_type(jtype);
-            append_dbus_message_arg(type, idx, args, jarg);
-            break;
-        }
-
-        default:
-            break;
-    }
-}
-
-int parse_json_args(struct json_object *jarray, struct json_request *jreq)
-{
-    struct dbus_message *dmsg = jreq->dmsg;
-    char *signature = dbus_introspect(jreq);
-
-    if (!signature) {
-        DBUS_BROKER_WARNING("dbus-introspect %s", "");
-        return -1;
-    }
-
-    memcpy(dmsg->arg_sig, signature, strlen(signature) + 1);
-    size_t array_length = json_object_array_length(jarray);
-    dmsg->arg_number = array_length;
-
-    for (int i=0; i < array_length; i++) {
-
-        struct json_object *jarg = json_object_array_get_idx(jarray, i);
-        int jtype = json_object_get_type(jarg);
-
-        if (jtype == json_type_null) {
-            dmsg->args[i] = malloc(sizeof(char) * 2);
-            ((char *) dmsg->args[i])[0] = '\0';
-            continue;
-        }
-        
-        dmsg->json_sig[i] = json_arg_to_dbus_type(jtype);       
-        append_dbus_message_arg(*signature, i, dmsg->args, jarg);
-        signature++;
-    }
-
-    return 0;
 }
 
 void free_json_response(struct json_response *jrsp)
