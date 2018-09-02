@@ -4,13 +4,32 @@
 int broker(struct dbus_message *dmsg, struct dbus_request *req)
 {
     uint16_t domid = req->domid;
-    // filter
-    int policy = 1;
+
+    int policy = 0;
+    int etc_count = dbus_broker_policy->etc.count;
+    struct etc_policy etc = dbus_broker_policy->etc;
+
+    for (int i=0; i < etc_count; i++)
+        policy = filter(&(etc.rules[i]), dmsg, domid);
+
+    int domains = dbus_broker_policy->domain_number;
+    
+    for (int i=0; i < domains; i++) {
+        if (dbus_broker_policy->domains[i].domid == domid) {
+
+            struct domain_policy domain = dbus_broker_policy->domains[i];
+            int domain_count = domain.count; 
+
+            for (int j=0; j < domain_count; j++)
+                policy = filter(&(domain.rules[j]), dmsg);
+
+            break;
+        }
+    }
+        
+    policy = 1;
 
     char req_msg[1024];
-
-    if (!dmsg->path)
-        dmsg->path = "/";
 
     snprintf(req_msg, 1023, "Dom: %d [Dest: %s Path: %s Iface: %s Meth: %s]",
                       domid, dmsg->destination, dmsg->path, 
