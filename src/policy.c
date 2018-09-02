@@ -189,7 +189,7 @@ struct policy *build_policy(const char *rule_filename)
         get_rules(conn, current);
 
         dbus_message_iter_next(&sub);
-        dbus_policy->vm_number++;
+        dbus_policy->domain_number++;
     }
 
     get_etc_policy(&(dbus_policy->etc), rule_filename);

@@ -55,7 +55,8 @@ struct rule {
     const char *rule_string;
 };
 
-#define MAX_RULES 1024
+#define MAX_RULES      1024
+#define MAX_DOMAINS    1024
 #define ETC_MAX_FILE 0xffff
 
 struct etc_policy {
@@ -79,8 +80,6 @@ struct domain_policy {
     const char *uuid;
     struct rule rules[MAX_RULES];
 };
-
-#define MAX_DOMAINS 1024
 
 struct policy {
     size_t vm_number;

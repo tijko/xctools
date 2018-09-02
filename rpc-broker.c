@@ -127,14 +127,13 @@ static void run(struct dbus_broker_args *args)
 {
     srand48(time(NULL));
     dbus_broker_policy = build_policy(args->rule_file);
-/*
-    for (int i=0; i < dbus_broker_policy->vm_number; i++) {
-        struct domain_policy dom = dbus_broker_policy->domains[i];
-        printf("Domain: %s\n", dom.uuid);
-        for (int j=0; j < dom.count; j++)
-            printf("\t%s -> %d\n", dom.rules[j].rule_string, dom.rules[j].policy);
+
+    struct etc_policy etc = dbus_broker_policy->etc;
+
+    for (int i=0; i < etc.count; i++) {
+        printf("%s\n", etc.rules[i]);
     }
-*/
+
     sem_init(&memory_lock, 0, 1);
 
     struct dbus_broker_server *server = start_server(BROKER_DEFAULT_PORT);
