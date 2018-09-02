@@ -92,10 +92,11 @@ static inline void get_etc_policy(struct etc_policy *etc,
 {
     struct stat policy_stat;
      
-    if (stat(rule_filepath, &policy_stat) < 0)
+    if (stat(rule_filepath, &policy_stat) < 0) {
         DBUS_BROKER_WARNING("/etc policy stat of file <%s> failed %s",
                              rule_filepath, strerror(errno));
         return;
+    }
 
     char *filename = basename(rule_filepath);
 
@@ -108,10 +109,11 @@ static inline void get_etc_policy(struct etc_policy *etc,
 
     size_t policy_size = policy_stat.st_size;
 
-    if (policy_size > ETC_MAX_FILE)
+    if (policy_size > ETC_MAX_FILE) {
         DBUS_BROKER_WARNING("/etc policy file %s exceeds buffer size <%d>",
                              rule_filepath, policy_size);
         return;
+    }
 
     etc->filepath = rule_filepath;
 
@@ -143,14 +145,11 @@ static inline void get_etc_policy(struct etc_policy *etc,
             char *line = strdup(rule_token);
             struct rule *current = &(etc->rules[i]);
             create_rule(current, line);
-            printf("etc: %s\n", current->rule_string);
             etc->count++;
         }
 
         rule_token = strtok_r(NULL, newline, &fileptr);
     }
-
-    printf("Count: %d\n", etc->count);
 }
 
 struct policy *build_policy(const char *rule_filename)
@@ -197,9 +196,8 @@ struct policy *build_policy(const char *rule_filename)
     }
 
     struct etc_policy *etc = &(dbus_policy->etc);
-    printf("Getting etc policy...\n");
     get_etc_policy(etc, rule_filename);
-    printf("exit etc...\n");
+
     return dbus_policy;
 }
 
