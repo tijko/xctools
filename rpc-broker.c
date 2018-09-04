@@ -112,6 +112,14 @@ void print_usage(void)
     printf("Adds extra information (run with logging).\n"); 
 }
 
+static void reload_policy(void *arg)
+{
+    sem_wait(&memory_lock);
+    free_policy();
+    dbus_broker_policy = build_policy(RULES_FILENAME);
+    sem_post(&memory_lock); 
+}
+
 void sigint_handler(int signal)
 {
     DBUS_BROKER_WARNING("<received signal interrupt> %s", "");
@@ -121,16 +129,8 @@ void sigint_handler(int signal)
 void sighup_handler(int signal)
 {
     pthread_t reload_thr;
-    pthread_create(&reload_thr, NULL, (void *(*)(void)) reload_policy, NULL);
+    pthread_create(&reload_thr, NULL, (void *(*)(void *)) reload_policy, NULL);
     DBUS_BROKER_EVENT("Re-loading policy %s", "");
-}
-
-static void reload_policy(void)
-{
-    sem_wait(&memory_lock);
-    free_policy(dbus_broker_policy);
-    dbus_broker_policy = build_policy(RULES_FILENAME);
-    sem_post(&memory_lock); 
 }
 
 static void run(struct dbus_broker_args *args)

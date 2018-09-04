@@ -77,7 +77,7 @@ struct etc_policy {
 struct domain_policy {
     uint16_t domid;
     size_t count;
-    const char *uuid;
+    char *uuid;
     struct rule rules[MAX_RULES];
 };
 
