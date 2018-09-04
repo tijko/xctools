@@ -125,7 +125,7 @@ struct dbus_message {
     //   char dbus_type;
     //   char actual_type;
     // };
-    size_t arg_number;
+    uint8_t arg_number;
     char arg_sig[DBUS_MAX_ARG_LEN];
     char json_sig[DBUS_MAX_ARG_LEN];
     void *args[DBUS_MAX_ARG_LEN];
@@ -136,14 +136,6 @@ struct dbus_message {
 
 #define CLIENT_REQ_LEN       16
 #define CLIENT_DBUS_REQ_LEN 256
-
-#define DBUS_DB_DEST     "com.citrix.xenclient.db"
-#define DBUS_DB_IFACE    "com.citrix.xenclient.db"
-#define DBUS_VM_PATH     "/vm"
-#define DBUS_BASE_PATH   "/"
-#define DBUS_BUS_ADDR    "/var/run/dbus/system_bus_socket"
-#define DBUS_INTRO_IFACE "org.freedesktop.DBus.Introspectable"
-#define DBUS_INTRO_METH  "Introspect"
 
 #define VM_UUID_LEN   33
 #define DOMID_UUID_LEN 8
@@ -160,14 +152,6 @@ static const xmlChar XML_DIRECTION_PROPERTY[] = "direction";
 
 static const char XML_IN_FIELD[]           = "in";
 static const char XML_TYPE_FIELD[]         = "type";
-
-#define JSON_REQ_ID_MAX 16
-#define JSON_TYPE_MAX   16
-#define JSON_REQ_MAX   256
-
-#define JSON_RESP "response"
-#define JSON_SIG  "signal"
-#define JSON_ID   "1"
 
 struct lws_ring *ring;
 sem_t memory_lock;
@@ -192,24 +176,6 @@ struct dbus_broker_args {
     const char *bus_name;
     const char *logging_file;
     const char *rule_file;
-};
-
-struct json_request {
-    uint32_t id;
-    DBusConnection *conn;
-    struct lws *wsi;
-    struct dbus_message *dmsg;
-};
-
-struct json_response {
-    uint32_t id;
-    const char *path;
-    const char *interface;
-    const char *member;
-    char response_to[JSON_REQ_ID_MAX];
-    char type[JSON_TYPE_MAX]; 
-    char arg_sig[DBUS_MAX_ARG_LEN];
-    struct json_object *args;
 };
 
 // rpc-broker.c
@@ -243,6 +209,14 @@ char *db_query(DBusConnection *conn, char *arg);
 
 char *dbus_introspect(struct json_request *jreq);
 
+#define DBUS_DB_DEST     "com.citrix.xenclient.db"
+#define DBUS_DB_IFACE    "com.citrix.xenclient.db"
+#define DBUS_VM_PATH     "/vm"
+#define DBUS_BASE_PATH   "/"
+#define DBUS_BUS_ADDR    "/var/run/dbus/system_bus_socket"
+#define DBUS_INTRO_IFACE "org.freedesktop.DBus.Introspectable"
+#define DBUS_INTRO_METH  "Introspect"
+
 
 // src/json.c
 struct json_response *init_jrsp(void);
@@ -258,6 +232,32 @@ struct json_object *convert_dbus_response(struct json_response *jrsp);
 void add_jobj(struct json_object *args, char *key, struct json_object *jobj);
 
 void free_json_response(struct json_response *jrsp);
+
+#define JSON_REQ_ID_MAX 16
+#define JSON_TYPE_MAX   16
+#define JSON_REQ_MAX   256
+
+#define JSON_RESP "response"
+#define JSON_SIG  "signal"
+#define JSON_ID   "1"
+
+struct json_request {
+    uint32_t id;
+    DBusConnection *conn;
+    struct lws *wsi;
+    struct dbus_message *dmsg;
+};
+
+struct json_response {
+    uint32_t id;
+    const char *path;
+    const char *interface;
+    const char *member;
+    char response_to[JSON_REQ_ID_MAX];
+    char type[JSON_TYPE_MAX]; 
+    char arg_sig[DBUS_MAX_ARG_LEN];
+    struct json_object *args;
+};
 
 
 // src/msg.c

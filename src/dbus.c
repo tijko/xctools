@@ -99,7 +99,7 @@ void *dbus_signal(void *subscriber)
 
     return NULL;
 }
-
+// handle pointer to struct dbus_message...
 struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
 {
     DBusError error;
@@ -274,17 +274,14 @@ char *db_query(DBusConnection *conn, char *arg)
 
 char *dbus_introspect(struct json_request *jreq)
 {
-    struct dbus_message *dmsg = calloc(1, sizeof *dmsg);
-
-    dmsg->destination = jreq->dmsg->destination;
-    dmsg->interface = DBUS_INTRO_IFACE;
-    dmsg->member = DBUS_INTRO_METH;
-    dmsg->path = jreq->dmsg->path;
-    dmsg->arg_number = 0;
-    dmsg->arg_sig[0] = '\0';
+    struct dbus_message dmsg = { .destination=jreq->dmsg->destination,
+                                 .interface=DBUS_INTRO_IFACE,
+                                 .member=DBUS_INTRO_METH,
+                                 .path=jreq->dmsg->path,
+                                 .arg_number=0 };
 
     dbus_connection_flush(jreq->conn);
-    DBusMessage *introspect = make_dbus_call(jreq->conn, dmsg);
+    DBusMessage *introspect = make_dbus_call(jreq->conn, &dmsg);
 
     if (dbus_message_get_type(introspect) == DBUS_MESSAGE_TYPE_ERROR)
         return NULL;
