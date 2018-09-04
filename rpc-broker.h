@@ -147,6 +147,24 @@ struct dbus_message {
 #define WS_USER_MEM_SIZE 8192  // the amount memory that is allocated for user
                                // for each ws-callback
  
+struct json_request {
+    uint32_t id;
+    DBusConnection *conn;
+    struct lws *wsi;
+    struct dbus_message *dmsg;
+};
+
+struct json_response {
+    uint32_t id;
+    const char *path;
+    const char *interface;
+    const char *member;
+    char response_to[JSON_REQ_ID_MAX];
+    char type[JSON_TYPE_MAX]; 
+    char arg_sig[DBUS_MAX_ARG_LEN];
+    struct json_object *args;
+};
+
 static const xmlChar XML_NAME_PROPERTY[]      = "name";
 static const xmlChar XML_DIRECTION_PROPERTY[] = "direction";
 
@@ -240,24 +258,6 @@ void free_json_response(struct json_response *jrsp);
 #define JSON_RESP "response"
 #define JSON_SIG  "signal"
 #define JSON_ID   "1"
-
-struct json_request {
-    uint32_t id;
-    DBusConnection *conn;
-    struct lws *wsi;
-    struct dbus_message *dmsg;
-};
-
-struct json_response {
-    uint32_t id;
-    const char *path;
-    const char *interface;
-    const char *member;
-    char response_to[JSON_REQ_ID_MAX];
-    char type[JSON_TYPE_MAX]; 
-    char arg_sig[DBUS_MAX_ARG_LEN];
-    struct json_object *args;
-};
 
 
 // src/msg.c
