@@ -167,7 +167,7 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
 static signed int parse_json_args(struct json_object *jarray, 
                                   struct json_request *jreq)
 {
-    struct dbus_message *dmsg = jreq->dmsg;
+    struct dbus_message dmsg = jreq.dmsg;
     char *signature = dbus_introspect(jreq);
 
     if (!signature) {
@@ -175,9 +175,9 @@ static signed int parse_json_args(struct json_object *jarray,
         return -1;
     }
 
-    memcpy(dmsg->arg_sig, signature, strlen(signature) + 1);
+    memcpy(dmsg.arg_sig, signature, strlen(signature) + 1);
     size_t array_length = json_object_array_length(jarray);
-    dmsg->arg_number = array_length;
+    dmsg.arg_number = array_length;
 
     for (int i=0; i < array_length; i++) {
 
@@ -185,13 +185,13 @@ static signed int parse_json_args(struct json_object *jarray,
         int jtype = json_object_get_type(jarg);
 
         if (jtype == json_type_null) {
-            dmsg->args[i] = malloc(sizeof(char) * 2);
-            ((char *) dmsg->args[i])[0] = '\0';
+            dmsg.args[i] = malloc(sizeof(char) * 2);
+            ((char *) dmsg.args[i])[0] = '\0';
             continue;
         }
         
-        dmsg->json_sig[i] = json_arg_to_dbus_type(jtype);       
-        append_dbus_message_arg(*signature, i, dmsg->args, jarg);
+        dmsg.json_sig[i] = json_arg_to_dbus_type(jtype);       
+        append_dbus_message_arg(*signature, i, dmsg.args, jarg);
         signature++;
     }
 
@@ -202,12 +202,11 @@ struct json_request *convert_json_request(char *raw_json_req)
 {
     struct json_object *jobj = json_tokener_parse(raw_json_req);
     struct json_request *jreq = malloc(sizeof *jreq);
-    // un-needed alloc
-    jreq->dmsg = malloc(sizeof *jreq->dmsg);
-    jreq->dmsg->destination = get_json_str_obj(jobj, "destination");
-    jreq->dmsg->interface = get_json_str_obj(jobj, "interface");
-    jreq->dmsg->path = get_json_str_obj(jobj, "path");
-    jreq->dmsg->member = get_json_str_obj(jobj, "method");
+
+    jreq->dmsg.destination = get_json_str_obj(jobj, "destination");
+    jreq->dmsg.interface = get_json_str_obj(jobj, "interface");
+    jreq->dmsg.path = get_json_str_obj(jobj, "path");
+    jreq->dmsg.member = get_json_str_obj(jobj, "method");
     jreq->conn = create_dbus_connection();
 
     if (!jobj) {
