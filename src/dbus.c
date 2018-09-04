@@ -251,13 +251,12 @@ char *db_query(DBusConnection *conn, char *arg)
 {
     char *reply = malloc(sizeof(char) * RULE_MAX_LENGTH);
 
-    struct dbus_message *dmsg = calloc(sizeof *dmsg + sizeof(char *), 1);
-    dbus_default(dmsg);
-    dmsg->member = DBUS_READ;
-    dmsg->args[0] = (void *) arg;
+    struct dbus_message dmsg;
+    dbus_default(&dmsg);
+    dmsg.member = DBUS_READ;
+    dmsg.args[0] = (void *) arg;
 
-    DBusMessage *msg = make_dbus_call(conn, dmsg);
-    free(dmsg);
+    DBusMessage *msg = make_dbus_call(conn, &dmsg);
 
     DBusMessageIter iter;
     if (!dbus_message_iter_init(msg, &iter)) 
