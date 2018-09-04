@@ -154,6 +154,10 @@ struct json_request {
     struct dbus_message *dmsg;
 };
 
+#define JSON_REQ_ID_MAX 16
+#define JSON_TYPE_MAX   16
+#define JSON_REQ_MAX   256
+
 struct json_response {
     uint32_t id;
     const char *path;
@@ -250,10 +254,6 @@ struct json_object *convert_dbus_response(struct json_response *jrsp);
 void add_jobj(struct json_object *args, char *key, struct json_object *jobj);
 
 void free_json_response(struct json_response *jrsp);
-
-#define JSON_REQ_ID_MAX 16
-#define JSON_TYPE_MAX   16
-#define JSON_REQ_MAX   256
 
 #define JSON_RESP "response"
 #define JSON_SIG  "signal"
