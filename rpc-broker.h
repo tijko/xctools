@@ -223,7 +223,8 @@ int connect_to_system_bus(void);
 
 void *dbus_signal(void *subscriber);
 
-struct dbus_message *convert_raw_dbus(const char *msg, size_t len);
+signed int convert_raw_dbus(struct dbus_message *dmsg, 
+                            const char *msg, size_t len);
 
 DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg);
 

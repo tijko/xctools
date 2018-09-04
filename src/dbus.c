@@ -100,7 +100,8 @@ void *dbus_signal(void *subscriber)
     return NULL;
 }
 // handle pointer to struct dbus_message...
-struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
+signed int convert_raw_dbus(struct dbus_message *dmsg, 
+                            const char *msg, size_t len)
 {
     DBusError error;
     dbus_error_init(&error);
@@ -110,10 +111,9 @@ struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
     if (dbus_error_is_set(&error)) {
         DBUS_BROKER_WARNING("<De-Marshal failed> [Length: %d] error: %s",
                               len, error.message);
-        return NULL;
+        return -1;
     }
         
-    struct dbus_message *dmsg = calloc(1, sizeof *dmsg);
     dmsg->destination = dbus_message_get_destination(dbus_msg);
 
     const char *path = dbus_message_get_path(dbus_msg);
@@ -124,7 +124,8 @@ struct dbus_message *convert_raw_dbus(const char *msg, size_t len)
 
     const char *member = dbus_message_get_member(dbus_msg);
     dmsg->member = member ? member : "NULL";
-    return dmsg;
+
+    return 0;
 }
 
 static inline void append_variant(DBusMessageIter *iter, int type, void *data)

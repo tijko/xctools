@@ -57,8 +57,15 @@ int exchange(int rsock, int ssock,
         int len = dbus_message_demarshal_bytes_needed(buf, rbytes);
 
         if (len == rbytes) {
-            struct dbus_message *dmsg = convert_raw_dbus(buf, len);
-            if (broker(dmsg, req) == 0) 
+
+            struct dbus_message dmsg;
+
+            if (convert_raw_dbus(&dmsg, buf, len) < 0) {
+                DBUS_BROKER_WARNING("DBus-message conversion failed %s", "");
+                return 0;
+            }
+
+            if (broker(&dmsg, req) == 0) 
                 return 0;   
         }     
     }
