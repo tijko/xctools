@@ -274,6 +274,8 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid);
 // src/policy.c
 struct policy *build_policy(const char *rule_filename);
 
+void free_policy(void);
+
 
 // src/signature.c
 xmlNodePtr find_xml_property(const char *target, const xmlChar *property, 

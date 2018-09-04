@@ -202,3 +202,19 @@ struct policy *build_policy(const char *rule_filename)
     return dbus_policy;
 }
 
+void free_policy(void)
+{
+    // Are the struct rule fields (e.g. destination, member, ...) all heap 
+    // alloc'd?
+
+    int count = dbus_broker_policy->domain_number;
+    
+    for (int i=0; i < count; i++) {
+
+        struct domain_policy domain = dbus_broker_policy->domains[i];
+        free(domain.uuid);    
+    }
+
+    free(dbus_broker_policy);
+}
+
