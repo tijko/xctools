@@ -100,7 +100,9 @@ void *dbus_signal(void *subscriber)
         dbus_connection_flush(conn);
     }
 
-    dbus_connection_close(conn);
+    if (connection_open)
+        dbus_connection_close(conn);
+
     free(bsig);
 
     return NULL;
