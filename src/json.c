@@ -167,7 +167,6 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
 static signed int parse_json_args(struct json_object *jarray, 
                                   struct json_request *jreq)
 {
-    struct dbus_message dmsg = jreq->dmsg;
     char *signature = dbus_introspect(jreq);
 
     if (!signature) {
@@ -175,9 +174,9 @@ static signed int parse_json_args(struct json_object *jarray,
         return -1;
     }
 
-    memcpy(dmsg.arg_sig, signature, strlen(signature) + 1);
+    memcpy(jreq->dmsg.arg_sig, signature, strlen(signature) + 1);
     size_t array_length = json_object_array_length(jarray);
-    dmsg.arg_number = array_length;
+    jreq->dmsg.arg_number = array_length;
 
     for (int i=0; i < array_length; i++) {
 
@@ -185,13 +184,13 @@ static signed int parse_json_args(struct json_object *jarray,
         int jtype = json_object_get_type(jarg);
 
         if (jtype == json_type_null) {
-            dmsg.args[i] = malloc(sizeof(char) * 2);
-            ((char *) dmsg.args[i])[0] = '\0';
+            jreq->dmsg.args[i] = malloc(sizeof(char) * 2);
+            ((char *) jreq->dmsg.args[i])[0] = '\0';
             continue;
         }
         
-        dmsg.json_sig[i] = json_arg_to_dbus_type(jtype);       
-        append_dbus_message_arg(*signature, i, dmsg.args, jarg);
+        jreq->dmsg.json_sig[i] = json_arg_to_dbus_type(jtype);       
+        append_dbus_message_arg(*signature, i, jreq->dmsg.args, jarg);
         signature++;
     }
 

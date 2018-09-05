@@ -5,10 +5,12 @@
 char *prepare_json_reply(struct json_response *jrsp)
 {
     struct json_object *jobj = convert_dbus_response(jrsp);
+
     if (!jobj)
         return NULL;
 
     char *reply = malloc(sizeof(char) * WS_RING_BUFFER_MEMBER_SIZE);
+
     snprintf(reply, WS_RING_BUFFER_MEMBER_SIZE - 1, "%s", 
              json_object_to_json_string(jobj));
 
