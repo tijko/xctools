@@ -63,7 +63,7 @@ void *dbus_signal(void *subscriber)
     struct broker_signal *bsig = (struct broker_signal *) subscriber;
     DBusConnection *conn = bsig->conn;
 
-    while (dbus_broker_running &&
+    while (dbus_broker_running && connection_open &&
            dbus_connection_get_is_connected(conn)) {
 
         sleep(1);
