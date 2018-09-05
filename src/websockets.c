@@ -53,6 +53,9 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
             DBUS_BROKER_EVENT("<WS client request> %s", "");
             break;
 
+        case LWS_CALLBACK_CLOSED:
+            connection_open = 0;
+
         default:
             break;
     }

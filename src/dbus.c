@@ -87,7 +87,12 @@ void *dbus_signal(void *subscriber)
 
         sem_wait(&memory_lock);
         lws_ring_insert(ring, reply, 1);
-        lws_callback_on_writable(bsig->wsi);
+
+        if (connection_open)
+            lws_callback_on_writable(bsig->wsi);
+        else
+            dbus_connection_close(conn);
+
         sem_post(&memory_lock);
 
         dbus_message_unref(msg);

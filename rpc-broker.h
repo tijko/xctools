@@ -178,7 +178,7 @@ static const char XML_TYPE_FIELD[]         = "type";
 struct lws_ring *ring;
 sem_t memory_lock;
 int dbus_broker_running;
-
+int connection_open;
 
 struct broker_signal {
     DBusConnection *conn;
