@@ -21,7 +21,7 @@ void *broker_message(void *request)
     int client = req->client;
 
     fd_set ex_set;
- 
+
     int srv = connect_to_system_bus();
     int bytes = 0;
 
