@@ -90,7 +90,7 @@ static inline void get_etc_policy(struct etc_policy *etc,
                                   const char *rule_filepath)
 {
     struct stat policy_stat;
-    etc.count = 0;
+    etc->count = 0;
      
     if (stat(rule_filepath, &policy_stat) < 0) {
         DBUS_BROKER_WARNING("/etc policy stat of file <%s> failed %s",
