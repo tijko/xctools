@@ -63,7 +63,8 @@ void *dbus_signal(void *subscriber)
     struct broker_signal *bsig = (struct broker_signal *) subscriber;
     DBusConnection *conn = bsig->conn;
 
-    while (dbus_connection_get_is_connected(conn)) { 
+    while (dbus_broker_running &&
+           dbus_connection_get_is_connected(conn)) {
 
         sleep(1);
         dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
@@ -99,7 +100,7 @@ void *dbus_signal(void *subscriber)
 
     return NULL;
 }
-// handle pointer to struct dbus_message...
+
 signed int convert_raw_dbus(struct dbus_message *dmsg, 
                             const char *msg, size_t len)
 {

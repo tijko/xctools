@@ -22,7 +22,6 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
 
         case LWS_CALLBACK_RECEIVE: {
             sem_wait(&memory_lock);
-            // memset needed?
             memset(user, '\0', WS_USER_MEM_SIZE); 
             memcpy(user, in, len);
             if (ws_request_handler(wsi, user) == 0)

@@ -151,7 +151,7 @@ struct json_request {
     uint32_t id;
     DBusConnection *conn;
     struct lws *wsi;
-    struct dbus_message *dmsg;
+    struct dbus_message dmsg;
 };
 
 #define JSON_REQ_ID_MAX 16
