@@ -30,7 +30,7 @@ struct json_response *make_json_request(struct json_request *jreq)
     }
     
     snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, "%d", jreq->id);
-    DBusMessage *msg = make_dbus_call(conn, jreq->dmsg);
+    DBusMessage *msg = make_dbus_call(conn, &(jreq->dmsg));
 
     if (!msg || dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) { 
         DBUS_BROKER_WARNING("response to <%d> request failed", jreq->id); 
@@ -40,7 +40,7 @@ struct json_response *make_json_request(struct json_request *jreq)
 
     load_json_response(msg, jrsp);
 
-    if (strcmp("AddMatch", jreq->dmsg->member) == 0) { 
+    if (strcmp("AddMatch", jreq->dmsg.member) == 0) { 
         pthread_t signal_thr;
         struct broker_signal *bsig = malloc(sizeof *bsig);
         bsig->conn = conn;
@@ -167,7 +167,7 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
 static signed int parse_json_args(struct json_object *jarray, 
                                   struct json_request *jreq)
 {
-    struct dbus_message dmsg = jreq.dmsg;
+    struct dbus_message dmsg = jreq->dmsg;
     char *signature = dbus_introspect(jreq);
 
     if (!signature) {

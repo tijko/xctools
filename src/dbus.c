@@ -275,10 +275,10 @@ char *db_query(DBusConnection *conn, char *arg)
 
 char *dbus_introspect(struct json_request *jreq)
 {
-    struct dbus_message dmsg = { .destination=jreq->dmsg->destination,
+    struct dbus_message dmsg = { .destination=jreq->dmsg.destination,
                                  .interface=DBUS_INTRO_IFACE,
                                  .member=DBUS_INTRO_METH,
-                                 .path=jreq->dmsg->path,
+                                 .path=jreq->dmsg.path,
                                  .arg_number=0 };
 
     dbus_connection_flush(jreq->conn);
@@ -295,7 +295,7 @@ char *dbus_introspect(struct json_request *jreq)
 
     char *signature = calloc(1, sizeof(char) * 16);
     if (retrieve_xml_signature((const xmlChar *) reply, signature, 
-                                jreq->dmsg->interface, jreq->dmsg->member) < 1)
+                                jreq->dmsg.interface, jreq->dmsg.member) < 1)
         signature[0] = '\0';
 
     return signature;
