@@ -17,6 +17,9 @@
 
 void *broker_message(void *request)
 {
+    if (!request)
+        return NULL;
+
     struct dbus_request *req = (struct dbus_request *) request;
     int client = req->client;
 
@@ -54,12 +57,14 @@ void *broker_message(void *request)
 signed int is_stubdom(uint16_t domid)
 {
     struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
+
     size_t len = 0;
 
     if (!xsh) 
         return -1;
 
     char *path = xs_get_domain_path(xsh, domid);
+
     path = realloc(path, sizeof(char) * strlen(path) + 8); 
     strcat(path, "/target");
 
@@ -137,8 +142,6 @@ static void run(struct dbus_broker_args *args)
 {
     srand48(time(NULL));
 
-    for (;db_list() == NULL;);
-       
     dbus_broker_policy = build_policy(args->rule_file);
 
     struct etc_policy etc = dbus_broker_policy->etc;
