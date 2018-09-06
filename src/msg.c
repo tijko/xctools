@@ -27,7 +27,6 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
         policy = filter(&(etc.rules[i]), dmsg, domid);
 
     int domains = dbus_broker_policy->domain_number;
-    DBUS_BROKER_EVENT("FILTER-START%s", "");
     
     for (int i=0; i < domains; i++) {
         if (dbus_broker_policy->domains[i].domid == domid) {
@@ -45,7 +44,6 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
     policy = 1;
 
     char req_msg[1024];
-    DBUS_BROKER_WARNING("Done BROKERING %s", "");
 
     snprintf(req_msg, 1023, "Dom: %d [Dest: %s Path: %s Iface: %s Meth: %s]",
                       domid, dmsg->destination, dmsg->path, 
@@ -75,7 +73,6 @@ int exchange(int rsock, int ssock,
         if (len == rbytes) {
 
             struct dbus_message dmsg;
-            DBUS_BROKER_EVENT("CONVERTING %s", "");
             if (convert_raw_dbus(&dmsg, buf, len) < 0) {
                 DBUS_BROKER_WARNING("DBus-message conversion failed %s", "");
                 return 0;
@@ -100,8 +97,6 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
         DBUS_BROKER_WARNING("Invalid filter request %s", "");
         return -1;
     }
-
-    DBUS_BROKER_EVENT("FILTERING %s", "");
 
     DBusConnection *conn;
     char *uuid, *arg;

@@ -33,8 +33,6 @@ struct json_response *make_json_request(struct json_request *jreq)
         snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, JSON_ID);
         snprintf(jrsp->arg_sig, DBUS_MAX_ARG_LEN - 1, "s");
         json_object_array_add(jrsp->args, json_object_new_string(busname));
-        // TMP XXX
-        DBUS_BROKER_EVENT("CREATE json-response %s", "hello");
         return jrsp;
     }
     
@@ -240,9 +238,6 @@ struct json_request *convert_json_request(char *raw_json_req)
     jreq->id = json_object_get_int(jint);
     json_object_put(jint);
     
-    // TMP XXX
-    DBUS_BROKER_EVENT("Converted json-request %s", jreq->dmsg.destination);
-
     return jreq;
 }
 

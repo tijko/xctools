@@ -90,8 +90,6 @@ int init_request(int client)
         return ret;
     }
 
-    DBUS_BROKER_WARNING("Starting thread for <%d>", client);
-
     dreq->domid = client_addr.domain;
     ret = pthread_create(&dbus_req_thread, NULL, 
                         (void *(*)(void *)) broker_message, (void *) dreq);
