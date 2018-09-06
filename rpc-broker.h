@@ -38,7 +38,7 @@
 
 #define DBUS_REQ_ARG(buf, fmt, ...) ({ asprintf(&buf, fmt, __VA_ARGS__); })
 
-#define RULES_FILENAME "/etc/rpc-proxy.rules"
+#define RULES_FILENAME "/etc/rpc-broker.rules"
 #define RULES_MAX_LENGTH 256
 #define RULE_MAX_LENGTH  256
 

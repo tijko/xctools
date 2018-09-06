@@ -8,9 +8,10 @@ PV = "0+git${SRCPV}"
 SRCREV = "${AUTOREV}"
 SRC_URI = "git://github.com/tijko/rpc-broker;protocol=https;branch=master \
            file://rpc-broker.initscript                                   \
+           file://rpc-broker.rules                                        \
           "
 
-S = "${WORKDIR}/git/"
+S = "${WORKDIR}/git"
 
 INITSCRIPT_NAME = "rpc-broker"
 
