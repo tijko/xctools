@@ -15,11 +15,12 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
     int policy = 0;
     struct etc_policy etc = dbus_broker_policy->etc;
     int etc_count = etc.count;
-
+    DBUS_BROKER_EVENT("DOM: %d Count: %d", domid, etc_count);
     for (int i=0; i < etc_count; i++)
         policy = filter(&(etc.rules[i]), dmsg, domid);
 
     int domains = dbus_broker_policy->domain_number;
+    DBUS_BROKER_EVENT("FILTER-START%s", "");
     
     for (int i=0; i < domains; i++) {
         if (dbus_broker_policy->domains[i].domid == domid) {
@@ -37,6 +38,7 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
     policy = 1;
 
     char req_msg[1024];
+    DBUS_BROKER_WARNING("Done BROKERING %s", "");
 
     snprintf(req_msg, 1023, "Dom: %d [Dest: %s Path: %s Iface: %s Meth: %s]",
                       domid, dmsg->destination, dmsg->path, 
