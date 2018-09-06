@@ -273,6 +273,8 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid);
 
 
 // src/policy.c
+DBusMessage *db_list(void);
+
 struct policy *build_policy(const char *rule_filename);
 
 void free_policy(void);

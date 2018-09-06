@@ -136,6 +136,9 @@ void sighup_handler(int signal)
 static void run(struct dbus_broker_args *args)
 {
     srand48(time(NULL));
+
+    for (;db_list() == NULL;);
+       
     dbus_broker_policy = build_policy(args->rule_file);
 
     struct etc_policy etc = dbus_broker_policy->etc;

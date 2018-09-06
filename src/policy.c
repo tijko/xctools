@@ -157,12 +157,10 @@ static inline void get_etc_policy(struct etc_policy *etc,
     etc->count = idx;
 }
 
-struct policy *build_policy(const char *rule_filename)
+DBusMessage *db_list(void)
 {
     DBusConnection *conn = create_dbus_connection();
    
-vm_status:
-
     if (!conn) {
         DBUS_BROKER_WARNING("Failed to connect to dbus %s", ""); 
         return NULL;
@@ -177,7 +175,14 @@ vm_status:
     DBusMessage *vms = make_dbus_call(conn, &dmsg);
 
     if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) 
-        goto vm_status;
+        return NULL;
+
+    return vms;
+}
+
+struct policy *build_policy(const char *rule_filename)
+{
+    DBusMessage *vms = db_list();
 
     struct policy *dbus_policy = calloc(1, sizeof *dbus_policy);
 
