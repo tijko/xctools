@@ -22,12 +22,19 @@ struct json_response *make_json_request(struct json_request *jreq)
     dbus_connection_flush(conn);
 
     if (jreq->id == 1) {
+
         const char *busname = dbus_bus_get_unique_name(conn);
+
+        if (!busname)
+            DBUS_BROKER_ERROR("DBus refused busname");
+
         jrsp->id = jreq->id;
 
         snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, JSON_ID);
         snprintf(jrsp->arg_sig, DBUS_MAX_ARG_LEN - 1, "s");
         json_object_array_add(jrsp->args, json_object_new_string(busname));
+        // TMP XXX
+        DBUS_BROKER_EVENT("CREATE json-response %s", "hello");
         return jrsp;
     }
     
@@ -204,6 +211,7 @@ struct json_request *convert_json_request(char *raw_json_req)
     struct json_object *jobj = json_tokener_parse(raw_json_req);
     struct json_request *jreq = malloc(sizeof *jreq);
 
+    // Check-each
     jreq->dmsg.destination = get_json_str_obj(jobj, "destination");
     jreq->dmsg.interface = get_json_str_obj(jobj, "interface");
     jreq->dmsg.path = get_json_str_obj(jobj, "path");
@@ -232,6 +240,9 @@ struct json_request *convert_json_request(char *raw_json_req)
     jreq->id = json_object_get_int(jint);
     json_object_put(jint);
     
+    // TMP XXX
+    DBUS_BROKER_EVENT("Converted json-request %s", jreq->dmsg.destination);
+
     return jreq;
 }
 

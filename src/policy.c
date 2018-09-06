@@ -3,6 +3,9 @@
 
 static inline void create_rule(struct rule *current, char *rule)
 {
+    if (!rule)
+        return;
+
     current->rule_string = strdup(rule);
 
     char *ruleptr;

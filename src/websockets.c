@@ -96,7 +96,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
         DBUS_BROKER_WARNING("getpeername call failed <%d>", client);
         return 1;
     }
-// never actually filter...
+
     struct json_request *jreq = convert_json_request(raw_req);
 
     if (!jreq)
@@ -105,7 +105,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     jreq->wsi = wsi;
 
     struct json_response *jrsp = make_json_request(jreq);
-    // free jreq
+
     if (!jrsp)
         return 1;
 
