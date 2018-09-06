@@ -8,6 +8,8 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
         return 1;
     }
 
+    DBUS_BROKER_EVENT("BROKERING %s", "");
+
     uint16_t domid = req->domid;
 
     int policy = 0;
@@ -64,7 +66,7 @@ int exchange(int rsock, int ssock,
         if (len == rbytes) {
 
             struct dbus_message dmsg;
-
+            DBUS_BROKER_EVENT("CONVERTING %s", "");
             if (convert_raw_dbus(&dmsg, buf, len) < 0) {
                 DBUS_BROKER_WARNING("DBus-message conversion failed %s", "");
                 return 0;
@@ -89,6 +91,8 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
         DBUS_BROKER_WARNING("Invalid filter request %s", "");
         return -1;
     }
+
+    DBUS_BROKER_EVENT("FILTERING %s", "");
 
     DBusConnection *conn;
     char *uuid, *arg;
