@@ -8,14 +8,21 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
         return 1;
     }
 
-    DBUS_BROKER_EVENT("BROKERING %s", "");
+    if (!req->domid) {
+        DBUS_BROKER_WARNING("Invalid domain ID %s", "");
+        return 1;
+    }
 
     uint16_t domid = req->domid;
 
     int policy = 0;
+    if (!dbus_broker_policy || !dbus_broker_policy->etc) {
+        DBUS_BROKER_WARNING("No policy in place %s", "");
+        return 1;
+    }
+
     struct etc_policy etc = dbus_broker_policy->etc;
     int etc_count = etc.count;
-    DBUS_BROKER_EVENT("DOM: %d Count: %d", domid, etc_count);
     for (int i=0; i < etc_count; i++)
         policy = filter(&(etc.rules[i]), dmsg, domid);
 
