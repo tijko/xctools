@@ -1,6 +1,6 @@
 DESCRIPTION = "RPC Broker"
 LICENSE = "GPLv2"
-LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/GPL-2.0;md5=801f80980d171dd6425610833a22dbe6"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=d32239bcb673463ab874e80d47fae504"
 DEPENDS = "json-c libwebsockets libv4v dbus libxml2"
 
 PV = "0+git${SRCPV}"
@@ -23,4 +23,5 @@ do_install_append() {
     install -m 0755 -d ${D}/etc
     install -m 0755 -d ${D}/etc/init.d
     install -m 0755 ${WORKDIR}/rpc-broker.initscript ${D}${sysconfdir}/init.d/rpc-broker
+    install -m 0644 ${WORKDIR}/rpc-broker.rules ${D}/etc/rpc-broker.rules
 }
