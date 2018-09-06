@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2013 Citrix Systems, Inc.
+# Copyright (c) 2018 AIS, Inc.
 # 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,11 +23,13 @@
 PIDFILE=/var/run/rpc-broker.pid
 
 # Make sure the progam exists
-[ -f /usr/bin/rpc-broker ] || exit 0
+[ -f /usr/sbin/rpc-broker ] || exit 0
 
 start() {
 	echo "Starting rpc-broker"    
-	start-stop-daemon --start --quiet --oknodo --background --make-pidfile --pidfile $PIDFILE --exec /usr/bin/rpc-broker
+	export LD_PRELOAD=/usr/lib/libv4v-1.0.so.0    
+	export INET_IS_V4V=1
+	start-stop-daemon --start --quiet --oknodo --background --make-pidfile --pidfile $PIDFILE --exec /usr/sbin/rpc-broker
 }
 stop() {
 	echo "Stopping rpc-broker"
