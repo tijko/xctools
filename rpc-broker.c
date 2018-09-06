@@ -168,29 +168,33 @@ static void run(struct dbus_broker_args *args)
 
         FD_ZERO(&server_set);
         FD_SET(default_socket, &server_set);
-        lws_service(ws_context, WS_LOOP_TIMEOUT);
+//        lws_service(ws_context, WS_LOOP_TIMEOUT);
 
         struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_TIMEOUT };
         int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
 
-        if (ret == 0)
-            continue;
+//        if (ret == 0)
+//            continue;
 
-        if (ret < 0)
-            DBUS_BROKER_ERROR("select");
+//        if (ret < 0)
+//            DBUS_BROKER_ERROR("select");
 
-        if (FD_ISSET(default_socket, &server_set) == 0)
-            continue;
+//        if (FD_ISSET(default_socket, &server_set) == 0)
+//            continue;
   
-        int client = v4v_accept(default_socket, &server->peer);
+        if (FD_ISSET(default_socket, &server_set) > 0) {
+            int client = v4v_accept(default_socket, &server->peer);
 
-        if (client < 0)
-            DBUS_BROKER_ERROR("v4v_accept");
+            if (client < 0)
+                DBUS_BROKER_ERROR("v4v_accept");
 
-        DBUS_BROKER_EVENT("<Client has made a connection> [Dom: %d Client: %d]",
-                            server->peer.domain, client);
+            DBUS_BROKER_EVENT("<Client has made a connection> [Dom: %d Client: %d]",
+                                server->peer.domain, client);
 
-        init_request(client);
+            init_request(client);
+        }
+
+        lws_service(ws_context, WS_LOOP_TIMEOUT);
     }
 
     free(server);
