@@ -3,6 +3,11 @@
 
 int broker(struct dbus_message *dmsg, struct dbus_request *req)
 {
+    if (!dmsg || !req) {
+        DBUS_BROKER_WARNING("Invalid broker request %s", "");
+        return 1;
+    }
+
     uint16_t domid = req->domid;
 
     int policy = 0;
@@ -80,6 +85,11 @@ int exchange(int rsock, int ssock,
 
 int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
 {
+    if (!policy_rule || !dmsg) {
+        DBUS_BROKER_WARNING("Invalid filter request %s", "");
+        return -1;
+    }
+
     DBusConnection *conn;
     char *uuid, *arg;
 
