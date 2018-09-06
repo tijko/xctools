@@ -274,9 +274,11 @@ char *db_query(DBusConnection *conn, char *arg)
     dbus_message_iter_get_basic(&iter, &reply);
     dbus_message_unref(msg);
 
+    DBUS_BROKER_WARNING("Query - was null %s", "");
     if (reply[0] == '\0') 
         return NULL;
 
+    DBUS_BROKER_WARNING("Query: %s", reply);
     return reply;
 }
 
