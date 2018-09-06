@@ -16,7 +16,7 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
     uint16_t domid = req->domid;
 
     int policy = 0;
-    if (!dbus_broker_policy || !dbus_broker_policy->etc) {
+    if (!dbus_broker_policy) {
         DBUS_BROKER_WARNING("No policy in place %s", "");
         return 1;
     }
