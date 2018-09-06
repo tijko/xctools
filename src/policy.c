@@ -161,10 +161,8 @@ DBusMessage *db_list(void)
 {
     DBusConnection *conn = create_dbus_connection();
    
-    if (!conn) {
-        DBUS_BROKER_WARNING("Failed to connect to dbus %s", ""); 
+    if (!conn)
         return NULL;
-    }
 
     struct dbus_message dmsg;
 
@@ -177,12 +175,15 @@ DBusMessage *db_list(void)
     if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) 
         return NULL;
 
+    dbus_connection_unref(conn);
+
     return vms;
 }
 
 struct policy *build_policy(const char *rule_filename)
 {
     DBusMessage *vms = db_list();
+    DBusConnection *conn = create_dbus_connection();
 
     struct policy *dbus_policy = calloc(1, sizeof *dbus_policy);
 
