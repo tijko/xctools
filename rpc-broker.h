@@ -203,7 +203,7 @@ struct dbus_broker_args {
 // rpc-broker.c
 void *broker_message(void *request);
 
-int init_request(int client, struct policy *dbus_policy);
+int init_request(int client);
 
 signed int is_stubdom(uint16_t domid);
 

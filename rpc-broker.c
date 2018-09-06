@@ -74,7 +74,7 @@ signed int is_stubdom(uint16_t domid)
     return len;
 }
 
-int init_request(int client, struct policy *dbus_policy)
+int init_request(int client)
 {
     int ret;
     pthread_t dbus_req_thread;
@@ -89,6 +89,8 @@ int init_request(int client, struct policy *dbus_policy)
         free(dreq);
         return ret;
     }
+
+    DBUS_BROKER_WARNING("Starting thread for <%d>", client);
 
     dreq->domid = client_addr.domain;
     ret = pthread_create(&dbus_req_thread, NULL, 
@@ -186,7 +188,8 @@ static void run(struct dbus_broker_args *args)
 
         DBUS_BROKER_EVENT("<Client has made a connection> [Dom: %d Client: %d]",
                             server->peer.domain, client);
-        init_request(client, dbus_broker_policy);
+
+        init_request(client);
     }
 
     free(server);
