@@ -191,7 +191,16 @@ static void run(struct dbus_broker_args *args)
             DBUS_BROKER_EVENT("<Client has made a connection> [Dom: %d Client: %d]",
                                 server->peer.domain, client);
 
-            init_request(client);
+            struct dbus_request *dreq = malloc(sizeof *dreq);
+            dreq->client = client;
+
+            v4v_addr_t client_addr;
+
+            v4v_getpeername(client, &client_addr);
+            dreq->domid = client_addr.domain;
+
+            broker_messaged(req);
+//            init_request(client);
         }
 
         lws_service(ws_context, WS_LOOP_TIMEOUT);
