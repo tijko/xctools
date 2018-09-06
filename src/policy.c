@@ -161,8 +161,10 @@ struct policy *build_policy(const char *rule_filename)
 {
     DBusConnection *conn = create_dbus_connection();
    
-    if (!conn) 
+    if (!conn) {
+        DBUS_BROKER_WARNING("Failed to connect to dbus %s", ""); 
         return NULL;
+    }
 
     struct dbus_message dmsg;
 

@@ -4,18 +4,14 @@
 int broker(struct dbus_message *dmsg, struct dbus_request *req)
 {
     if (!dmsg || !req) {
-        DBUS_BROKER_WARNING("Invalid broker request %s", "");
-        return 1;
-    }
-
-    if (!req->domid) {
-        DBUS_BROKER_WARNING("Invalid domain ID %s", "");
+        DBUS_BROKER_WARNING("Invalid args to broker-request %s", "");
         return 1;
     }
 
     uint16_t domid = req->domid;
 
     int policy = 0;
+
     if (!dbus_broker_policy) {
         DBUS_BROKER_WARNING("No policy in place %s", "");
         return 1;
