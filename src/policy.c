@@ -166,6 +166,8 @@ struct policy *build_policy(const char *rule_filename)
         return NULL;
     }
 
+vm_status:
+
     struct dbus_message dmsg;
 
     dbus_default(&dmsg);
@@ -174,10 +176,8 @@ struct policy *build_policy(const char *rule_filename)
 
     DBusMessage *vms = make_dbus_call(conn, &dmsg);
 
-    if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) {
-        DBUS_BROKER_WARNING("<No policy in place> %s", "");
-        return NULL;
-    }
+    if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) 
+        goto vm_status;
 
     struct policy *dbus_policy = calloc(1, sizeof *dbus_policy);
 
