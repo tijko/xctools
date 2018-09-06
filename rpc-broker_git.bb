@@ -14,6 +14,7 @@ SRC_URI = "git://github.com/tijko/rpc-broker;protocol=https;branch=master \
 S = "${WORKDIR}/git"
 
 INITSCRIPT_NAME = "rpc-broker"
+INITSCRIPT_PARAMS = "defaults 60"
 
 EXTRA_OECONF += ""
 EXTRA_OEMAKE += ""

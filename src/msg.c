@@ -19,6 +19,7 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
 
     struct etc_policy etc = dbus_broker_policy->etc;
     int etc_count = etc.count;
+
     for (int i=0; i < etc_count; i++)
         policy = filter(&(etc.rules[i]), dmsg, domid);
 
