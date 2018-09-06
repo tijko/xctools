@@ -199,7 +199,7 @@ static void run(struct dbus_broker_args *args)
             v4v_getpeername(client, &client_addr);
             dreq->domid = client_addr.domain;
 
-            broker_messaged(req);
+            broker_message(dreq);
 //            init_request(client);
         }
 
