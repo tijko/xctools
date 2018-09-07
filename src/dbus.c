@@ -112,6 +112,7 @@ void *dbus_signal(void *subscriber)
         jrsp->interface = dbus_message_get_interface(msg);
         jrsp->member = dbus_message_get_member(msg);
         jrsp->path = dbus_message_get_path(msg);
+        char *reply = prepare_json_reply(jrsp);
 
         sem_wait(&memory_lock);
         lws_ring_insert(ring, reply, 1);
