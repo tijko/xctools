@@ -110,10 +110,11 @@ void *dbus_signal(void *subscriber)
 
         sem_wait(&memory_lock);
         lws_ring_insert(ring, reply, 1);
-
-        if (connection_open)
+        // get ring-buffer size (test)
+        if (connection_open) {
+            printf("Elements: %d\n", lws_ring_get_count_waiting_elements(ring, NULL));
             lws_callback_on_writable(bsig->wsi);
-        else
+        } else
             dbus_connection_close(conn);
 
         sem_post(&memory_lock);
@@ -122,10 +123,11 @@ void *dbus_signal(void *subscriber)
         free_json_response(jrsp);
 //        dbus_connection_flush(conn);
     }
-
+//
+    printf("Signal Closed!\n");
     if (connection_open)
         dbus_connection_close(conn);
-
+    // print whenever signal thread exits
     free(bsig);
 
     return NULL;
