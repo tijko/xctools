@@ -1,16 +1,16 @@
-/* 
+/*
  Copyright (c) 2018 AIS, Inc.
- 
+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -32,9 +32,9 @@ static inline void create_rule(struct rule *current, char *rule)
 
     current->policy = token[0] == 'a' ? 1 : 0;
     token = strtok_r(NULL, delimiter, &ruleptr);
- 
+
     while (token) {
-        
+
         char *field = strtok_r(NULL, delimiter, &ruleptr);
 
         switch (token[0]) {
@@ -43,7 +43,7 @@ static inline void create_rule(struct rule *current, char *rule)
 
                 if (token[1] == 'e')
                     current->destination = strdup(field);
-                else 
+                else
                     current->domtype = strdup(field);
 
                 break;
@@ -54,23 +54,23 @@ static inline void create_rule(struct rule *current, char *rule)
                 if (token[1] == 'n')
                     current->interface = strdup(field);
                 else {
-                    current->if_bool = strdup(field); 
+                    current->if_bool = strdup(field);
                     token = strtok_r(NULL, delimiter, &ruleptr);
                     current->if_bool_flag = token[0] == 't' ? 1 : 0;
                 }
-                
+
                 break;
             }
 
-            case ('s'): 
+            case ('s'):
                 current->stubdom = 1;
                 break;
 
-            case ('p'): 
-                current->path = strdup(field);                
+            case ('p'):
+                current->path = strdup(field);
                 break;
 
-            case ('m'): 
+            case ('m'):
                 current->member = strdup(field);
                 break;
 
@@ -92,7 +92,7 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
     for (int rule_idx=0; rule_idx < MAX_RULES; rule_idx++) {
 
         char *arg;
-        DBUS_REQ_ARG(arg, "/vm/%s/rpc-firewall-rules/%d", 
+        DBUS_REQ_ARG(arg, "/vm/%s/rpc-firewall-rules/%d",
                      dom->uuid, rule_idx);
 
         char *rulestring = db_query(conn, arg);
@@ -101,18 +101,18 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
             break;
 
         struct rule *policy_rule = &(dom->rules[rule_idx]);
-        create_rule(policy_rule, rulestring); 
+        create_rule(policy_rule, rulestring);
 
         dom->count++;
-    } 
+    }
 }
 
-static inline void get_etc_policy(struct etc_policy *etc, 
+static inline void get_etc_policy(struct etc_policy *etc,
                                   const char *rule_filepath)
 {
     struct stat policy_stat;
     etc->count = 0;
-     
+
     if (stat(rule_filepath, &policy_stat) < 0) {
         DBUS_BROKER_WARNING("/etc policy stat of file <%s> failed %s",
                              rule_filepath, strerror(errno));
@@ -142,7 +142,7 @@ static inline void get_etc_policy(struct etc_policy *etc,
 
     if (policy_fd < 0) {
         DBUS_BROKER_WARNING("/etc policy file %s failed to open %s",
-                              rule_filepath, strerror(errno)); 
+                              rule_filepath, strerror(errno));
         return;
     }
 
@@ -178,7 +178,7 @@ static inline void get_etc_policy(struct etc_policy *etc,
 DBusMessage *db_list(void)
 {
     DBusConnection *conn = create_dbus_connection();
-   
+
     if (!conn)
         return NULL;
 
@@ -190,7 +190,7 @@ DBusMessage *db_list(void)
 
     DBusMessage *vms = make_dbus_call(conn, &dmsg);
 
-    if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) 
+    if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR)
         return NULL;
 
     dbus_connection_unref(conn);
@@ -207,9 +207,9 @@ struct policy *build_policy(const char *rule_filename)
 
     DBusMessageIter iter, sub;
     dbus_message_iter_init(vms, &iter);
-    dbus_message_iter_recurse(&iter, &sub); 
+    dbus_message_iter_recurse(&iter, &sub);
 
-    for (int dom_idx=0; 
+    for (int dom_idx=0;
              dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_INVALID;
              dom_idx++) {
 
@@ -234,15 +234,15 @@ struct policy *build_policy(const char *rule_filename)
 
 void free_policy(void)
 {
-    // Are the struct rule fields (e.g. destination, member, ...) all heap 
+    // Are the struct rule fields (e.g. destination, member, ...) all heap
     // alloc'd?
 
     int count = dbus_broker_policy->domain_number;
-    
+
     for (int i=0; i < count; i++) {
 
         struct domain_policy domain = dbus_broker_policy->domains[i];
-        free(domain.uuid);    
+        free(domain.uuid);
     }
 
     free(dbus_broker_policy);

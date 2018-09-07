@@ -1,16 +1,16 @@
-/* 
+/*
  Copyright (c) 2018 AIS, Inc.
- 
+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -21,8 +21,8 @@
 
 struct json_response *init_jrsp(void)
 {
-    struct json_response *jrsp = calloc(sizeof *jrsp + 
-                                       (sizeof(char *) * JSON_REQ_MAX), 1); 
+    struct json_response *jrsp = calloc(sizeof *jrsp +
+                                       (sizeof(char *) * JSON_REQ_MAX), 1);
 
     jrsp->args = json_object_new_array();
     jrsp->id = rand() % 4096;
@@ -53,25 +53,25 @@ struct json_response *make_json_request(struct json_request *jreq)
         json_object_array_add(jrsp->args, json_object_new_string(busname));
         return jrsp;
     }
-    
+
     snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, "%d", jreq->id);
     DBusMessage *msg = make_dbus_call(conn, &(jreq->dmsg));
 
-    if (!msg || dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) { 
-        DBUS_BROKER_WARNING("response to <%d> request failed", jreq->id); 
+    if (!msg || dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) {
+        DBUS_BROKER_WARNING("response to <%d> request failed", jreq->id);
         free_json_response(jrsp);
         return NULL;
     }
 
     load_json_response(msg, jrsp);
 
-    if (strcmp("AddMatch", jreq->dmsg.member) == 0) { 
+    if (strcmp("AddMatch", jreq->dmsg.member) == 0) {
         pthread_t signal_thr;
         struct broker_signal *bsig = malloc(sizeof *bsig);
         bsig->conn = conn;
         bsig->wsi = jreq->wsi;
         pthread_create(&signal_thr, NULL, dbus_signal, bsig);
-    } 
+    }
 
     return jrsp;
 }
@@ -110,11 +110,11 @@ static inline char json_arg_to_dbus_type(int jtype)
 static inline void append_dbus_message_arg(int type, int idx, void **args,
                                                  struct json_object *jarg)
 {
-    // The "argument" array -> `void **args` will be set-up as an array of 
+    // The "argument" array -> `void **args` will be set-up as an array of
     // `struct arg` and these types won't need to be declared;
     // (possibly add union-type in the `struct arg`)
 
-    switch (type) {        
+    switch (type) {
 
         case ('b'): {
             int json_bool = json_object_get_boolean(jarg);
@@ -166,7 +166,7 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
     DBusMessageIter iter, sub;
     dbus_message_iter_init(msg, &iter);
 
-    snprintf(jrsp->arg_sig, DBUS_MAX_ARG_LEN - 1, "%s", 
+    snprintf(jrsp->arg_sig, DBUS_MAX_ARG_LEN - 1, "%s",
              dbus_message_iter_get_signature(&iter));
 
     struct json_object *args = jrsp->args;
@@ -176,8 +176,8 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
         dbus_message_iter_recurse(&iter, &sub);
         iter = sub;
 
-        if (jrsp->arg_sig[1] == 'a' || 
-            jrsp->arg_sig[1] == 'o' || 
+        if (jrsp->arg_sig[1] == 'a' ||
+            jrsp->arg_sig[1] == 'o' ||
             jrsp->arg_sig[1] == 's' ||
             jrsp->arg_sig[1] == 'i') {
             struct json_object *array = json_object_new_array();
@@ -190,7 +190,7 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
     // set the fields
 }
 
-static signed int parse_json_args(struct json_object *jarray, 
+static signed int parse_json_args(struct json_object *jarray,
                                   struct json_request *jreq)
 {
     char *signature = dbus_introspect(jreq);
@@ -214,8 +214,8 @@ static signed int parse_json_args(struct json_object *jarray,
             ((char *) jreq->dmsg.args[i])[0] = '\0';
             continue;
         }
-        
-        jreq->dmsg.json_sig[i] = json_arg_to_dbus_type(jtype);       
+
+        jreq->dmsg.json_sig[i] = json_arg_to_dbus_type(jtype);
         append_dbus_message_arg(*signature, i, jreq->dmsg.args, jarg);
         signature++;
     }
@@ -256,7 +256,7 @@ struct json_request *convert_json_request(char *raw_json_req)
     json_object_object_get_ex(jobj, "id", &jint);
     jreq->id = json_object_get_int(jint);
     json_object_put(jint);
-    
+
     return jreq;
 }
 
@@ -267,14 +267,14 @@ struct json_object *convert_dbus_response(struct json_response *jrsp)
     json_object_object_add(jobj, "type", json_object_new_string(jrsp->type));
 
     if (jrsp->response_to[0] != '\0') {
-        json_object_object_add(jobj, "response-to", 
+        json_object_object_add(jobj, "response-to",
                                json_object_new_string(jrsp->response_to));
     } else {
-        json_object_object_add(jobj, "interface", 
+        json_object_object_add(jobj, "interface",
                                json_object_new_string(jrsp->interface));
-        json_object_object_add(jobj, "path", 
+        json_object_object_add(jobj, "path",
                                json_object_new_string(jrsp->path));
-        json_object_object_add(jobj, "member", 
+        json_object_object_add(jobj, "member",
                                json_object_new_string(jrsp->member));
     }
 
@@ -296,7 +296,7 @@ void free_json_response(struct json_response *jrsp)
         struct json_object *array = jrsp->args;
         for (int i=0; i < strlen(jrsp->arg_sig); i++) {
             struct json_object *arg = json_object_array_get_idx(array, i);
-            json_object_put(arg);            
+            json_object_put(arg);
         }
 
         json_object_put(array);

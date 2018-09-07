@@ -1,16 +1,16 @@
-/* 
+/*
  Copyright (c) 2018 AIS, Inc.
- 
+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -19,7 +19,7 @@
 #include "../rpc-broker.h"
 
 
-xmlNodePtr find_xml_property(const char *target, const xmlChar *property, 
+xmlNodePtr find_xml_property(const char *target, const xmlChar *property,
                              xmlNodePtr node)
 {
     if (node == NULL)
@@ -35,7 +35,7 @@ xmlNodePtr find_xml_property(const char *target, const xmlChar *property,
     return node;
 }
 
-int retrieve_xml_signature(const xmlChar *xml_dump, char *args, 
+int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
                            const char *interface, const char *member)
 {
     int idx = 0;
@@ -49,14 +49,14 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
         goto xml_error;
     }
 
-    xmlNodePtr interface_node = find_xml_property(interface, XML_NAME_PROPERTY, 
+    xmlNodePtr interface_node = find_xml_property(interface, XML_NAME_PROPERTY,
                                               xmlFirstElementChild(root));
     if (interface_node == NULL) {
         error = "interface";
         goto xml_error;
     }
 
-    xmlNodePtr member_node = find_xml_property(member, XML_NAME_PROPERTY, 
+    xmlNodePtr member_node = find_xml_property(member, XML_NAME_PROPERTY,
                                                interface_node);
     if (member_node == NULL) {
         error = "member";
@@ -67,7 +67,7 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
 
     while (name && !strcmp((const char *) name, XML_IN_FIELD)) {
 
-        const xmlChar *type = xmlGetProp(member_node, 
+        const xmlChar *type = xmlGetProp(member_node,
                                         (const xmlChar *) XML_TYPE_FIELD);
 
         if (type)
@@ -87,7 +87,7 @@ xml_error:
     return idx;
 }
 
-static inline void add_json_array(struct json_object *args, char *key, 
+static inline void add_json_array(struct json_object *args, char *key,
                                      DBusMessageIter *iter)
 {
     DBusMessageIter sub;
@@ -115,7 +115,7 @@ void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter)
         dbus_message_iter_get_basic(&sub, &key);
 
         dbus_message_iter_next(&sub);
-        parse_signature(dbus_dict, key, &sub); 
+        parse_signature(dbus_dict, key, &sub);
         dbus_message_iter_next(iter);
     }
 }
@@ -125,14 +125,14 @@ void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
     int type;
     void *arg = malloc(sizeof(char) * DBUS_ARG_LEN);
     DBusMessageIter sub;
- 
+
     while ((type = dbus_message_iter_get_arg_type(iter)) != DBUS_TYPE_INVALID) {
 
         struct json_object *obj = NULL;
 
         switch (type) {
 
-            case (DBUS_TYPE_ARRAY): 
+            case (DBUS_TYPE_ARRAY):
                 add_json_array(args, key, iter);
                 break;
 

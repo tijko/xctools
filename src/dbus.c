@@ -1,16 +1,16 @@
-/* 
+/*
  Copyright (c) 2018 AIS, Inc.
- 
+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -25,7 +25,7 @@ DBusConnection *create_dbus_connection(void)
     dbus_error_init(&error);
     DBusConnection *conn = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
 
-    if (dbus_error_is_set(&error)) 
+    if (dbus_error_is_set(&error))
         DBUS_BROKER_WARNING("<DBus Connection Error> [%s]", error.message);
 
     return conn;
@@ -70,7 +70,7 @@ int connect_to_system_bus(void)
     // could have bus-path override (LEN would need checking)
     snprintf(addr.sun_path, DBUS_BUS_ADDR_LEN, DBUS_BUS_ADDR);
 
-    if (connect(srv, (struct sockaddr *) &addr, sizeof(addr)) < 0) 
+    if (connect(srv, (struct sockaddr *) &addr, sizeof(addr)) < 0)
         DBUS_BROKER_ERROR("connect");
 
     return srv;
@@ -97,7 +97,7 @@ void *dbus_signal(void *subscriber)
         struct json_response *jrsp = init_jrsp();
         jrsp->response_to[0] = '\0';
         snprintf(jrsp->type, JSON_REQ_ID_MAX - 1, "%s", JSON_SIG);
-        
+
         load_json_response(msg, jrsp);
 
         jrsp->interface = dbus_message_get_interface(msg);
@@ -127,7 +127,7 @@ void *dbus_signal(void *subscriber)
     return NULL;
 }
 
-signed int convert_raw_dbus(struct dbus_message *dmsg, 
+signed int convert_raw_dbus(struct dbus_message *dmsg,
                             const char *msg, size_t len)
 {
     DBusError error;
@@ -140,7 +140,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
                               len, error.message);
         return -1;
     }
-        
+
     dmsg->destination = dbus_message_get_destination(dbus_msg);
 
     const char *path = dbus_message_get_path(dbus_msg);
@@ -204,14 +204,14 @@ static inline void append_variant(DBusMessageIter *iter, int type, void *data)
     else
         dbus_message_iter_append_basic(&sub, dbus_type, data);
 
-    dbus_message_iter_close_container(iter, &sub); 
+    dbus_message_iter_close_container(iter, &sub);
 }
 
 DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 {
-    DBusMessage *msg = dbus_message_new_method_call(dmsg->destination, 
+    DBusMessage *msg = dbus_message_new_method_call(dmsg->destination,
                                                     dmsg->path,
-                                                    dmsg->interface, 
+                                                    dmsg->interface,
                                                     dmsg->member);
     DBusError error;
     dbus_error_init(&error);
@@ -224,8 +224,8 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
         switch (dmsg->arg_sig[i]) {
 
             case ('s'):
-                dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, 
-                                               &(dmsg->args[i])); 
+                dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING,
+                                               &(dmsg->args[i]));
                 break;
 
             case ('u'):
@@ -233,14 +233,14 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
                                                 dmsg->args[i]);
                 break;
 
-            case ('i'): 
-                dbus_message_iter_append_basic(&iter, DBUS_TYPE_INT32, 
+            case ('i'):
+                dbus_message_iter_append_basic(&iter, DBUS_TYPE_INT32,
                                                 dmsg->args[i]);
                 break;
 
             case ('b'): {
-                dbus_message_iter_append_basic(&iter, DBUS_TYPE_BOOLEAN, 
-                                               dmsg->args[i]); 
+                dbus_message_iter_append_basic(&iter, DBUS_TYPE_BOOLEAN,
+                                               dmsg->args[i]);
                 break;
             }
 
@@ -251,14 +251,14 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 
             default:
                 DBUS_BROKER_WARNING("<Invalid DBus Signature> [%c]",
-                                      dmsg->arg_sig[i]); 
+                                      dmsg->arg_sig[i]);
                 break;
         }
     }
 
     DBusPendingCall *pc = NULL;
-    if (!dbus_connection_send_with_reply(conn, msg, 
-                                        &pc, DBUS_REQ_TIMEOUT) || !pc) 
+    if (!dbus_connection_send_with_reply(conn, msg,
+                                        &pc, DBUS_REQ_TIMEOUT) || !pc)
         return NULL;
 
     dbus_connection_flush(conn);
@@ -266,7 +266,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
     dbus_connection_flush(conn);
     dbus_message_unref(msg);
 
-    if ((msg = dbus_pending_call_steal_reply(pc)) == NULL) 
+    if ((msg = dbus_pending_call_steal_reply(pc)) == NULL)
         return NULL;
 
     dbus_connection_unref(conn);
@@ -287,13 +287,13 @@ char *db_query(DBusConnection *conn, char *arg)
     DBusMessage *msg = make_dbus_call(conn, &dmsg);
 
     DBusMessageIter iter;
-    if (!dbus_message_iter_init(msg, &iter)) 
+    if (!dbus_message_iter_init(msg, &iter))
         return NULL;
 
     dbus_message_iter_get_basic(&iter, &reply);
     dbus_message_unref(msg);
 
-    if (reply[0] == '\0') 
+    if (reply[0] == '\0')
         return NULL;
 
     return reply;
@@ -320,7 +320,7 @@ char *dbus_introspect(struct json_request *jreq)
     dbus_message_iter_get_basic(&iter, &reply);
 
     char *signature = calloc(1, sizeof(char) * 16);
-    if (retrieve_xml_signature((const xmlChar *) reply, signature, 
+    if (retrieve_xml_signature((const xmlChar *) reply, signature,
                                 jreq->dmsg.interface, jreq->dmsg.member) < 1)
         signature[0] = '\0';
 

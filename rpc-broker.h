@@ -1,16 +1,16 @@
-/* 
+/*
  Copyright (c) 2018 AIS, Inc.
- 
+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -50,7 +50,7 @@
         syslog(type, "%s", buf);                                      \
         free(buf);                                                    \
     })                                                                \
-    
+
 #define DBUS_BROKER_WARNING(fmt, ...) DBUS_LOG(LOG_WARNING, fmt, __VA_ARGS__)
 #define DBUS_BROKER_EVENT(fmt, ...)   DBUS_LOG(LOG_INFO, fmt, __VA_ARGS__)
 
@@ -73,7 +73,7 @@ struct rule {
     const char *rule_string;
 };
 
-#define MAX_RULES      512 
+#define MAX_RULES      512
 #define MAX_DOMAINS    128
 #define ETC_MAX_FILE 0xffff
 
@@ -114,14 +114,14 @@ struct policy *dbus_broker_policy;
 // DBus-Broker server
 #define BROKER_DEFAULT_PORT 5555
 #define BROKER_UI_PORT      8080
-        
+
 struct dbus_broker_server {
     int dbus_socket;
     v4v_addr_t addr;
     v4v_addr_t peer;
 };
 
-#define WS_LOOP_TIMEOUT     200   // length of time each service of the websocket 
+#define WS_LOOP_TIMEOUT     200   // length of time each service of the websocket
                                   // event-loop (millisecs)
 #define DBUS_BROKER_TIMEOUT 100
 
@@ -164,7 +164,7 @@ struct dbus_message {
 
 #define WS_USER_MEM_SIZE 8192  // the amount memory that is allocated for user
                                // for each ws-callback
- 
+
 struct json_request {
     uint32_t id;
     DBusConnection *conn;
@@ -182,7 +182,7 @@ struct json_response {
     const char *interface;
     const char *member;
     char response_to[JSON_REQ_ID_MAX];
-    char type[JSON_TYPE_MAX]; 
+    char type[JSON_TYPE_MAX];
     char arg_sig[DBUS_MAX_ARG_LEN];
     struct json_object *args;
 };
@@ -241,7 +241,7 @@ int connect_to_system_bus(void);
 
 void *dbus_signal(void *subscriber);
 
-signed int convert_raw_dbus(struct dbus_message *dmsg, 
+signed int convert_raw_dbus(struct dbus_message *dmsg,
                             const char *msg, size_t len);
 
 DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg);
@@ -282,7 +282,7 @@ void free_json_response(struct json_response *jrsp);
 // src/msg.c
 int broker(struct dbus_message *dmsg, struct dbus_request *req);
 
-int exchange(int rsock, int ssock, 
+int exchange(int rsock, int ssock,
              ssize_t (*rcv)(int, void *, size_t, int),
              ssize_t (*snd)(int, const void *, size_t, int),
              struct dbus_request *req);
@@ -299,7 +299,7 @@ void free_policy(void);
 
 
 // src/signature.c
-xmlNodePtr find_xml_property(const char *target, const xmlChar *property, 
+xmlNodePtr find_xml_property(const char *target, const xmlChar *property,
                              xmlNodePtr node);
 
 int retrieve_xml_signature(const xmlChar *xml_dump, char *args,

@@ -1,16 +1,16 @@
-/* 
+/*
  Copyright (c) 2018 AIS, Inc.
- 
+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -29,7 +29,7 @@ char *prepare_json_reply(struct json_response *jrsp)
 
     char *reply = malloc(sizeof(char) * WS_RING_BUFFER_MEMBER_SIZE);
 
-    snprintf(reply, WS_RING_BUFFER_MEMBER_SIZE - 1, "%s", 
+    snprintf(reply, WS_RING_BUFFER_MEMBER_SIZE - 1, "%s",
              json_object_to_json_string(jobj));
 
     return reply;
@@ -42,7 +42,7 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
 
         case LWS_CALLBACK_RECEIVE: {
             sem_wait(&memory_lock);
-            memset(user, '\0', WS_USER_MEM_SIZE); 
+            memset(user, '\0', WS_USER_MEM_SIZE);
             memcpy(user, in, len);
             if (ws_request_handler(wsi, user) == 0)
                 lws_callback_on_writable(wsi);
@@ -56,10 +56,10 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
                 char *rsp = (char *) lws_ring_get_element(ring, NULL);
                 memcpy(user + LWS_SEND_BUFFER_PRE_PADDING, rsp, strlen(rsp));
 
-                lws_write(wsi, user + LWS_SEND_BUFFER_PRE_PADDING, 
+                lws_write(wsi, user + LWS_SEND_BUFFER_PRE_PADDING,
                           strlen(rsp), LWS_WRITE_TEXT);
 
-                lws_ring_consume(ring, NULL, NULL, 1); 
+                lws_ring_consume(ring, NULL, NULL, 1);
                 lws_callback_on_writable(wsi);
             }
 
@@ -84,16 +84,16 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
 }
 
 static struct lws_protocols server_protos[] = {
-    
+
     { "server-callback", ws_server_callback, 0, 0 },
     { NULL, NULL, 0, 0 }
-    
+
 };
 
 struct lws_context *create_ws_context(int port)
 {
     struct lws_context_creation_info info;
-    ring = lws_ring_create(WS_RING_BUFFER_MEMBER_SIZE, 
+    ring = lws_ring_create(WS_RING_BUFFER_MEMBER_SIZE,
                            WS_RING_BUFFER_MEMBER_NUM, NULL);
     server_protos[0].per_session_data_size = WS_USER_MEM_SIZE;
     memset(&info, 0, sizeof(info));
@@ -118,7 +118,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     struct json_request *jreq = convert_json_request(raw_req);
 
     if (!jreq)
-        return 1; 
+        return 1;
 
     jreq->wsi = wsi;
 

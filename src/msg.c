@@ -1,16 +1,16 @@
-/* 
+/*
  Copyright (c) 2018 AIS, Inc.
- 
+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -42,12 +42,12 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
         policy = filter(&(etc.rules[i]), dmsg, domid);
 
     int domains = dbus_broker_policy->domain_number;
-    
+
     for (int i=0; i < domains; i++) {
         if (dbus_broker_policy->domains[i].domid == domid) {
 
             struct domain_policy domain = dbus_broker_policy->domains[i];
-            int domain_count = domain.count; 
+            int domain_count = domain.count;
 
             for (int j=0; j < domain_count; j++)
                 policy = filter(&(domain.rules[j]), dmsg, domid);
@@ -55,15 +55,15 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
             break;
         }
     }
-        
+
     policy = 1;
 
     char req_msg[1024];
 
     snprintf(req_msg, 1023, "Dom: %d [Dest: %s Path: %s Iface: %s Meth: %s]",
-                      domid, dmsg->destination, dmsg->path, 
+                      domid, dmsg->destination, dmsg->path,
                              dmsg->interface, dmsg->member);
-    
+
     if (policy == 0)
         DBUS_BROKER_WARNING("%s <%s>", req_msg, "Dropped request");
     else
@@ -72,7 +72,7 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
     return policy;
 }
 
-int exchange(int rsock, int ssock, 
+int exchange(int rsock, int ssock,
              ssize_t (*rcv)(int, void *, size_t, int),
              ssize_t (*snd)(int, const void *, size_t, int),
              struct dbus_request *req)
@@ -93,9 +93,9 @@ int exchange(int rsock, int ssock,
                 return 0;
             }
 
-            if (broker(&dmsg, req) == 0) 
-                return 0;   
-        }     
+            if (broker(&dmsg, req) == 0)
+                return 0;
+        }
     }
 
     if (rbytes < 1)
@@ -116,11 +116,11 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
     DBusConnection *conn;
     char *uuid, *arg;
 
-    if (((policy_rule->stubdom && is_stubdom(domid) < 1))                || 
-        (policy_rule->destination && strcmp(policy_rule->destination, 
+    if (((policy_rule->stubdom && is_stubdom(domid) < 1))                ||
+        (policy_rule->destination && strcmp(policy_rule->destination,
                                                  dmsg->destination))     ||
         (policy_rule->path && strcmp(policy_rule->path, dmsg->path))     ||
-        (policy_rule->interface && strcmp(policy_rule->interface, 
+        (policy_rule->interface && strcmp(policy_rule->interface,
                                                  dmsg->interface))       ||
         (policy_rule->member && strcmp(policy_rule->member, dmsg->member)))
         return -1;
@@ -138,8 +138,8 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
         if (policy_rule->if_bool) {
             DBUS_REQ_ARG(arg, "%s/%s", uuid, policy_rule->if_bool);
             char *attr_cond = db_query(conn, arg);
-        
-            if (!attr_cond || (attr_cond[0] == 't' && 
+
+            if (!attr_cond || (attr_cond[0] == 't' &&
                                policy_rule->if_bool_flag == 0) ||
                               (attr_cond[0] == 'f' &&
                                policy_rule->if_bool_flag == 1))
