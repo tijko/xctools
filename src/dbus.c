@@ -91,17 +91,8 @@ void *dbus_signal(void *subscriber)
         dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
         DBusMessage *msg = dbus_connection_pop_message(conn);
 
-        if (!msg)
+        if (!msg || dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
             continue;
-        if (dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL) {
-            char *test = malloc(4096);
-            int len;
-            dbus_message_marshal(msg, &test, &len);
-            printf("Not-Signal: %s\n", test);
-            printf("Type: %s\n", dbus_message_type_to_string(dbus_message_get_type(msg)));
-            free(test);
-            continue;
-        }
 
         struct json_response *jrsp = init_jrsp();
         jrsp->response_to[0] = '\0';
