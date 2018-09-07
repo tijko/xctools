@@ -266,7 +266,7 @@ struct json_object *convert_dbus_response(struct json_response *jrsp)
     json_object_object_add(jobj, "id", json_object_new_int(jrsp->id));
     json_object_object_add(jobj, "type", json_object_new_string(jrsp->type));
 
-    if (jrsp->response_to != NULL) {
+    if (jrsp->response_to[0] != '\0') {
         json_object_object_add(jobj, "response-to", 
                                json_object_new_string(jrsp->response_to));
     } else {
