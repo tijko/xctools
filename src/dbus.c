@@ -90,10 +90,18 @@ void *dbus_signal(void *subscriber)
         sleep(1);
         dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
         DBusMessage *msg = dbus_connection_pop_message(conn);
-        if (lws_ring_get_count_waiting_elements(ring, NULL) > 0)
-            lws_callback_on_writable(bsig->wsi);
-        if (!msg || dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
+
+        if (!msg)
             continue;
+        if (dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL) {
+            char *test = malloc(4096);
+            int len;
+            dbus_message_marshal(msg, &test, &len);
+            printf("Not-Signal: %s\n", test);
+            printf("Type: %s\n", dbus_message_type_to_string(dbus_message_get_type(msg)));
+            free(test);
+            continue;
+        }
 
         struct json_response *jrsp = init_jrsp();
         jrsp->response_to[0] = '\0';
@@ -104,7 +112,6 @@ void *dbus_signal(void *subscriber)
         jrsp->interface = dbus_message_get_interface(msg);
         jrsp->member = dbus_message_get_member(msg);
         jrsp->path = dbus_message_get_path(msg);
-        char *reply = prepare_json_reply(jrsp);
 
         sem_wait(&memory_lock);
         lws_ring_insert(ring, reply, 1);
