@@ -187,6 +187,7 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
     }
 
     parse_signature(args, NULL, &iter);
+    // set the fields
 }
 
 static signed int parse_json_args(struct json_object *jarray, 

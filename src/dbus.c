@@ -83,7 +83,8 @@ void *dbus_signal(void *subscriber)
 
     struct broker_signal *bsig = (struct broker_signal *) subscriber;
     DBusConnection *conn = bsig->conn;
-
+    // Handle re-freshes?
+    // message to ui to re-fresh?
     while (dbus_broker_running && connection_open &&
            dbus_connection_get_is_connected(conn)) {
 
@@ -97,13 +98,15 @@ void *dbus_signal(void *subscriber)
         struct json_response *jrsp = init_jrsp();
         jrsp->response_to[0] = '\0';
         snprintf(jrsp->type, JSON_REQ_ID_MAX - 1, "%s", JSON_SIG);
-
+        
         load_json_response(msg, jrsp);
 
         jrsp->interface = dbus_message_get_interface(msg);
         jrsp->member = dbus_message_get_member(msg);
         jrsp->path = dbus_message_get_path(msg);
-
+        printf("Interface %s ", jrsp->interface);
+        printf("Member %s ", jrsp->member);
+        printf("Path %s\n\n", jrsp->path);
         char *reply = prepare_json_reply(jrsp);
 
         sem_wait(&memory_lock);
