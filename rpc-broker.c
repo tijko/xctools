@@ -211,7 +211,7 @@ static void run(struct dbus_broker_args *args)
         DBUS_BROKER_EVENT("<Client has made a connection> [Dom: %d Client: %d]",
                             server->peer.domain, client);
 
-        struct json_request dreq;
+        struct dbus_request dreq;
         dreq.client = client;
 
         v4v_addr_t client_addr;
