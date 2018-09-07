@@ -91,6 +91,7 @@ void *dbus_signal(void *subscriber)
         dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
         DBusMessage *msg = dbus_connection_pop_message(conn);
         dbus_connection_flush(conn);
+        lws_callback_on_writable(bsig->wsi);
 
         if (!msg || dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
             continue;
@@ -110,9 +111,10 @@ void *dbus_signal(void *subscriber)
         sem_wait(&memory_lock);
         lws_ring_insert(ring, reply, 1);
 
-        if (connection_open)
-            lws_callback_on_writable(bsig->wsi);
-        else
+        //if (connection_open)
+        //    lws_callback_on_writable(bsig->wsi);
+        //else
+        if (!connection_open)
             dbus_connection_close(conn);
 
         sem_post(&memory_lock);
