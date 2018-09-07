@@ -90,6 +90,7 @@ void *dbus_signal(void *subscriber)
         sleep(1);
         dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
         DBusMessage *msg = dbus_connection_pop_message(conn);
+        dbus_connection_flush(conn);
 
         if (!msg || dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
             continue;
@@ -103,14 +104,12 @@ void *dbus_signal(void *subscriber)
         jrsp->interface = dbus_message_get_interface(msg);
         jrsp->member = dbus_message_get_member(msg);
         jrsp->path = dbus_message_get_path(msg);
-        printf("Interface %s ", jrsp->interface);
-        printf("Member %s ", jrsp->member);
-        printf("Path %s\n\n", jrsp->path);
         char *reply = prepare_json_reply(jrsp);
+        printf("Reply: %s\n", reply);
 
         sem_wait(&memory_lock);
         lws_ring_insert(ring, reply, 1);
-        // get ring-buffer size (test)
+
         if (connection_open)
             lws_callback_on_writable(bsig->wsi);
         else
@@ -120,12 +119,11 @@ void *dbus_signal(void *subscriber)
 
         dbus_message_unref(msg);
         free_json_response(jrsp);
-//        dbus_connection_flush(conn);
     }
 
     if (connection_open)
         dbus_connection_close(conn);
-    // print whenever signal thread exits
+
     free(bsig);
 
     return NULL;
