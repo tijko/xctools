@@ -87,7 +87,7 @@ void *dbus_signal(void *subscriber)
     while (dbus_broker_running && connection_open &&
            dbus_connection_get_is_connected(conn)) {
 
-        sleep(1);
+//        sleep(1);
         dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
         DBusMessage *msg = dbus_connection_pop_message(conn);
         dbus_connection_flush(conn);
