@@ -1,16 +1,16 @@
-/* 
+/*
  Copyright (c) 2018 AIS, Inc.
- 
+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation; either version 2 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -59,7 +59,7 @@ void *broker_message(void *request)
         if (ret < 0)
             DBUS_BROKER_ERROR("select");
 
-        if (FD_ISSET(srv, &ex_set)) 
+        if (FD_ISSET(srv, &ex_set))
             bytes = exchange(srv, client, recv, v4v_send, req);
         else
             bytes = exchange(client, srv, v4v_recv, send, req);
@@ -78,19 +78,19 @@ signed int is_stubdom(uint16_t domid)
 
     size_t len = 0;
 
-    if (!xsh) 
+    if (!xsh)
         return -1;
 
     char *path = xs_get_domain_path(xsh, domid);
 
-    path = realloc(path, sizeof(char) * strlen(path) + 8); 
+    path = realloc(path, sizeof(char) * strlen(path) + 8);
     strcat(path, "/target");
 
     void *ret = xs_read(xsh, XBT_NULL, path, &len);
 
     if (ret)
        free(ret);
- 
+
     free(path);
     xs_close(xsh);
 
@@ -114,7 +114,7 @@ int init_request(int client)
     }
 
     dreq->domid = client_addr.domain;
-    ret = pthread_create(&dbus_req_thread, NULL, 
+    ret = pthread_create(&dbus_req_thread, NULL,
                         (void *(*)(void *)) broker_message, (void *) dreq);
 
     return ret;
@@ -132,7 +132,7 @@ void print_usage(void)
     printf("\t-r  [--rule-file=FILENAME]          ");
     printf("Provide a policy file to run against.\n");
     printf("\t-v  [--verbose]                     ");
-    printf("Adds extra information (run with logging).\n"); 
+    printf("Adds extra information (run with logging).\n");
 }
 
 static void reload_policy(void *arg)
@@ -140,7 +140,7 @@ static void reload_policy(void *arg)
     sem_wait(&memory_lock);
     free_policy();
     dbus_broker_policy = build_policy(RULES_FILENAME);
-    sem_post(&memory_lock); 
+    sem_post(&memory_lock);
 }
 
 void sigint_handler(int signal)
@@ -202,7 +202,7 @@ static void run(struct dbus_broker_args *args)
 
         if (FD_ISSET(default_socket, &server_set) == 0)
             continue;
-  
+
         int client = v4v_accept(default_socket, &server->peer);
 
         if (client < 0)
