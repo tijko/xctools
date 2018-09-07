@@ -211,16 +211,7 @@ static void run(struct dbus_broker_args *args)
         DBUS_BROKER_EVENT("<Client has made a connection> [Dom: %d Client: %d]",
                             server->peer.domain, client);
 
-        struct dbus_request dreq;
-        dreq.client = client;
-
-        v4v_addr_t client_addr;
-
-        v4v_getpeername(client, &client_addr);
-
-        dreq.domid = client_addr.domain;
-        broker_message(&dreq);
-//        init_request(client);
+        init_request(client);
     }
 
     free(server);
