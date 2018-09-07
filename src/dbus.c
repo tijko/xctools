@@ -83,8 +83,7 @@ void *dbus_signal(void *subscriber)
 
     struct broker_signal *bsig = (struct broker_signal *) subscriber;
     DBusConnection *conn = bsig->conn;
-    // Handle re-freshes?
-    // message to ui to re-fresh?
+
     while (dbus_broker_running && connection_open &&
            dbus_connection_get_is_connected(conn)) {
 
@@ -121,7 +120,7 @@ void *dbus_signal(void *subscriber)
 
         dbus_message_unref(msg);
         free_json_response(jrsp);
-        dbus_connection_flush(conn);
+//        dbus_connection_flush(conn);
     }
 
     if (connection_open)
