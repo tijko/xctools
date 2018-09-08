@@ -136,7 +136,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
         pthread_t signal_thr;
         struct broker_signal *bsig = malloc(sizeof *bsig);
         bsig->conn = jreq->conn;
-        dbus_connection_flush(bsig->conn);
+        //dbus_connection_flush(bsig->conn);
         bsig->wsi = jreq->wsi;
         pthread_create(&signal_thr, NULL, dbus_signal, bsig);
     }
