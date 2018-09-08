@@ -87,9 +87,7 @@ void *dbus_signal(void *subscriber)
     while (dbus_broker_running && connection_open &&
            dbus_connection_get_is_connected(conn)) {
 
-        //sleep(1);
-        dbus_connection_read_write(conn, 0);
-        //dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
+        dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
         DBusMessage *msg = dbus_connection_pop_message(conn);
 
         if (!msg || dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
@@ -106,7 +104,7 @@ void *dbus_signal(void *subscriber)
         jrsp->path = dbus_message_get_path(msg);
         char *reply = prepare_json_reply(jrsp);
 
-        sem_wait(&memory_lock);
+        pthread_mutex_lock(&ring_lock);
         lws_ring_insert(ring, reply, 1);
 
         if (connection_open)
@@ -114,7 +112,7 @@ void *dbus_signal(void *subscriber)
         else
             dbus_connection_close(conn);
 
-        sem_post(&memory_lock);
+        pthread_mutex_unlock(&ring_lock);
 
         dbus_message_unref(msg);
         free_json_response(jrsp);

@@ -194,7 +194,10 @@ static const char XML_IN_FIELD[]           = "in";
 static const char XML_TYPE_FIELD[]         = "type";
 
 struct lws_ring *ring;
-sem_t memory_lock;
+
+pthread_mutex_t ring_lock;
+pthread_mutex_t policy_lock;
+
 int dbus_broker_running;
 int connection_open;
 

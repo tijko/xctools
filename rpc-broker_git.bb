@@ -16,8 +16,6 @@ S = "${WORKDIR}/git"
 INITSCRIPT_NAME = "rpc-broker"
 INITSCRIPT_PARAMS = "defaults 40"
 
-EXTRA_OECONF += ""
-EXTRA_OEMAKE += ""
 
 inherit autotools pkgconfig update-rc.d
 

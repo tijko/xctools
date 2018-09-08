@@ -21,9 +21,7 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <pthread.h>
-#include <semaphore.h>
 #include <signal.h>
-#include <stdint.h>
 #include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -137,10 +135,10 @@ void print_usage(void)
 
 static void reload_policy(void *arg)
 {
-    sem_wait(&memory_lock);
+    pthread_mutex_lock(&policy_lock);
     free_policy();
     dbus_broker_policy = build_policy(RULES_FILENAME);
-    sem_post(&memory_lock);
+    pthread_mutex_unlock(&policy_lock);
 }
 
 void sigint_handler(int signal)
@@ -164,7 +162,11 @@ static void run(struct dbus_broker_args *args)
 
     struct etc_policy etc = dbus_broker_policy->etc;
 
-    sem_init(&memory_lock, 0, 1);
+    if (pthread_mutex_init(&ring_lock, NULL) < 0)
+        DBUS_BROKER_ERROR("initializing ring-lock");
+
+    if (pthread_mutex_init(&policy_lock, NULL) < 0)
+        DBUS_BROKER_ERROR("initializing policy-lock");
 
     struct dbus_broker_server *server = start_server(BROKER_DEFAULT_PORT);
     DBUS_BROKER_EVENT("<Server has started listening> [Port: %d]",
