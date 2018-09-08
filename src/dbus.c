@@ -91,6 +91,9 @@ void *dbus_signal(void *subscriber)
         dbus_connection_read_write(conn, DBUS_REQ_TIMEOUT);
         DBusMessage *msg = dbus_connection_pop_message(conn);
 
+        if (lws_ring_get_count_waiting_elements(ring, NULL) > 0) 
+            lws_callback_on_writable(wsi);
+
         if (!msg || dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
             continue;
 
