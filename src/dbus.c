@@ -92,7 +92,7 @@ void *dbus_signal(void *subscriber)
         DBusMessage *msg = dbus_connection_pop_message(conn);
 
         if (lws_ring_get_count_waiting_elements(ring, NULL) > 0) 
-            lws_callback_on_writable(wsi);
+            lws_callback_on_writable(bsig->wsi);
 
         if (!msg || dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
             continue;
