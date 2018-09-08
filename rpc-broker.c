@@ -191,6 +191,9 @@ static void run(struct dbus_broker_args *args)
         FD_SET(default_socket, &server_set);
         lws_service(ws_context, WS_LOOP_TIMEOUT);
 
+        if (lws_ring_get_count_waiting_elements(ring, NULL) > 0) 
+            lws_callback_on_writable(wsi);
+
         struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_TIMEOUT };
         int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
 
