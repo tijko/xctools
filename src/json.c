@@ -64,15 +64,16 @@ struct json_response *make_json_request(struct json_request *jreq)
     }
 
     load_json_response(msg, jrsp);
-
+/*
     if (strcmp("AddMatch", jreq->dmsg.member) == 0) {
         pthread_t signal_thr;
         struct broker_signal *bsig = malloc(sizeof *bsig);
         bsig->conn = conn;
+        dbus_connection_flush(conn);
         bsig->wsi = jreq->wsi;
         pthread_create(&signal_thr, NULL, dbus_signal, bsig);
     }
-
+*/
     return jrsp;
 }
 
