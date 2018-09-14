@@ -186,11 +186,50 @@ static void run(struct dbus_broker_args *args)
 
     dbus_broker_running = 1;
     connection_open = 1;
+    dbus_links = 0;
+    dlinks = NULL;
 
     while (dbus_broker_running) {
 
         FD_ZERO(&server_set);
         FD_SET(default_socket, &server_set);
+
+// XXX cycle thru dbus links...
+        struct dbus_link *curr = dlinks;
+
+        while (curr) { 
+            dbus_connection_read_write(curr->conn, 0);
+            DBusMessage *msg = dbus_connection_pop_message(curr->conn);
+
+            if (!msg || 
+                 dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL) {
+                curr = curr->next; 
+                continue;
+            }
+
+            struct json_response *jrsp = init_jrsp();
+            jrsp->response_to[0] = '\0';
+            snprintf(jrsp->type, JSON_REQ_ID_MAX - 1, "%s", JSON_SIG);
+
+            load_json_response(msg, jrsp);
+
+            jrsp->interface = dbus_message_get_interface(msg);
+            jrsp->member = dbus_message_get_member(msg);
+            jrsp->path = dbus_message_get_path(msg);
+            char *reply = prepare_json_reply(jrsp);
+
+            pthread_mutex_lock(&ring_lock);
+            lws_ring_insert(ring, reply, 1);
+
+            lws_callback_on_writable(curr->wsi);
+
+            pthread_mutex_unlock(&ring_lock);
+
+            dbus_message_unref(msg);
+            free_json_response(jrsp);
+            curr = curr->next;
+        }
+//
         lws_service(ws_context, WS_LOOP_TIMEOUT);
 
         struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_TIMEOUT };

@@ -132,12 +132,28 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     free_json_response(jrsp);
     lws_ring_insert(ring, reply, 1);
 
+    // no-need to lock just add to dbus-links
+    // ...long-handed...
     if (strcmp("AddMatch", jreq->dmsg.member) == 0) {
+        /*
         pthread_t signal_thr;
         struct broker_signal *bsig = malloc(sizeof *bsig);
         bsig->conn = jreq->conn;
         bsig->wsi = jreq->wsi;
         pthread_create(&signal_thr, NULL, dbus_signal, bsig);
+        */
+        
+        // globla dbus-link
+        if (!dlinks) {
+            dlinks = malloc(sizeof *dlinks);
+            dlinks->wsi = wsi;
+            dlinks->dconn = conn;
+        } else {
+            dlinks->next = malloc(sizeof *dlinks);
+            struct dbus_link *curr = dlinks->next;
+            curr->wsi = wsi;
+            curr->dconn = conn;
+        }
     }
 
     return 0;

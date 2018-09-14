@@ -51,6 +51,35 @@
         free(buf);                                                    \
     })                                                                \
 
+
+struct dbus_link {
+    DBusConnection *dconn;
+    struct lws *wsi;
+    // meta-fields
+    // name-of-signal
+    // ...
+    struct dbus_link *next;
+};
+
+struct dbus_link *dlinks;
+/* Global structure of file-objects to poll on?  Basic is the local-server
+   running on 5555 (give a TYPE to each).  There only needs the dbus-conn
+   and the local-server (unless additionally adding the websockets to the
+   same event-loop to poll on.
+
+   As-is create a global array of "DBus-Connection" (structs?) and a count
+   variable to track the number of connection objects part of the array
+   upon a read-ready poll (select) have the "signal-callback" ready to go.
+
+   The websocket to the dbus-connection needs to be attached...
+
+   In the dbus "event-loop" checking if each member is still alive?
+   Removal would be in-efficient in the cases of connections closing
+   (see re-assigning) Use a linked list instead....
+*/
+
+//
+
 #define DBUS_BROKER_WARNING(fmt, ...) DBUS_LOG(LOG_WARNING, fmt, __VA_ARGS__)
 #define DBUS_BROKER_EVENT(fmt, ...)   DBUS_LOG(LOG_INFO, fmt, __VA_ARGS__)
 
