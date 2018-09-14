@@ -193,7 +193,21 @@ static void run(struct dbus_broker_args *args)
         FD_ZERO(&server_set);
         FD_SET(default_socket, &server_set);
 
+        struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_TIMEOUT };
+        int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
+
+        if (ret > 0) {
+            int client = v4v_accept(default_socket, &server->peer);
+            DBUS_BROKER_EVENT("<Client has made a connection> [Dom: %d Client: %d]",
+                                server->peer.domain, client);
+            init_request(client);
+        }
+
+        lws_service(ws_context, WS_LOOP_TIMEOUT);
+
+
 // XXX cycle thru dbus links...
+// switch ordering of links (print outs/logging..)
         struct dbus_link *curr = dlinks;
 
         while (curr) { 
@@ -229,8 +243,9 @@ static void run(struct dbus_broker_args *args)
             curr = curr->next;
         }
 //
-        lws_service(ws_context, WS_LOOP_TIMEOUT);
-
+//        lws_service(ws_context, WS_LOOP_TIMEOUT);
+//
+/*
         struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_TIMEOUT };
         int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
 
@@ -252,6 +267,7 @@ static void run(struct dbus_broker_args *args)
                             server->peer.domain, client);
 
         init_request(client);
+*/
     }
 
     free(server);
