@@ -186,7 +186,6 @@ static void run(struct dbus_broker_args *args)
 
     dbus_broker_running = 1;
     connection_open = 1;
-    dbus_links = 0;
     dlinks = NULL;
 
     while (dbus_broker_running) {
@@ -198,8 +197,8 @@ static void run(struct dbus_broker_args *args)
         struct dbus_link *curr = dlinks;
 
         while (curr) { 
-            dbus_connection_read_write(curr->conn, 0);
-            DBusMessage *msg = dbus_connection_pop_message(curr->conn);
+            dbus_connection_read_write(curr->dconn, 0);
+            DBusMessage *msg = dbus_connection_pop_message(curr->dconn);
 
             if (!msg || 
                  dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL) {

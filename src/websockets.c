@@ -144,16 +144,19 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
         */
         
         // globla dbus-link
+        struct dbus_link *curr;
         if (!dlinks) {
             dlinks = malloc(sizeof *dlinks);
-            dlinks->wsi = wsi;
-            dlinks->dconn = conn;
+            curr = dlinks;
         } else {
-            dlinks->next = malloc(sizeof *dlinks);
-            struct dbus_link *curr = dlinks->next;
-            curr->wsi = wsi;
-            curr->dconn = conn;
+            curr = dlinks;
+            while (curr->next)
+                curr = curr->next;
+            curr->next = malloc(sizeof *dlinks);
         }
+
+        curr->wsi = jreq->wsi;
+        curr->dconn = jreq->conn;
     }
 
     return 0;
