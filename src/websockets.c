@@ -61,7 +61,7 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
 
                 lws_ring_consume(ring, NULL, NULL, 1);
                 lws_callback_on_writable(wsi);
- //               free(rsp);
+                free(rsp);
             }
 
             pthread_mutex_unlock(&ring_lock);
@@ -124,7 +124,6 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     jreq->wsi = wsi;
 
     struct json_response *jrsp = make_json_request(jreq);
-//    free_json_request(jreq);
 
     if (!jrsp)
         return 1;
@@ -160,7 +159,10 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
         curr->wsi = jreq->wsi;
         curr->dconn = jreq->conn;
         curr->next = NULL;
-    }
+    } else
+        dbus_connection_close(jreq->conn);
+
+    free_json_request(jreq);
 
     return 0;
 }
