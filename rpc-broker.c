@@ -194,6 +194,7 @@ static void run(struct dbus_broker_args *args)
         FD_SET(default_socket, &server_set);
 
         struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_TIMEOUT };
+/*
         int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
 //
         if (ret > 0) {
@@ -215,6 +216,7 @@ static void run(struct dbus_broker_args *args)
             }
 
         }
+*/
 //
         lws_service(ws_context, WS_LOOP_TIMEOUT);
 
@@ -256,6 +258,27 @@ static void run(struct dbus_broker_args *args)
             curr = curr->next;
         }
 //
+        int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
+//
+        if (ret > 0) {
+            int client = v4v_accept(default_socket, &server->peer);
+            DBUS_BROKER_EVENT("<Client has made a connection> [Dom: %d Client: %d]",
+                                server->peer.domain, client);
+//            init_request(client);
+//
+            struct dbus_request dreq;
+            dreq.client = client;
+            v4v_addr_t client_addr;
+
+            if ((ret = v4v_getpeername(client, &client_addr)) < 0) {
+                DBUS_BROKER_WARNING("getpeername call failed <%s>", 
+                                                  strerror(errno));
+            } else {
+                dreq.domid = client_addr.domain;
+                broker_message(&dreq);
+            }
+
+        }
 //        lws_service(ws_context, WS_LOOP_TIMEOUT);
 //
 /*
