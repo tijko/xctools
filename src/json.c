@@ -261,7 +261,7 @@ void free_json_request(struct json_request *jreq)
         }
     }
 
-    dbus_connection_close(jreq->conn)
+    dbus_connection_close(jreq->conn);
 
     free(jreq);
 }
