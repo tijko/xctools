@@ -154,6 +154,43 @@ void sighup_handler(int signal)
     DBUS_BROKER_EVENT("Re-loading policy %s", "");
 }
 
+static inline void service_signals(void)
+{
+    struct dbus_link *curr = dlinks;
+
+    while (curr) { 
+        dbus_connection_read_write(curr->dconn, 0);
+        DBusMessage *msg = dbus_connection_pop_message(curr->dconn);
+
+        if (!msg || dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL) {
+            curr = curr->next; 
+            continue;
+        }
+
+        struct json_response *jrsp = init_jrsp();
+        jrsp->response_to[0] = '\0';
+        snprintf(jrsp->type, JSON_REQ_ID_MAX - 1, "%s", JSON_SIG);
+
+        load_json_response(msg, jrsp);
+
+        jrsp->interface = dbus_message_get_interface(msg);
+        jrsp->member = dbus_message_get_member(msg);
+        jrsp->path = dbus_message_get_path(msg);
+        char *reply = prepare_json_reply(jrsp);
+
+        pthread_mutex_lock(&ring_lock);
+        lws_ring_insert(ring, reply, 1);
+
+        lws_callback_on_writable(curr->wsi);
+
+        pthread_mutex_unlock(&ring_lock);
+
+        dbus_message_unref(msg);
+        free_json_response(jrsp);
+        curr = curr->next;
+    }
+}
+
 static void run(struct dbus_broker_args *args)
 {
     srand48(time(NULL));
@@ -194,116 +231,17 @@ static void run(struct dbus_broker_args *args)
         FD_SET(default_socket, &server_set);
 
         struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_TIMEOUT };
-/*
         int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
-//
+
         if (ret > 0) {
             int client = v4v_accept(default_socket, &server->peer);
             DBUS_BROKER_EVENT("<Client has made a connection> [Dom: %d Client: %d]",
                                 server->peer.domain, client);
-//            init_request(client);
-//
-            struct dbus_request dreq;
-            dreq.client = client;
-            v4v_addr_t client_addr;
-
-            if ((ret = v4v_getpeername(client, &client_addr)) < 0) {
-                DBUS_BROKER_WARNING("getpeername call failed <%s>", 
-                                                  strerror(errno));
-            } else {
-                dreq.domid = client_addr.domain;
-                broker_message(&dreq);
-            }
-
+            init_request(client);
         }
-*/
-//
+
+        service_signals();
         lws_service(ws_context, WS_LOOP_TIMEOUT);
-
-
-// XXX cycle thru dbus links...
-// switch ordering of links (print outs/logging..)
-        struct dbus_link *curr = dlinks;
-
-        while (curr) { 
-            dbus_connection_read_write(curr->dconn, 0);
-            DBusMessage *msg = dbus_connection_pop_message(curr->dconn);
-
-            if (!msg || 
-                 dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL) {
-                curr = curr->next; 
-                continue;
-            }
-
-            struct json_response *jrsp = init_jrsp();
-            jrsp->response_to[0] = '\0';
-            snprintf(jrsp->type, JSON_REQ_ID_MAX - 1, "%s", JSON_SIG);
-
-            load_json_response(msg, jrsp);
-
-            jrsp->interface = dbus_message_get_interface(msg);
-            jrsp->member = dbus_message_get_member(msg);
-            jrsp->path = dbus_message_get_path(msg);
-            char *reply = prepare_json_reply(jrsp);
-
-            pthread_mutex_lock(&ring_lock);
-            lws_ring_insert(ring, reply, 1);
-
-            lws_callback_on_writable(curr->wsi);
-
-            pthread_mutex_unlock(&ring_lock);
-
-            dbus_message_unref(msg);
-            free_json_response(jrsp);
-            curr = curr->next;
-        }
-//
-        int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
-//
-        if (ret > 0) {
-            int client = v4v_accept(default_socket, &server->peer);
-            DBUS_BROKER_EVENT("<Client has made a connection> [Dom: %d Client: %d]",
-                                server->peer.domain, client);
-//            init_request(client);
-//
-            struct dbus_request dreq;
-            dreq.client = client;
-            v4v_addr_t client_addr;
-
-            if ((ret = v4v_getpeername(client, &client_addr)) < 0) {
-                DBUS_BROKER_WARNING("getpeername call failed <%s>", 
-                                                  strerror(errno));
-            } else {
-                dreq.domid = client_addr.domain;
-                broker_message(&dreq);
-            }
-
-        }
-//        lws_service(ws_context, WS_LOOP_TIMEOUT);
-//
-/*
-        struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_TIMEOUT };
-        int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
-
-        if (ret == 0)
-            continue;
-
-        if (ret < 0)
-            DBUS_BROKER_ERROR("select");
-
-        if (FD_ISSET(default_socket, &server_set) == 0)
-            continue;
-
-        int client = v4v_accept(default_socket, &server->peer);
-
-        if (client < 0)
-            DBUS_BROKER_ERROR("v4v_accept");
-
-        DBUS_BROKER_EVENT("<Client has made a connection> [Dom: %d Client: %d]",
-                            server->peer.domain, client);
-
-        init_request(client);
-*/
     }
 
     free(server);
