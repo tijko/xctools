@@ -65,6 +65,7 @@ void *broker_message(void *request)
     } while (bytes > 0);
 
     close(srv);
+    free(request);
 
     // set errno in void *
     return NULL;
@@ -157,6 +158,9 @@ void sighup_handler(int signal)
 static inline void service_signals(void)
 {
     struct dbus_link *curr = dlinks;
+
+    // Make check on the status of the connection
+    // add-link remove-link functions
 
     while (curr) { 
         dbus_connection_read_write(curr->dconn, 0);

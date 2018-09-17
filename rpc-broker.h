@@ -306,6 +306,8 @@ void add_jobj(struct json_object *args, char *key, struct json_object *jobj);
 
 void free_json_response(struct json_response *jrsp);
 
+void free_json_request(struct json_request *jreq);
+
 #define JSON_RESP "response"
 #define JSON_SIG  "signal"
 #define JSON_ID   "1"

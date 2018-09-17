@@ -224,6 +224,7 @@ struct json_request *convert_json_request(char *raw_json_req)
     jreq->dmsg.interface = get_json_str_obj(jobj, "interface");
     jreq->dmsg.path = get_json_str_obj(jobj, "path");
     jreq->dmsg.member = get_json_str_obj(jobj, "method");
+    // put-jobj
     jreq->conn = create_dbus_connection();
 
     if (!jobj) {
@@ -249,6 +250,20 @@ struct json_request *convert_json_request(char *raw_json_req)
     json_object_put(jint);
 
     return jreq;
+}
+
+void free_json_request(struct json_request *jreq)
+{
+    for (int i=0; i < jreq->dmsg.arg_number; i++) {
+        if (jreq->dmsg.args[i]) {
+            free(jreq->dmsg.args[i]);
+            jreq->dmsg.args[i] = NULL;
+        }
+    }
+
+    dbus_connection_close(jreq->dmsg.conn)
+
+    free(jreq);
 }
 
 struct json_object *convert_dbus_response(struct json_response *jrsp)
