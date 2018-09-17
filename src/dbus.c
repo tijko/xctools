@@ -76,58 +76,6 @@ int connect_to_system_bus(void)
     return srv;
 }
 
-/*
-void *dbus_signal(void *subscriber)
-{
-    if (!subscriber)
-        return NULL;
-
-    struct broker_signal *bsig = (struct broker_signal *) subscriber;
-    DBusConnection *conn = bsig->conn;
-
-    while (dbus_broker_running && connection_open &&
-           dbus_connection_get_is_connected(conn)) {
-
-        sleep(0.8);
-        dbus_connection_read_write(conn, 0);
-        DBusMessage *msg = dbus_connection_pop_message(conn);
-
-        if (!msg || dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
-            continue;
-
-        struct json_response *jrsp = init_jrsp();
-        jrsp->response_to[0] = '\0';
-        snprintf(jrsp->type, JSON_REQ_ID_MAX - 1, "%s", JSON_SIG);
-
-        load_json_response(msg, jrsp);
-
-        jrsp->interface = dbus_message_get_interface(msg);
-        jrsp->member = dbus_message_get_member(msg);
-        jrsp->path = dbus_message_get_path(msg);
-        char *reply = prepare_json_reply(jrsp);
-
-        pthread_mutex_lock(&ring_lock);
-        lws_ring_insert(ring, reply, 1);
-
-        if (connection_open)
-            lws_callback_on_writable(bsig->wsi);
-        else
-            dbus_connection_close(conn);
-
-        pthread_mutex_unlock(&ring_lock);
-
-        dbus_message_unref(msg);
-        free_json_response(jrsp);
-    }
-
-    if (connection_open)
-        dbus_connection_close(conn);
-
-    free(bsig);
-
-    return NULL;
-}
-*/
 signed int convert_raw_dbus(struct dbus_message *dmsg,
                             const char *msg, size_t len)
 {
