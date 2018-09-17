@@ -149,10 +149,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
         curr->wsi = jreq->wsi;
         curr->dconn = jreq->conn;
         curr->next = NULL;
-    } else
-        dbus_connection_close(jreq->conn);
-
-    free_json_request(jreq);
+    } 
 
     return 0;
 }
