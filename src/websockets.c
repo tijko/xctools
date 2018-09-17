@@ -61,7 +61,7 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
 
                 lws_ring_consume(ring, NULL, NULL, 1);
                 lws_callback_on_writable(wsi);
-                free(rsp);
+    //            free(rsp);
             }
 
             pthread_mutex_unlock(&ring_lock);
@@ -133,18 +133,8 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     free_json_response(jrsp);
     lws_ring_insert(ring, reply, 1);
 
-    // no-need to lock just add to dbus-links
-    // ...long-handed...
     if (strcmp("AddMatch", jreq->dmsg.member) == 0) {
-        /*
-        pthread_t signal_thr;
-        struct broker_signal *bsig = malloc(sizeof *bsig);
-        bsig->conn = jreq->conn;
-        bsig->wsi = jreq->wsi;
-        pthread_create(&signal_thr, NULL, dbus_signal, bsig);
-        */
         
-        // globla dbus-link
         struct dbus_link *curr;
         if (!dlinks) {
             dlinks = malloc(sizeof *dlinks);
@@ -162,7 +152,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     } else
         dbus_connection_close(jreq->conn);
 
-    //free_json_request(jreq);
+    free_json_request(jreq);
 
     return 0;
 }
