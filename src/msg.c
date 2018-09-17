@@ -79,8 +79,7 @@ int exchange(int rsock, int ssock,
 {
     char buf[DBUS_MSG_LEN];
     int rbytes = rcv(rsock, buf, DBUS_MSG_LEN, 0);
-
-    // why 8-bytes?
+    printf("Exchange: %d\n", rbytes);
     if (rbytes >= 8) {
 
         int len = dbus_message_demarshal_bytes_needed(buf, rbytes);

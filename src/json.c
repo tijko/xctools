@@ -39,6 +39,8 @@ struct json_response *make_json_request(struct json_request *jreq)
     DBusConnection *conn = jreq->conn;
     dbus_connection_flush(conn);
 
+    // request "id" #1 is a dbus "hello" and there is no response back to 
+    // client (XXX use `strcmp` instead?)
     if (jreq->id == 1) {
 
         const char *busname = dbus_bus_get_unique_name(conn);
@@ -166,7 +168,8 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
 
         dbus_message_iter_recurse(&iter, &sub);
         iter = sub;
-
+        // This accomodates the broken legacy of `rpc-proxy` where the 
+        // signatures are being mis-handled.
         if (jrsp->arg_sig[1] == 'a' ||
             jrsp->arg_sig[1] == 'o' ||
             jrsp->arg_sig[1] == 's' ||
