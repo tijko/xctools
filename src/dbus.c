@@ -76,6 +76,10 @@ int connect_to_system_bus(void)
     return srv;
 }
 
+/* Used by client communications over port-5555 where, the raw-bytes are being
+ * read directly from the client file-descriptor.  The `char` buffer is
+ * de-marshalled into a dbus-protocol object `DBusMessage`
+ */
 signed int convert_raw_dbus(struct dbus_message *dmsg,
                             const char *msg, size_t len)
 {
@@ -223,7 +227,9 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
     return msg;
 }
 
-// pass-in char buffer
+/*
+ * Helper function to facilitate requests the xenclient database.
+ */
 char *db_query(DBusConnection *conn, char *arg)
 {
     char *reply = malloc(sizeof(char) * RULE_MAX_LENGTH);
@@ -248,6 +254,16 @@ char *db_query(DBusConnection *conn, char *arg)
     return reply;
 }
 
+/*
+ * For any given dbus request, this function will retrieve its corresponding
+ * introspection information.  
+ *
+ * By matching up the method call being made, with the ones listed in the 
+ * services' introspection data, we can examine what the argument type the
+ * service is expecting instead of relying on JSON to infer the type
+ * (json doesn't have uint32_t for instance and would return int, where
+ *  the method would fail expecting the former).
+ */
 char *dbus_introspect(struct json_request *jreq)
 {
     struct dbus_message dmsg = { .destination=jreq->dmsg.destination,

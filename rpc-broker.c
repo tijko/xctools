@@ -31,6 +31,13 @@
 #include "rpc-broker.h"
 
 
+/*
+ * Whenever clients connect to port 5555, this function then connects directly
+ * to the DBus system bus socket (/var/run/dbus/system_bus_socket).
+ *
+ * Polling on the client & server file-descriptors until the connection 
+ * communication is finished.
+ */
 void *broker_message(void *request)
 {
     if (!request)
@@ -50,6 +57,7 @@ void *broker_message(void *request)
         FD_SET(srv, &ex_set);
 
         struct timeval tv = { .tv_sec=1, .tv_usec=0 };
+        // Poll on read ready
         int ret = select(srv + 1, &ex_set, NULL, NULL, &tv);
 
         if (ret == 0)
@@ -57,6 +65,8 @@ void *broker_message(void *request)
         if (ret < 0)
             DBUS_BROKER_ERROR("select");
 
+        // Depending on which fd is ready to be read from determines which
+        // function pointer to pass to `exchange` 
         if (FD_ISSET(srv, &ex_set))
             bytes = exchange(srv, client, recv, v4v_send, req);
         else
@@ -155,6 +165,10 @@ void sighup_handler(int signal)
     DBUS_BROKER_EVENT("Re-loading policy %s", "");
 }
 
+/*
+ * Cycle through linked-list of current dbus-signals being subscribed to.
+ * If there are any signals queued up, start the exchange of communication.
+ */
 static inline void service_signals(void)
 {
     struct dbus_link *curr = dlinks;
@@ -235,6 +249,7 @@ static void run(struct dbus_broker_args *args)
         FD_SET(default_socket, &server_set);
 
         struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_TIMEOUT };
+        // Poll on port-5555
         int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
 
         if (ret > 0) {
@@ -244,7 +259,9 @@ static void run(struct dbus_broker_args *args)
             init_request(client);
         }
 
+        // check signal subscriptions
         service_signals();
+        // websocket servicing event-loop
         lws_service(ws_context, WS_LOOP_TIMEOUT);
     }
 
