@@ -32,8 +32,8 @@
 
 
 /*
- * Whenever clients connect to port 5555, this function then connects directly
- * to the DBus system bus socket (/var/run/dbus/system_bus_socket).
+ * Whenever clients connect to port 5555, this function will then connect 
+ * directly to the DBus system bus socket (/var/run/dbus/system_bus_socket).
  *
  * Polling on the client & server file-descriptors until the connection 
  * communication is finished.
@@ -57,7 +57,7 @@ void *broker_message(void *request)
         FD_SET(srv, &ex_set);
 
         struct timeval tv = { .tv_sec=1, .tv_usec=0 };
-        // Poll on read ready
+        // Poll on read-ready
         int ret = select(srv + 1, &ex_set, NULL, NULL, &tv);
 
         if (ret == 0)
@@ -65,7 +65,7 @@ void *broker_message(void *request)
         if (ret < 0)
             DBUS_BROKER_ERROR("select");
 
-        // Depending on which fd is ready to be read from determines which
+        // Depending on which fd is ready to be read, determines which
         // function pointer to pass to `exchange` 
         if (FD_ISSET(srv, &ex_set))
             bytes = exchange(srv, client, recv, v4v_send, req);
