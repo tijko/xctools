@@ -76,6 +76,7 @@ int connect_to_system_bus(void)
     return srv;
 }
 
+/*
 void *dbus_signal(void *subscriber)
 {
     if (!subscriber)
@@ -126,7 +127,7 @@ void *dbus_signal(void *subscriber)
 
     return NULL;
 }
-
+*/
 signed int convert_raw_dbus(struct dbus_message *dmsg,
                             const char *msg, size_t len)
 {
