@@ -19,6 +19,13 @@
 #include "../rpc-broker.h"
 
 
+/*
+ * All requests are handled by this function whether they are raw requests 
+ * coming from port 5555 or Websocket requests from 8080.  For every policy
+ * rule listed either in /etc/rpc-broker.policy file or the domain-specific
+ * rules listed in xenclient database are passed to `filter` to determine
+ * whether or not to be dropped or passed through.
+ */
 int broker(struct dbus_message *dmsg, struct dbus_request *req)
 {
     if (!dmsg || !req) {
@@ -72,6 +79,12 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
     return policy;
 }
 
+/*
+ * This is an opaque function to pass raw dbus-bytes back in forth between
+ * sender and receiver.  Its opaque in the sense that the function is unaware
+ * who the client is and who the server is.  There are just sender and receiver
+ * syscalls being made over port 5555.
+ */
 int exchange(int rsock, int ssock,
              ssize_t (*rcv)(int, void *, size_t, int),
              ssize_t (*snd)(int, const void *, size_t, int),
@@ -105,6 +118,10 @@ int exchange(int rsock, int ssock,
     return rbytes;
 }
 
+/*
+ * The main policy filtering function, compares the policy-rule against the dbus
+ * request being made.
+ */
 int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
 {
     if (!policy_rule || !dmsg) {
