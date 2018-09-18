@@ -219,6 +219,7 @@ static signed int parse_json_args(struct json_object *jarray,
 
 struct json_request *convert_json_request(char *raw_json_req)
 {
+    // free
     struct json_object *jobj = json_tokener_parse(raw_json_req);
     struct json_request *jreq = malloc(sizeof *jreq);
 
@@ -270,6 +271,7 @@ void free_json_request(struct json_request *jreq)
 struct json_object *convert_dbus_response(struct json_response *jrsp)
 {
     struct json_object *jobj = json_object_new_object();
+    // free
     json_object_object_add(jobj, "id", json_object_new_int(jrsp->id));
     json_object_object_add(jobj, "type", json_object_new_string(jrsp->type));
 

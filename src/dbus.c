@@ -87,7 +87,8 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
     DBusError error;
     dbus_error_init(&error);
 
-    DBusMessage *dbus_msg = dbus_message_demarshal(msg, len, &error);
+    DBusMessage *dbus_msg = NULL;
+    dbus_msg = dbus_message_demarshal(msg, len, &error);
 
     if (dbus_error_is_set(&error)) {
         DBUS_BROKER_WARNING("<De-Marshal failed> [Length: %d] error: %s",
@@ -211,6 +212,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
     }
 
     DBusPendingCall *pc = NULL;
+    // free?
     if (!dbus_connection_send_with_reply(conn, msg,
                                         &pc, DBUS_REQ_TIMEOUT) || !pc)
         return NULL;
@@ -233,6 +235,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
  */
 char *db_query(DBusConnection *conn, char *arg)
 {
+    // free
     char *reply = malloc(sizeof(char) * RULE_MAX_LENGTH);
 
     struct dbus_message dmsg;

@@ -155,6 +155,14 @@ static void reload_policy(void *arg)
 void sigint_handler(int signal)
 {
     DBUS_BROKER_WARNING("<received signal interrupt> %s", "");
+    // free globals
+    // dbus-links free func
+    // etc-policy free func
+    // domain-policy free func
+    // server free func
+    // close dbus conns
+    // websocket ring
+    // 
     exit(0);
 }
 
@@ -231,7 +239,8 @@ static void run(struct dbus_broker_args *args)
 
     fd_set server_set;
 
-    struct lws_context *ws_context = create_ws_context(BROKER_UI_PORT);
+    struct lws_context *ws_context = NULL;
+    ws_context = create_ws_context(BROKER_UI_PORT);
 
     if (!ws_context)
         DBUS_BROKER_ERROR("WebSockets-Server");

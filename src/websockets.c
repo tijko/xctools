@@ -27,6 +27,7 @@ char *prepare_json_reply(struct json_response *jrsp)
     if (!jobj)
         return NULL;
 
+    // free
     char *reply = malloc(sizeof(char) * WS_RING_BUFFER_MEMBER_SIZE);
 
     snprintf(reply, WS_RING_BUFFER_MEMBER_SIZE - 1, "%s",

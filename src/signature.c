@@ -25,6 +25,7 @@ xmlNodePtr find_xml_property(const char *target, const xmlChar *property,
     if (node == NULL)
         return NULL;
 
+    // free
     const xmlChar *name = xmlGetProp(node, property);
 
     if (name && !strcmp((const char *) name, target))
@@ -109,7 +110,7 @@ void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter)
     add_jobj(args, key, dbus_dict);
 
     while (dbus_message_iter_get_arg_type(iter) != DBUS_TYPE_INVALID) {
-
+        // free
         char *key = malloc(sizeof(char) * DBUS_ARG_LEN);
         DBusMessageIter sub;
         dbus_message_iter_recurse(iter, &sub);
@@ -124,6 +125,7 @@ void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter)
 void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
 {
     int type;
+    // free
     void *arg = malloc(sizeof(char) * DBUS_ARG_LEN);
     DBusMessageIter sub;
 
