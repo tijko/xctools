@@ -100,7 +100,6 @@ static inline void add_json_array(struct json_object *args, char *key,
     if (dbus_message_iter_get_arg_type(&sub) == DBUS_TYPE_INVALID && key) {
         struct json_object *empty_array = json_object_new_object();
         add_jobj(args, key, empty_array);
-        free(key);
         return;
     }
 
@@ -113,7 +112,6 @@ void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter)
     add_jobj(args, key, dbus_dict);
 
     while (dbus_message_iter_get_arg_type(iter) != DBUS_TYPE_INVALID) {
-        // free
         char *key = malloc(sizeof(char) * DBUS_ARG_LEN);
         DBusMessageIter sub;
         dbus_message_iter_recurse(iter, &sub);
@@ -122,6 +120,7 @@ void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter)
         dbus_message_iter_next(&sub);
         parse_signature(dbus_dict, key, &sub);
         dbus_message_iter_next(iter);
+        free(key);
     }
 }
 

@@ -19,7 +19,6 @@
 #include "../rpc-broker.h"
 
 
-// pass-in buffer
 char *prepare_json_reply(struct json_response *jrsp)
 {
     struct json_object *jobj = convert_dbus_response(jrsp);
@@ -27,7 +26,6 @@ char *prepare_json_reply(struct json_response *jrsp)
     if (!jobj)
         return NULL;
 
-    // free
     char *reply = malloc(sizeof(char) * WS_RING_BUFFER_MEMBER_SIZE);
 
     snprintf(reply, WS_RING_BUFFER_MEMBER_SIZE - 1, "%s",
@@ -60,9 +58,9 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
                 lws_write(wsi, user + LWS_SEND_BUFFER_PRE_PADDING,
                           strlen(rsp), LWS_WRITE_TEXT);
 
+                free(rsp);
                 lws_ring_consume(ring, NULL, NULL, 1);
                 lws_callback_on_writable(wsi);
-    //            free(rsp);
             }
 
             pthread_mutex_unlock(&ring_lock);
