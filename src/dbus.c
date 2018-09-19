@@ -259,7 +259,7 @@ char *db_query(DBusConnection *conn, char *arg)
         return NULL;
     }
 
-    memcpy(buf, reply, strlen(buf) + 1);
+    strcpy(buf, reply, strlen(buf) + 1);
 
     return reply;
 }

@@ -212,11 +212,11 @@ struct policy *build_policy(const char *rule_filename)
              dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_INVALID;
              dom_idx++) {
 
-        void *arg = malloc(sizeof(char) * VM_UUID_LEN);
+        void *arg;
         dbus_message_iter_get_basic(&sub, &arg);
 
         struct domain_policy *current = &(dbus_policy->domains[dom_idx]);
-        current->uuid = arg;
+        strcpy(arg, current->uuid);
         current->domid = strtol(arg + DOMID_SECTION, NULL, 10);
 
         get_rules(conn, current);
@@ -266,8 +266,6 @@ void free_policy(void)
         struct domain_policy domain = dbus_broker_policy->domains[i];
         for (int i=0; i < domain.count; i++)
             free_rule(domain.rules[i]);
-
-        free(domain.uuid);
     }
 
     struct etc_policy etc = dbus_broker_policy->etc; 
