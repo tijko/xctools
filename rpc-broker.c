@@ -276,6 +276,7 @@ static void run(struct dbus_broker_args *args)
         service_signals();
         // websocket servicing event-loop
         lws_service(ws_context, WS_LOOP_TIMEOUT);
+        dbus_broker_running = 0;
     }
 
     free(server);
