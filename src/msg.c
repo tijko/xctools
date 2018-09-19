@@ -99,7 +99,7 @@ int exchange(int rsock, int ssock,
 
         if (len == rbytes) {
 
-            struct dbus_message dmsg = { 0 };
+            struct dbus_message dmsg;
             if (convert_raw_dbus(&dmsg, buf, len) < 0) {
                 DBUS_BROKER_WARNING("DBus-message conversion failed %s", "");
                 return 0;
