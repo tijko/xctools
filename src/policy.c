@@ -25,6 +25,8 @@ static inline void create_rule(struct rule *current, char *rule)
         return;
 
     current->rule_string = strdup(rule);
+    
+    char *base = rule;
 
     char *ruleptr;
     char *delimiter = " ";
@@ -86,7 +88,7 @@ static inline void create_rule(struct rule *current, char *rule)
         token = strtok_r(NULL, delimiter, &ruleptr);
     }
 
-    free(rule);
+    free(base);
 }
 
 static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
@@ -234,18 +236,48 @@ struct policy *build_policy(const char *rule_filename)
     return dbus_policy;
 }
 
+void free_rule(struct rule r)
+{
+    if (r.destination)
+        free(r.destination);
+
+    if (r.path)
+        free(r.path);
+
+    if (r.interface)
+        free(r.interface);
+
+    if (r.member)
+        free(r.member);
+
+    if (r.if_bool)
+        free(r.if_bool);
+
+    if (r.domtype)
+        free(r.domtype);
+
+    if (r.rule_string)
+        free(r.rule_string);
+}
+
 void free_policy(void)
 {
-    // Are the struct rule fields (e.g. destination, member, ...) all heap
-    // alloc'd?
-
     int count = dbus_broker_policy->domain_number;
 
     for (int i=0; i < count; i++) {
 
         struct domain_policy domain = dbus_broker_policy->domains[i];
+        for (int i=0; i < domain.count; i++)
+            free_rule(domain.rules[i]);
+
         free(domain.uuid);
     }
+
+    struct etc_policy etc = dbus_broker_policy; 
+    count = etc.count;
+
+    for (int i=0; i < count; i++) 
+        free_rule(etc.rules[i]);
 
     free(dbus_broker_policy);
 }

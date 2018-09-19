@@ -280,7 +280,7 @@ static void run(struct dbus_broker_args *args)
     }
 
     free(server);
-    free(dbus_broker_policy);
+    free_policy();
     close(default_socket);
 
     lws_ring_destroy(ring);

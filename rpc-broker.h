@@ -329,6 +329,8 @@ DBusMessage *db_list(void);
 
 struct policy *build_policy(const char *rule_filename);
 
+void free_rule(struct rule r);
+
 void free_policy(void);
 
 
