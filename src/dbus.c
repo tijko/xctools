@@ -214,7 +214,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
     }
 
     DBusPendingCall *pc = NULL;
-    // free?
+    // free pc?
     if (!dbus_connection_send_with_reply(conn, msg,
                                         &pc, DBUS_REQ_TIMEOUT) || !pc)
         return NULL;
@@ -289,6 +289,7 @@ char *dbus_introspect(struct json_request *jreq)
     DBusMessageIter iter;
     dbus_message_iter_init(introspect, &iter);
     dbus_message_iter_get_basic(&iter, &reply);
+    dbus_message_unref(introspect);
 
     char *signature = calloc(1, sizeof(char) * 16);
     if (retrieve_xml_signature((const xmlChar *) reply, signature,

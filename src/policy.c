@@ -224,6 +224,8 @@ struct policy *build_policy(const char *rule_filename)
         dbus_policy->domain_number++;
     }
 
+    dbus_message_unref(vms);
+
     struct etc_policy *etc = &(dbus_policy->etc);
     get_etc_policy(etc, rule_filename);
 
