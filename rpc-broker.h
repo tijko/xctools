@@ -45,7 +45,7 @@
 
 #define DBUS_LOG(type, fmt, ...)                                      \
     ({                                                                \
-        char *buf;                                                    \
+        char *buf = NULL;                                             \
         asprintf(&buf, fmt, __VA_ARGS__);                             \
         syslog(type, "%s", buf);                                      \
         free(buf);                                                    \
