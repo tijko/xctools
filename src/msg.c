@@ -173,12 +173,14 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
             DBUS_REQ_ARG(arg, "%s/type", uuid);
             char *dom_type = NULL;
             dom_type = db_query(conn, arg);
+
             if (!dom_type || strcmp(policy_rule->domtype, dom_type))
                 return -1;
+
+            if (dom_type)
+                free(dom_type);
         }
 
-        if (dom_type)
-            free(dom_type);
 
         if (uuid)
             free(uuid);
