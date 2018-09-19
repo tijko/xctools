@@ -103,7 +103,9 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
         create_rule(policy_rule, rulestring);
 
         dom->count++;
+        free(rulestring);
     }
+
 }
 
 static inline void get_etc_policy(struct etc_policy *etc,
