@@ -112,7 +112,7 @@ void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter)
     add_jobj(args, key, dbus_dict);
 
     while (dbus_message_iter_get_arg_type(iter) != DBUS_TYPE_INVALID) {
-        char *new_key = malloc(sizeof(char) * DBUS_ARG_LEN);
+        char *new_key;
         DBusMessageIter sub;
         dbus_message_iter_recurse(iter, &sub);
         dbus_message_iter_get_basic(&sub, &new_key);
@@ -120,14 +120,13 @@ void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter)
         dbus_message_iter_next(&sub);
         parse_signature(dbus_dict, new_key, &sub);
         dbus_message_iter_next(iter);
-        free(new_key);
     }
 }
 
 void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
 {
     int type;
-    void *arg = malloc(sizeof(char) * DBUS_ARG_LEN);
+    void *arg;
     DBusMessageIter sub;
 
     while ((type = dbus_message_iter_get_arg_type(iter)) != DBUS_TYPE_INVALID) {
@@ -189,8 +188,5 @@ void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
 
         dbus_message_iter_next(iter);
     }
-
-    if (arg)
-        free(arg);
 }
 

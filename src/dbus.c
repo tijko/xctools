@@ -238,7 +238,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 char *db_query(DBusConnection *conn, char *arg)
 {
     char *buf;
-    char *reply = malloc(sizeof(char) * RULE_MAX_LENGTH);
+    char *reply = malloc(RULE_MAX_LENGTH);
 
     struct dbus_message dmsg;
     dbus_default(&dmsg);
@@ -259,7 +259,7 @@ char *db_query(DBusConnection *conn, char *arg)
         return NULL;
     }
 
-    strcpy(buf, reply, strlen(buf) + 1);
+    strcpy(buf, reply);
 
     return reply;
 }
@@ -288,7 +288,7 @@ char *dbus_introspect(struct json_request *jreq)
     if (dbus_message_get_type(introspect) == DBUS_MESSAGE_TYPE_ERROR)
         return NULL;
 
-    char *reply = malloc(sizeof(char) * 4096);
+    char reply[4096];
 
     DBusMessageIter iter;
     dbus_message_iter_init(introspect, &iter);
@@ -299,7 +299,6 @@ char *dbus_introspect(struct json_request *jreq)
                                 jreq->dmsg.interface, jreq->dmsg.member) < 1)
         signature[0] = '\0';
 
-    free(reply);
     dbus_message_unref(introspect);
 
     return signature;
