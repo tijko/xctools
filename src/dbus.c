@@ -237,6 +237,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
  */
 char *db_query(DBusConnection *conn, char *arg)
 {
+    char *buf;
     char *reply = malloc(sizeof(char) * RULE_MAX_LENGTH);
 
     struct dbus_message dmsg;
@@ -250,11 +251,15 @@ char *db_query(DBusConnection *conn, char *arg)
     if (!dbus_message_iter_init(msg, &iter))
         return NULL;
 
-    dbus_message_iter_get_basic(&iter, &reply);
+    dbus_message_iter_get_basic(&iter, &buf);
     dbus_message_unref(msg);
 
-    if (reply[0] == '\0')
+    if (buf[0] == '\0') {
+        free(reply);
         return NULL;
+    }
+
+    memcpy(buf, reply, strlen(buf) + 1);
 
     return reply;
 }

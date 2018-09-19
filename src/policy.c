@@ -21,7 +21,7 @@
 
 static inline void create_rule(struct rule *current, char *rule)
 {
-    if (!rule)
+    if (!rule || rule[0] == '\0')
         return;
 
     current->rule_string = strdup(rule);
