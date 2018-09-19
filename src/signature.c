@@ -84,7 +84,7 @@ xml_error:
         DBUS_BROKER_WARNING("Invalid xml-%s", error);
 
     args[idx] = '\0';
-    xmlFreeDoc(doc);
+//    xmlFreeDoc(doc);
 
     return idx;
 }

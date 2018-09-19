@@ -293,7 +293,7 @@ char *dbus_introspect(struct json_request *jreq)
                                 jreq->dmsg.interface, jreq->dmsg.member) < 1)
         signature[0] = '\0';
 
-    free(reply);
+    //free(reply);
 
     return signature;
 }
