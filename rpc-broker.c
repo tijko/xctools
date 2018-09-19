@@ -155,14 +155,9 @@ static void reload_policy(void *arg)
 void sigint_handler(int signal)
 {
     DBUS_BROKER_WARNING("<received signal interrupt> %s", "");
-    // free globals
-    // dbus-links free func
-    // etc-policy free func
-    // domain-policy free func
-    // server free func
-    // close dbus conns
-    // websocket ring
-    // 
+    // links
+    free(dbus_broker_policy);
+    lws_ring_destroy(ring);
     exit(0);
 }
 
@@ -278,6 +273,7 @@ static void run(struct dbus_broker_args *args)
     free(dbus_broker_policy);
     close(default_socket);
 
+    lws_ring_destroy(ring);
     lws_context_destroy(ws_context);
 }
 

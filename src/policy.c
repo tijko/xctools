@@ -190,8 +190,8 @@ DBusMessage *db_list(void)
 
     DBusMessage *vms = make_dbus_call(conn, &dmsg);
 
-    if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR)
-        return NULL;
+    if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) 
+        vms = NULL;
 
     dbus_connection_unref(conn);
 
