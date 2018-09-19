@@ -127,7 +127,6 @@ void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter)
 void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
 {
     int type;
-    // free
     void *arg = malloc(sizeof(char) * DBUS_ARG_LEN);
     DBusMessageIter sub;
 
@@ -190,5 +189,7 @@ void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
 
         dbus_message_iter_next(iter);
     }
+
+    free(arg);
 }
 
