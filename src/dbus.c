@@ -288,7 +288,6 @@ char *dbus_introspect(struct json_request *jreq)
     DBusMessageIter iter;
     dbus_message_iter_init(introspect, &iter);
     dbus_message_iter_get_basic(&iter, &reply);
-    dbus_message_unref(introspect);
 
     char *signature = calloc(1, sizeof(char) * 16);
     if (retrieve_xml_signature((const xmlChar *) reply, signature,
@@ -296,6 +295,7 @@ char *dbus_introspect(struct json_request *jreq)
         signature[0] = '\0';
 
     free(reply);
+    dbus_message_unref(introspect);
 
     return signature;
 }

@@ -67,6 +67,7 @@ struct json_response *make_json_request(struct json_request *jreq)
 
     load_json_response(msg, jrsp);
     dbus_message_unref(msg);
+
     return jrsp;
 }
 
