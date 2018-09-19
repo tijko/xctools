@@ -190,7 +190,7 @@ static inline void service_signals(void)
         dbus_connection_read_write(curr->dconn, 0);
         DBusMessage *msg = dbus_connection_pop_message(curr->dconn);
 
-        if (dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL) {
+        if (!msg || dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL) {
             curr = curr->next; 
             if (msg)
                 dbus_message_unref(msg);
