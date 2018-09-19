@@ -237,7 +237,6 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
  */
 char *db_query(DBusConnection *conn, char *arg)
 {
-    // free
     char *reply = malloc(sizeof(char) * RULE_MAX_LENGTH);
 
     struct dbus_message dmsg;
@@ -295,6 +294,8 @@ char *dbus_introspect(struct json_request *jreq)
     if (retrieve_xml_signature((const xmlChar *) reply, signature,
                                 jreq->dmsg.interface, jreq->dmsg.member) < 1)
         signature[0] = '\0';
+
+    free(reply);
 
     return signature;
 }

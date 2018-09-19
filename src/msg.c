@@ -153,7 +153,8 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
 
         if (policy_rule->if_bool) {
             DBUS_REQ_ARG(arg, "%s/%s", uuid, policy_rule->if_bool);
-            char *attr_cond = db_query(conn, arg);
+            char *attr_cond = NULL;
+            attr_cond = db_query(conn, arg);
 
             if (!attr_cond || (attr_cond[0] == 't' &&
                                policy_rule->if_bool_flag == 0) ||
@@ -161,15 +162,23 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
                                policy_rule->if_bool_flag == 1))
                 return -1;
 
-            free(arg);
+            if (attr_cond)
+                free(attr_cond);
+
+            if (arg) 
+                free(arg);
         }
 
         if (policy_rule->domtype) {
             DBUS_REQ_ARG(arg, "%s/type", uuid);
-            char *dom_type = db_query(conn, arg);
+            char *dom_type = NULL;
+            dom_type = db_query(conn, arg);
             if (!dom_type || strcmp(policy_rule->domtype, dom_type))
                 return -1;
         }
+
+        if (dom_type)
+            free(dom_type);
 
         if (uuid)
             free(uuid);
