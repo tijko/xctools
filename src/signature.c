@@ -190,9 +190,7 @@ void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
         dbus_message_iter_next(iter);
     }
 
-    free(arg);
-
-    if (key)
-        free(key);
+    if (arg)
+        free(arg);
 }
 

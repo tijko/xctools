@@ -193,8 +193,6 @@ DBusMessage *db_list(void)
     if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) 
         vms = NULL;
 
-    dbus_connection_unref(conn);
-
     return vms;
 }
 

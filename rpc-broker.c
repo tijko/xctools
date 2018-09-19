@@ -157,6 +157,13 @@ void sigint_handler(int signal)
     DBUS_BROKER_WARNING("<received signal interrupt> %s", "");
     // links
     free(dbus_broker_policy);
+    size_t ring_count = lws_ring_get_count_waiting_elements(ring, NULL);
+    for (int i=0; i < ring_count; i++) {
+        char *reply = (char *) lws_ring_get_element(ring, NULL);
+        free(reply);
+        lws_ring_consume(ring, NULL, NULL, 1);
+    }
+
     lws_ring_destroy(ring);
     exit(0);
 }
