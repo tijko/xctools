@@ -114,8 +114,8 @@ int init_request(int client)
     struct dbus_request *dreq = malloc(sizeof *dreq);
     dreq->client = client;
 
-    v4v_addr_t client_addr;
-
+    v4v_addr_t client_addr = { .domain=0, .port=0 };
+    
     if ((ret = v4v_getpeername(client, &client_addr)) < 0) {
         DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
         free(dreq);

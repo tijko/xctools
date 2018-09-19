@@ -146,7 +146,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
         struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
 
         size_t len;
-        char path[256];
+        char path[256] = { 0 };
         snprintf(path, 255, "/local/domain/%d/vm", domid);
         uuid = (char *) xs_read(xsh, XBT_NULL, path, &len);
         xs_close(xsh);
