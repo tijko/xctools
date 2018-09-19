@@ -85,6 +85,8 @@ static inline void create_rule(struct rule *current, char *rule)
 
         token = strtok_r(NULL, delimiter, &ruleptr);
     }
+
+    free(rule);
 }
 
 static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
