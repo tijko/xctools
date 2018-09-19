@@ -273,7 +273,7 @@ void free_policy(void)
         free(domain.uuid);
     }
 
-    struct etc_policy etc = dbus_broker_policy.etc; 
+    struct etc_policy etc = dbus_broker_policy->etc; 
     count = etc.count;
 
     for (int i=0; i < count; i++) 
