@@ -90,7 +90,7 @@ int exchange(int rsock, int ssock,
              ssize_t (*snd)(int, const void *, size_t, int),
              struct dbus_request *req)
 {
-    char buf[DBUS_MSG_LEN];
+    char buf[DBUS_MSG_LEN] = { 0 };
     int rbytes = rcv(rsock, buf, DBUS_MSG_LEN, 0);
 
     if (rbytes >= 8) {
