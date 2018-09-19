@@ -100,6 +100,7 @@ static inline void add_json_array(struct json_object *args, char *key,
     if (dbus_message_iter_get_arg_type(&sub) == DBUS_TYPE_INVALID && key) {
         struct json_object *empty_array = json_object_new_object();
         add_jobj(args, key, empty_array);
+        free(key);
         return;
     }
 
@@ -191,5 +192,8 @@ void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
     }
 
     free(arg);
+
+    if (key)
+        free(key);
 }
 
