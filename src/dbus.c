@@ -249,8 +249,10 @@ char *db_query(DBusConnection *conn, char *arg)
     DBusMessage *msg = make_dbus_call(conn, &dmsg);
 
     DBusMessageIter iter;
-    if (!dbus_message_iter_init(msg, &iter))
+    if (!dbus_message_iter_init(msg, &iter)) {
+        free(reply);
         return NULL;
+    }
 
     dbus_message_iter_get_basic(&iter, &buf);
     dbus_message_unref(msg);
