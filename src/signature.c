@@ -126,7 +126,6 @@ void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter)
 void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
 {
     int type;
-    void *arg;
     DBusMessageIter sub;
 
     while ((type = dbus_message_iter_get_arg_type(iter)) != DBUS_TYPE_INVALID) {
@@ -145,24 +144,28 @@ void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
 
             case (DBUS_TYPE_OBJECT_PATH):
             case (DBUS_TYPE_STRING):
-                dbus_message_iter_get_basic(iter, &arg);
-                obj = json_object_new_string((char *) arg);
+                char *dbus_string;
+                dbus_message_iter_get_basic(iter, &dbus_string);
+                obj = json_object_new_string(dbus_string);
                 break;
 
             case (DBUS_TYPE_INT32):
             case (DBUS_TYPE_UINT32):
-                dbus_message_iter_get_basic(iter, arg);
-                obj = json_object_new_int(*(int *) arg);
+                int dbus_int;
+                dbus_message_iter_get_basic(iter, &dbus_int);
+                obj = json_object_new_int(dbus_int);
                 break;
 
             case (DBUS_TYPE_DOUBLE):
-                dbus_message_iter_get_basic(iter, arg);
-                obj = json_object_new_double(*(double *) arg);
+                double dbus_double;
+                dbus_message_iter_get_basic(iter, &dbus_double);
+                obj = json_object_new_double(dbus_double);
                 break;
 
             case (DBUS_TYPE_BOOLEAN):
-                dbus_message_iter_get_basic(iter, arg);
-                obj = json_object_new_boolean(*(bool *) arg);
+                bool dbus_bool;
+                dbus_message_iter_get_basic(iter, &dbus_bool);
+                obj = json_object_new_boolean(dbus_bool);
                 break;
 
             case (DBUS_TYPE_VARIANT): {
@@ -172,8 +175,9 @@ void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
             }
 
             case (DBUS_TYPE_INT64): {
-                dbus_message_iter_get_basic(iter, arg);
-                obj = json_object_new_int64(*(uint64_t *) arg);
+                uint64_t dbus_long;
+                dbus_message_iter_get_basic(iter, dbus_long);
+                obj = json_object_new_int64(dbus_long);
                 break;
             }
 
