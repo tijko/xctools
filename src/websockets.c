@@ -91,6 +91,8 @@ static struct lws_protocols server_protos[] = {
 struct lws_context *create_ws_context(int port)
 {
     struct lws_context_creation_info info;
+    ring = lws_ring_create(WS_RING_BUFFER_MEMBER_SIZE,
+                           WS_RING_BUFFER_MEMBER_NUM, NULL);
     server_protos[0].per_session_data_size = WS_USER_MEM_SIZE;
     memset(&info, 0, sizeof(info));
     info.port = port;

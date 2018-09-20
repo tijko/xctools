@@ -156,17 +156,8 @@ void sigint_handler(int signal)
 {
     DBUS_BROKER_WARNING("<received signal interrupt> %s", "");
     // links
-    /*
     free(dbus_broker_policy);
-    size_t ring_count = lws_ring_get_count_waiting_elements(ring, NULL);
-    for (int i=0; i < ring_count; i++) {
-        char *reply = (char *) lws_ring_get_element(ring, NULL);
-        free(reply);
-        lws_ring_consume(ring, NULL, NULL, 1);
-    }
-
     lws_ring_destroy(ring);
-    */
     exit(0);
 }
 
@@ -253,9 +244,6 @@ static void run(struct dbus_broker_args *args)
 
     DBUS_BROKER_EVENT("<WebSockets-Server has started listening> [Port: %d]",
                         BROKER_UI_PORT);
-
-    ring = lws_ring_create(WS_RING_BUFFER_MEMBER_SIZE,
-                           WS_RING_BUFFER_MEMBER_NUM, NULL);
 
     dbus_broker_running = 1;
     connection_open = 1;
