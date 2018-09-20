@@ -28,8 +28,13 @@ xmlNodePtr find_xml_property(const char *target, const xmlChar *property,
     const xmlChar *name = NULL;
     name = xmlGetProp(node, property);
 
-    if (name && !strcmp((const char *) name, target))
+    if (name && !strcmp((const char *) name, target)) {
+        xmlFree(name);
         return xmlFirstElementChild(node);
+    }
+
+    if (name)
+        xmlFree(name);
 
     node = find_xml_property(target, property, xmlNextElementSibling(node));
 
@@ -50,7 +55,6 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
         goto xml_error;
     }
 
-    // free
     xmlNodePtr interface_node = find_xml_property(interface, XML_NAME_PROPERTY,
                                               xmlFirstElementChild(root));
     if (interface_node == NULL) {
@@ -58,7 +62,6 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
         goto xml_error;
     }
 
-    // free
     xmlNodePtr member_node = find_xml_property(member, XML_NAME_PROPERTY,
                                                interface_node);
     if (member_node == NULL) {

@@ -110,33 +110,32 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
 {
     v4v_addr_t addr;
     int client = lws_get_socket_fd(wsi);
+    int ret = 1;
 
     if (v4v_getpeername(client, &addr) < 0) {
         DBUS_BROKER_WARNING("getpeername call failed <%d>", client);
-        return 1;
+        return ret;
     }
+
 
     struct json_request *jreq = convert_json_request(raw_req);
 
     if (!jreq)
-        return 1;
+        return ret;
 
     jreq->wsi = wsi;
 
     struct json_response *jrsp = make_json_request(jreq);
 
-    if (!jrsp)
-        return 1;
+    if (!jrsp) 
+        goto free_req;
 
     char *reply = prepare_json_reply(jrsp);
 
-    if (!reply) {
-        // cleanup
-        return 1;
-    }
+    if (!reply) 
+        goto free_resp;
 
     lws_ring_insert(ring, reply, 1);
-    free_json_response(jrsp);
     free(reply);
 
     if (strcmp("AddMatch", jreq->dmsg.member) == 0) {
@@ -157,6 +156,14 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
         curr->next = NULL;
     } 
 
-    return 0;
+    ret = 0;
+
+free_req:
+    free_json_request(jreq);
+
+free_resp:
+    free_json_response(jrsp);
+
+    return ret;
 }
 
