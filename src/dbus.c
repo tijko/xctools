@@ -229,7 +229,6 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
         return NULL;
 
     dbus_pending_call_unref(pc);
-    dbus_connection_close(conn);
 
     return msg;
 }
