@@ -75,9 +75,8 @@ void *broker_message(void *request)
     } while (bytes > 0);
 
     close(srv);
-    free(request);
+    free(req);
 
-    // set errno in void *
     return NULL;
 }
 
@@ -209,7 +208,7 @@ static inline void service_signals(void)
 
         pthread_mutex_lock(&ring_lock);
         lws_ring_insert(ring, reply, 1);
-
+        free(reply);
         lws_callback_on_writable(curr->wsi);
 
         pthread_mutex_unlock(&ring_lock);

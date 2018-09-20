@@ -108,6 +108,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
 
     const char *member = dbus_message_get_member(dbus_msg);
     dmsg->member = member ? member : "NULL";
+    dbus_message_unref(dbus_msg);
 
     return 0;
 }

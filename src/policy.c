@@ -168,6 +168,7 @@ static inline void get_etc_policy(struct etc_policy *etc,
             char *line = strdup(rule_token);
             struct rule *current = &(etc->rules[idx++]);
             create_rule(current, line);
+            free(line);
         }
 
         rule_token = strtok_r(NULL, newline, &fileptr);
