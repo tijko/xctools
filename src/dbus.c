@@ -214,7 +214,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
     }
 
     DBusPendingCall *pc = NULL;
-    // free pc?
+
     if (!dbus_connection_send_with_reply(conn, msg,
                                         &pc, DBUS_REQ_TIMEOUT) || !pc)
         return NULL;
@@ -227,6 +227,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
     if ((msg = dbus_pending_call_steal_reply(pc)) == NULL)
         return NULL;
 
+    dbus_pending_call_unref(pc);
     dbus_connection_unref(conn);
 
     return msg;

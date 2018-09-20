@@ -157,7 +157,6 @@ void sigint_handler(int signal)
     DBUS_BROKER_WARNING("<received signal interrupt> %s", "");
     struct dbus_link *curr = dlinks;
     while (curr) {
-        dbus_connection_close(curr->dconn);
         struct dbus_link *tmp = curr->next;
         free(curr);
         curr = tmp;
