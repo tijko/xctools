@@ -58,7 +58,6 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
 
                 lws_write(wsi, user + LWS_SEND_BUFFER_PRE_PADDING,
                           strlen(rsp), LWS_WRITE_TEXT);
-                free(rsp);
                 lws_callback_on_writable(wsi);
             }
 
@@ -134,6 +133,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
 
     lws_ring_insert(ring, reply, 1);
     free_json_response(jrsp);
+    free(reply);
 
     if (strcmp("AddMatch", jreq->dmsg.member) == 0) {
         
