@@ -288,14 +288,15 @@ char *dbus_introspect(struct json_request *jreq)
     if (dbus_message_get_type(introspect) == DBUS_MESSAGE_TYPE_ERROR)
         return NULL;
 
-    char reply[4096];
+    char *reply;
 
     DBusMessageIter iter;
     dbus_message_iter_init(introspect, &iter);
     dbus_message_iter_get_basic(&iter, &reply);
-
+    char *xml = malloc(strlen(reply) + 1);
+    strcpy(xml, reply);
     char *signature = calloc(1, sizeof(char) * 16);
-    if (retrieve_xml_signature((const xmlChar *) reply, signature,
+    if (retrieve_xml_signature((const xmlChar *) xml, signature,
                                 jreq->dmsg.interface, jreq->dmsg.member) < 1)
         signature[0] = '\0';
 

@@ -116,9 +116,6 @@ void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter)
         DBusMessageIter sub;
         dbus_message_iter_recurse(iter, &sub);
         dbus_message_iter_get_basic(&sub, &new_key);
-        //
-        printf("Key: %s\n", new_key);
-        //
         dbus_message_iter_next(&sub);
         parse_signature(dbus_dict, new_key, &sub);
         dbus_message_iter_next(iter);
