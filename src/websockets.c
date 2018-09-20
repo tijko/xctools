@@ -26,10 +26,12 @@ char *prepare_json_reply(struct json_response *jrsp)
     if (!jobj)
         return NULL;
 
-    char *reply = calloc(1, WS_RING_BUFFER_MEMBER_SIZE);
+    char *reply = malloc(WS_RING_BUFFER_MEMBER_SIZE);
 
     snprintf(reply, WS_RING_BUFFER_MEMBER_SIZE - 1, "%s",
              json_object_to_json_string(jobj));
+
+    json_object_put(jobj);
 
     return reply;
 }
