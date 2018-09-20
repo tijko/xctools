@@ -239,7 +239,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 char *db_query(DBusConnection *conn, char *arg)
 {
     char *buf;
-    char *reply = malloc(RULE_MAX_LENGTH);
+    char *reply = calloc(1, RULE_MAX_LENGTH);
 
     struct dbus_message dmsg;
     dbus_default(&dmsg);
@@ -260,7 +260,7 @@ char *db_query(DBusConnection *conn, char *arg)
         return NULL;
     }
 
-    strcpy(buf, reply);
+    strcpy(reply, buf);
 
     return reply;
 }
