@@ -116,7 +116,9 @@ void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter)
         DBusMessageIter sub;
         dbus_message_iter_recurse(iter, &sub);
         dbus_message_iter_get_basic(&sub, &new_key);
-
+        //
+        printf("Key: %s\n", new_key);
+        //
         dbus_message_iter_next(&sub);
         parse_signature(dbus_dict, new_key, &sub);
         dbus_message_iter_next(iter);
@@ -146,6 +148,9 @@ void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
             case (DBUS_TYPE_STRING): {
                 char *dbus_string;
                 dbus_message_iter_get_basic(iter, &dbus_string);
+                //
+                printf("str: %s\n", dbus_string);
+                //
                 obj = json_object_new_string(dbus_string);
                 break;
             }
@@ -154,6 +159,9 @@ void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
             case (DBUS_TYPE_UINT32): {
                 int dbus_int;
                 dbus_message_iter_get_basic(iter, &dbus_int);
+                //
+                printf("int: %d\n", dbus_int);
+                //
                 obj = json_object_new_int(dbus_int);
                 break;
             } 
@@ -161,13 +169,19 @@ void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
             case (DBUS_TYPE_DOUBLE): {
                 double dbus_double;
                 dbus_message_iter_get_basic(iter, &dbus_double);
+                //
+                printf("dbl: %z\n", dbus_double);
+                //
                 obj = json_object_new_double(dbus_double);
                 break;
             }
 
             case (DBUS_TYPE_BOOLEAN): {
-                bool dbus_bool;
+                int dbus_bool;
                 dbus_message_iter_get_basic(iter, &dbus_bool);
+                //
+                printf("bool: %d\n", dbus_bool);
+                // 
                 obj = json_object_new_boolean(dbus_bool);
                 break;
             }
@@ -181,6 +195,9 @@ void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
             case (DBUS_TYPE_INT64): {
                 uint64_t dbus_long;
                 dbus_message_iter_get_basic(iter, &dbus_long);
+                //
+                printf("long: %ld\n", dbus_long);
+                //
                 obj = json_object_new_int64(dbus_long);
                 break;
             }

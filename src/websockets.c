@@ -129,7 +129,6 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
         return 1;
 
     char *reply = prepare_json_reply(jrsp);
-    printf("Reply: %s\n", reply);
 
     free_json_response(jrsp);
     lws_ring_insert(ring, reply, 1);
