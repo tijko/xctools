@@ -130,8 +130,8 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
 
     char *reply = prepare_json_reply(jrsp);
 
-    free_json_response(jrsp);
     lws_ring_insert(ring, reply, 1);
+    free_json_response(jrsp);
 
     if (strcmp("AddMatch", jreq->dmsg.member) == 0) {
         

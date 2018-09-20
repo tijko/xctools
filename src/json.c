@@ -272,7 +272,6 @@ void free_json_request(struct json_request *jreq)
 struct json_object *convert_dbus_response(struct json_response *jrsp)
 {
     struct json_object *jobj = json_object_new_object();
-    // free
     json_object_object_add(jobj, "id", json_object_new_int(jrsp->id));
     json_object_object_add(jobj, "type", json_object_new_string(jrsp->type));
 
