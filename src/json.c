@@ -220,39 +220,48 @@ static signed int parse_json_args(struct json_object *jarray,
 
 struct json_request *convert_json_request(char *raw_json_req)
 {
-    // free
     struct json_object *jobj = json_tokener_parse(raw_json_req);
-    struct json_request *jreq = malloc(sizeof *jreq);
-
-    // Check-each
-    jreq->dmsg.destination = get_json_str_obj(jobj, "destination");
-    jreq->dmsg.interface = get_json_str_obj(jobj, "interface");
-    jreq->dmsg.path = get_json_str_obj(jobj, "path");
-    jreq->dmsg.member = get_json_str_obj(jobj, "method");
-    // put-jobj
-    jreq->conn = create_dbus_connection();
 
     if (!jobj) {
         DBUS_BROKER_WARNING("<Error parsing json-request> %s", raw_json_req);
         return NULL;
     }
 
+    struct json_request *jreq = malloc(sizeof *jreq);
+    jreq->dmsg.destination = get_json_str_obj(jobj, "destination");
+    jreq->dmsg.interface = get_json_str_obj(jobj, "interface");
+    jreq->dmsg.path = get_json_str_obj(jobj, "path");
+    jreq->dmsg.member = get_json_str_obj(jobj, "method");
+
+    jreq->conn = create_dbus_connection();
+
     struct json_object *jarray;
     json_object_object_get_ex(jobj, "args", &jarray);
 
     if (!jarray) {
-        json_object_put(jobj);
         DBUS_BROKER_WARNING("<Error json-request> %s", raw_json_req);
-        return NULL;
+        free(jreq);
+        jreq = NULL;
+        goto put_jobj; 
     }
 
-    if (parse_json_args(jarray, jreq) < 0)
-        return NULL;
+    if (parse_json_args(jarray, jreq) < 0) {
+        DBUS_BROKER_WARNING("<Error json-request> %s", raw_json_req);
+        free(jreq);
+        jreq = NULL;
+        goto put_jarray;
+    }
 
     struct json_object *jint;
     json_object_object_get_ex(jobj, "id", &jint);
     jreq->id = json_object_get_int(jint);
     json_object_put(jint);
+
+put_jarray:
+    json_object_put(jarray);
+
+put_jobj:
+    json_object_put(jobj);
 
     return jreq;
 }
