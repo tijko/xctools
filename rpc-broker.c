@@ -155,7 +155,14 @@ static void reload_policy(void *arg)
 void sigint_handler(int signal)
 {
     DBUS_BROKER_WARNING("<received signal interrupt> %s", "");
-    // links
+    struct dbus_link *curr = dlinks;
+    while (curr) {
+        dbus_connection_close(curr->dconn);
+        struct dbus_link *tmp = curr->next;
+        free(curr);
+        curr = tmp;
+    }
+
     free(dbus_broker_policy);
     lws_ring_destroy(ring);
     exit(0);
