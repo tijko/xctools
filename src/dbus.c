@@ -301,6 +301,7 @@ char *dbus_introspect(struct json_request *jreq)
         signature[0] = '\0';
 
     dbus_message_unref(introspect);
+    free(xml);
 
     return signature;
 }
