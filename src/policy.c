@@ -96,6 +96,8 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
 
         char *rulestring = db_query(conn, arg);
 
+        free(arg);
+
         if (!rulestring)
             break;
 

@@ -130,7 +130,10 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
     }
 
     DBusConnection *conn;
-    char *uuid, *arg;
+    char *uuid = NULL;
+    char *arg = NULL;
+    char *attr_cond = NULL;
+    char *dom_type = NULL;
 
     if (((policy_rule->stubdom && is_stubdom(domid) < 1))                ||
         (policy_rule->destination && strcmp(policy_rule->destination,
@@ -153,14 +156,15 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
 
         if (policy_rule->if_bool) {
             DBUS_REQ_ARG(arg, "%s/%s", uuid, policy_rule->if_bool);
-            char *attr_cond = NULL;
             attr_cond = db_query(conn, arg);
-
+            free(arg); 
             if (!attr_cond || (attr_cond[0] == 't' &&
                                policy_rule->if_bool_flag == 0) ||
                               (attr_cond[0] == 'f' &&
-                               policy_rule->if_bool_flag == 1))
+                               policy_rule->if_bool_flag == 1)) {  
+                free(uuid);
                 return -1;
+            }
 
             if (attr_cond)
                 free(attr_cond);
@@ -171,20 +175,20 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
 
         if (policy_rule->domtype) {
             DBUS_REQ_ARG(arg, "%s/type", uuid);
-            char *dom_type = NULL;
+            free(uuid);
             dom_type = db_query(conn, arg);
-
+            free(arg);
             if (!dom_type || strcmp(policy_rule->domtype, dom_type))
                 return -1;
 
             if (dom_type)
                 free(dom_type);
+
+            if (uuid)
+                free(uuid)
         }
-
-
-        if (uuid)
-            free(uuid);
     }
+
 
     return policy_rule->policy;
 }
