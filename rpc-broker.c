@@ -161,7 +161,7 @@ void sigint_handler(int signal)
         curr = tmp;
     }
 
-    free(dbus_broker_policy);
+    free_policy(dbus_broker_policy);
     lws_ring_destroy(ring);
     exit(0);
 }
