@@ -93,8 +93,6 @@ static struct lws_protocols server_protos[] = {
 struct lws_context *create_ws_context(int port)
 {
     struct lws_context_creation_info info;
-    ring = lws_ring_create(WS_RING_BUFFER_MEMBER_SIZE,
-                           WS_RING_BUFFER_MEMBER_NUM, NULL);
     server_protos[0].per_session_data_size = WS_USER_MEM_SIZE;
     memset(&info, 0, sizeof(info));
     info.port = port;
@@ -130,8 +128,13 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
 
     char *reply = prepare_json_reply(jrsp);
 
+    if (!reply) {
+        // cleanup
+        return 1;
+    }
+
     lws_ring_insert(ring, reply, 1);
-    //free_json_response(jrsp);
+    free_json_response(jrsp);
 
     if (strcmp("AddMatch", jreq->dmsg.member) == 0) {
         

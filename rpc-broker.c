@@ -252,6 +252,9 @@ static void run(struct dbus_broker_args *args)
     DBUS_BROKER_EVENT("<WebSockets-Server has started listening> [Port: %d]",
                         BROKER_UI_PORT);
 
+    ring = lws_ring_create(WS_RING_BUFFER_MEMBER_SIZE,
+                           WS_RING_BUFFER_MEMBER_NUM, NULL);
+
     dbus_broker_running = 1;
     connection_open = 1;
     dlinks = NULL;
