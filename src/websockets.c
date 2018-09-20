@@ -53,13 +53,12 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
             pthread_mutex_lock(&ring_lock);
             if (lws_ring_get_count_waiting_elements(ring, NULL) > 0) {
                 char *rsp = (char *) lws_ring_get_element(ring, NULL);
+                lws_ring_consume(ring, NULL, NULL, 1);
                 memcpy(user + LWS_SEND_BUFFER_PRE_PADDING, rsp, strlen(rsp));
 
                 lws_write(wsi, user + LWS_SEND_BUFFER_PRE_PADDING,
                           strlen(rsp), LWS_WRITE_TEXT);
-
                 free(rsp);
-                lws_ring_consume(ring, NULL, NULL, 1);
                 lws_callback_on_writable(wsi);
             }
 
