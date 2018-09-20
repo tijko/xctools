@@ -185,7 +185,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
                 free(dom_type);
 
             if (uuid)
-                free(uuid)
+                free(uuid);
         }
     }
 
