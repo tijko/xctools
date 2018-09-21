@@ -149,6 +149,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
             while (curr->next)
                 curr = curr->next;
             curr->next = malloc(sizeof *dlinks);
+            curr = curr->next;
         }
 
         curr->wsi = jreq->wsi;
