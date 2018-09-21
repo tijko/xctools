@@ -200,6 +200,7 @@ static signed int parse_json_args(struct json_object *jarray,
     memcpy(jreq->dmsg.arg_sig, signature, strlen(signature) + 1);
     size_t array_length = json_object_array_length(jarray);
     jreq->dmsg.arg_number = array_length;
+    char *sigptr = signature;
 
     for (int i=0; i < array_length; i++) {
 
@@ -213,9 +214,11 @@ static signed int parse_json_args(struct json_object *jarray,
         }
 
         jreq->dmsg.json_sig[i] = json_arg_to_dbus_type(jtype);
-        append_dbus_message_arg(*signature, i, jreq->dmsg.args, jarg);
-        signature++;
+        append_dbus_message_arg(*sigptr, i, jreq->dmsg.args, jarg);
+        sigptr++;
     }
+
+    free(signature);
 
     return 0;
 }
