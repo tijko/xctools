@@ -277,6 +277,15 @@ void free_json_request(struct json_request *jreq)
         }
     }
 
+    if (jreq->dmsg.destination)
+        free(jreq->dmsg.destination);
+    if (jreq->dmsg.interface)
+        free(jreq->dmsg.interface);
+    if (jreq->dmsg.path)
+        free(jreq->dmsg.path);
+    if (jreq->dmsg.member)
+        free(jreq->dmsg.member);
+
     free(jreq);
 }
 
@@ -308,13 +317,5 @@ void add_jobj(struct json_object *args, char *key, struct json_object *jobj)
         json_object_array_add(args, jobj);
     else
         json_object_object_add(args, key, jobj);
-}
-
-void free_json_response(struct json_response *jrsp)
-{
-    if (jrsp->arg_sig) 
-        json_object_put(jrsp->args);
-
-    free(jrsp);
 }
 
