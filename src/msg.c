@@ -129,7 +129,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
         return -1;
     }
 
-    DBusConnection *conn;
+    DBusConnection *conn = NULL;
     char *uuid = NULL;
     char *arg = NULL;
     char *attr_cond = NULL;
@@ -144,10 +144,11 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
         (policy_rule->member && strcmp(policy_rule->member, dmsg->member)))
         return -1;
 
+    int policy = policy_rule->policy;
+
     if (policy_rule->if_bool || policy_rule->domtype) {
         conn = create_dbus_connection();
         struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
-
         size_t len;
         char path[256] = { 0 };
         snprintf(path, 255, "/local/domain/%d/vm", domid);
@@ -162,12 +163,9 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
                                policy_rule->if_bool_flag == 0) ||
                               (attr_cond[0] == 'f' &&
                                policy_rule->if_bool_flag == 1)) {  
-                free(uuid);
-                return -1;
+                policy = -1;
+                goto filtered;
             }
-
-            if (attr_cond)
-                free(attr_cond);
 
             if (arg) 
                 free(arg);
@@ -177,19 +175,36 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
             DBUS_REQ_ARG(arg, "%s/type", uuid);
             free(uuid);
             dom_type = db_query(conn, arg);
-            free(arg);
-            if (!dom_type || strcmp(policy_rule->domtype, dom_type))
-                return -1;
-
-            if (dom_type)
-                free(dom_type);
-
-            if (uuid)
-                free(uuid);
+            if (!dom_type || strcmp(policy_rule->domtype, dom_type)) {
+                policy = -1;
+                goto filtered;
+            }
         }
+
+        if (uuid)
+            free(uuid);
+
+        if (arg)
+            free(arg);
     }
 
+filtered:
 
-    return policy_rule->policy;
+    if (arg)
+        free(arg);
+
+    if (attr_cond)
+        free(attr_cond);
+
+    if (dom_type)
+        free(dom_type);
+
+    if (conn)
+        dbus_connection_close(conn);
+
+    if (policy == policy_rule->policy)
+        return policy_rule->policy;
+
+    return policy;
 }
 
