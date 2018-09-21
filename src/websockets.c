@@ -162,7 +162,7 @@ free_req:
     free_json_request(jreq);
 
 free_resp:
-    free_json_response(jrsp);
+    free(jrsp);
 
     return ret;
 }

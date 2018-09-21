@@ -214,7 +214,7 @@ static inline void service_signals(void)
         pthread_mutex_unlock(&ring_lock);
 
         dbus_message_unref(msg);
-        free_json_response(jrsp);
+        free(jrsp);
         curr = curr->next;
     }
 }

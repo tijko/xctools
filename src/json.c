@@ -61,7 +61,7 @@ struct json_response *make_json_request(struct json_request *jreq)
 
     if (!msg || dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) {
         DBUS_BROKER_WARNING("response to <%d> request failed", jreq->id);
-        free_json_response(jrsp);
+        free(jrsp);
         return NULL;
     }
 
