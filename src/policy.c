@@ -37,19 +37,15 @@ static inline void create_rule(struct rule *current, char *rule)
         char *field = strtok_r(NULL, delimiter, &ruleptr);
 
         switch (token[0]) {
-
             case ('d'): {
-
                 if (token[1] == 'e')
                     current->destination = strdup(field);
                 else
                     current->domtype = strdup(field);
-
                 break;
             }
 
             case ('i'): {
-
                 if (token[1] == 'n')
                     current->interface = strdup(field);
                 else {
@@ -57,7 +53,6 @@ static inline void create_rule(struct rule *current, char *rule)
                     token = strtok_r(NULL, delimiter, &ruleptr);
                     current->if_bool_flag = token[0] == 't' ? 1 : 0;
                 }
-
                 break;
             }
 
@@ -89,7 +84,6 @@ static inline void create_rule(struct rule *current, char *rule)
 static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
 {
     for (int rule_idx=0; rule_idx < MAX_RULES; rule_idx++) {
-
         char *arg;
         DBUS_REQ_ARG(arg, "/vm/%s/rpc-firewall-rules/%d",
                      dom->uuid, rule_idx);
@@ -110,6 +104,7 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
 
 }
 
+// XXX split up 
 static inline void get_etc_policy(struct etc_policy *etc,
                                   const char *rule_filepath)
 {

@@ -57,7 +57,6 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
                 char *rsp = (char *) lws_ring_get_element(ring, NULL);
                 lws_ring_consume(ring, NULL, NULL, 1);
                 memcpy(user + LWS_SEND_BUFFER_PRE_PADDING, rsp, strlen(rsp));
-
                 lws_write(wsi, user + LWS_SEND_BUFFER_PRE_PADDING,
                           strlen(rsp), LWS_WRITE_TEXT);
                 lws_callback_on_writable(wsi);
@@ -117,7 +116,6 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
         return ret;
     }
 
-
     struct json_request *jreq = convert_json_request(raw_req);
 
     if (!jreq)
@@ -139,7 +137,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     free(reply);
 
     if (strcmp("AddMatch", jreq->dmsg.member) == 0) {
-        
+        // XXX separate logic into individual functions...        
         struct dbus_link *curr;
         if (!dlinks) {
             dlinks = malloc(sizeof *dlinks);

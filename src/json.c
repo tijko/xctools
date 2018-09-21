@@ -174,10 +174,10 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
         iter = sub;
         // This accomodates the legacy code in `rpc-proxy` where the 
         // signatures are being mis-handled.
-        if (jrsp->arg_sig[1] == 'a' ||
-            jrsp->arg_sig[1] == 'o' ||
-            jrsp->arg_sig[1] == 's' ||
-            jrsp->arg_sig[1] == 'i') {
+        if (jrsp->arg_sig[1] == 'o' ||
+            jrsp->arg_sig[1] == 'a' ||
+            jrsp->arg_sig[1] == 'i' ||
+            jrsp->arg_sig[1] == 's') {
             struct json_object *array = json_object_new_array();
             json_object_array_add(jrsp->args, array);
             args = array;
