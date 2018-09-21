@@ -69,17 +69,20 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
         goto xml_error;
     }
 
-    const xmlChar *name = xmlGetProp(member_node, XML_DIRECTION_PROPERTY);
+    const xmlChar *name = NULL;
+    const xmlChar *type = NULL;
+
+    name = xmlGetProp(member_node, XML_DIRECTION_PROPERTY);
 
     while (name && !strcmp((const char *) name, XML_IN_FIELD)) {
         xmlFree(name);
-        const xmlChar *type = xmlGetProp(member_node,
-                                        (const xmlChar *) XML_TYPE_FIELD);
+        type = xmlGetProp(member_node, (const xmlChar *) XML_TYPE_FIELD);
 
-        if (type)
+        if (type) {
             args[idx++] = type[0];
+            xmlFree(type);
+        }
 
-        xmlFree(type);
         member_node = xmlNextElementSibling(member_node);
         name = xmlGetProp(member_node, XML_DIRECTION_PROPERTY);
     }
@@ -88,6 +91,12 @@ xml_error:
 
     if (error)
         DBUS_BROKER_WARNING("Invalid xml-%s", error);
+
+    if (name)
+        xmlFree(name);
+
+    if (type)
+        xmlFree(type);
 
     args[idx] = '\0';
     xmlFreeDoc(doc);
