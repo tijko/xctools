@@ -216,7 +216,6 @@ static signed int parse_json_args(struct json_object *jarray,
         signature++;
     }
 
-    free(signature);
     return 0;
 }
 
