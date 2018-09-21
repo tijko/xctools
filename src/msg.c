@@ -199,9 +199,6 @@ filtered:
     if (dom_type)
         free(dom_type);
 
-    if (conn)
-        dbus_connection_close(conn);
-
     if (policy == policy_rule->policy)
         return policy_rule->policy;
 
