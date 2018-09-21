@@ -153,7 +153,8 @@ static const char *get_json_str_obj(struct json_object *jobj, char *field)
 {
     struct json_object *jfield;
     json_object_object_get_ex(jobj, field, &jfield);
-    return json_object_get_string(jfield);
+    const char *json_str = strdup(json_object_get_string(jfield));
+    return json_str;
 }
 
 void load_json_response(DBusMessage *msg, struct json_response *jrsp)
