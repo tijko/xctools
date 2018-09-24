@@ -218,6 +218,7 @@ struct json_response {
 const char json_dbus_types[] = {
     [json_type_boolean]='b',
     [json_type_double]='d',
+    [json_type_int]='i',
     [json_type_string]='s'
 };
 
