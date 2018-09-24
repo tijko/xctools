@@ -215,12 +215,15 @@ struct json_response {
     struct json_object *args;
 };
 
+#ifndef JSON_DBUS_TYPES
+#define JSON_DBUS_TYPES
 const char json_dbus_types[] = {
     [json_type_boolean]='b',
     [json_type_double]='d',
     [json_type_int]='i',
     [json_type_string]='s'
 };
+#endif
 
 static const xmlChar XML_NAME_PROPERTY[]      = "name";
 static const xmlChar XML_DIRECTION_PROPERTY[] = "direction";
