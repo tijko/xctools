@@ -38,8 +38,8 @@ struct dbus_broker_server *start_server(int port)
     if (server->dbus_socket < 0)
         DBUS_BROKER_ERROR("v4v_socket");
 
-	server->addr.port = port;
-	server->addr.domain = V4V_DOMID_ANY;
+    server->addr.port = port;
+    server->addr.domain = V4V_DOMID_ANY;
     server->peer.port = 0;
     server->peer.domain = 0;
 

@@ -166,7 +166,8 @@ static int filter_domtype(DBusConnection *conn, char *uuid,
     char *dom_type = db_query(conn, arg);
     free(arg);
 
-    if (strcmp(policy_domtype, dom_type)) {
+    if (dom_type && strcmp(policy_domtype, dom_type)) {
+        free(dom_type); 
         free(uuid); 
         return -1;
     }
