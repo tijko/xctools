@@ -292,9 +292,8 @@ void free_policy(void)
     }
 
     struct etc_policy etc = dbus_broker_policy->etc; 
-    count = etc.count;
 
-    for (i=0; i < count; i++) 
+    for (i=0; i < etc.count; i++) 
         free_rule(etc.rules[i]);
 
     free(dbus_broker_policy);

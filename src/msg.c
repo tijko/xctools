@@ -55,9 +55,8 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
         if (dbus_broker_policy->domains[i].domid == domid) {
 
             struct domain_policy domain = dbus_broker_policy->domains[i];
-            int domain_count = domain.count;
 
-            for (j=0; j < domain_count; j++)
+            for (j=0; j < domain.count; j++)
                 policy = filter(&(domain.rules[j]), dmsg, domid);
 
             break;
