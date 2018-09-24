@@ -45,18 +45,19 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
     struct etc_policy etc = dbus_broker_policy->etc;
     int etc_count = etc.count;
 
-    for (int i=0; i < etc_count; i++)
+    int i, j;
+    for (i=0; i < etc_count; i++)
         policy = filter(&(etc.rules[i]), dmsg, domid);
 
     int domains = dbus_broker_policy->domain_number;
 
-    for (int i=0; i < domains; i++) {
+    for (i=0; i < domains; i++) {
         if (dbus_broker_policy->domains[i].domid == domid) {
 
             struct domain_policy domain = dbus_broker_policy->domains[i];
             int domain_count = domain.count;
 
-            for (int j=0; j < domain_count; j++)
+            for (j=0; j < domain_count; j++)
                 policy = filter(&(domain.rules[j]), dmsg, domid);
 
             break;
