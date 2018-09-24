@@ -121,6 +121,61 @@ int exchange(int rsock, int ssock,
     return wbytes;
 }
 
+static inline char *get_uuid(DBusConnection *conn, uint16_t domid)
+{
+    size_t len;
+    char path[256] = { 0 };
+
+    struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
+    snprintf(path, 255, "/local/domain/%d/vm", domid);
+
+    uuid = (char *) xs_read(xsh, XBT_NULL, path, &len);
+    xs_close(xsh);
+
+    return uuid;
+}
+
+static int filter_if_bool(DBusConnection *conn, char *uuid, 
+                          char *bool_cond, int bool_flag)
+{
+    char *arg = NULL;
+    char *attr_cond = NULL;
+
+    DBUS_REQ_ARG(arg, "%s/%s", uuid, bool_cond);
+    attr_cond = db_query(conn, arg);
+    free(arg); 
+
+    if (!attr_cond || (attr_cond[0] == 't' && bool_flag == 0) || 
+                      (attr_cond[0] == 'f' && bool_flag == 1)) {  
+        free(uuid);
+        return -1;
+    }
+
+    if (attr_cond)
+        free(attr_cond);
+
+    return 0;
+}
+
+static int filter_domtype(DBusConnection *conn, char *uuid, char *domtype)
+{
+    char *arg;
+
+    DBUS_REQ_ARG(arg, "%s/type", uuid);
+    dom_type = db_query(conn, arg);
+    free(arg);
+
+    if (strcmp(policy_rule->domtype, dom_type)) {
+        free(uuid); 
+        return -1;
+    }
+
+    if (dom_type)
+        free(dom_type);
+
+    return 0;
+}
+
 /*
  * The main policy filtering function, compares the policy-rule against the dbus
  * request being made.
@@ -134,11 +189,8 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
 
     DBusConnection *conn = NULL;
     char *uuid = NULL;
-    char *arg = NULL;
-    char *attr_cond = NULL;
-    char *dom_type = NULL;
 
-    if (((policy_rule->stubdom && is_stubdom(domid) < 1))                ||
+    if ((policy_rule->stubdom && is_stubdom(domid) < 1)                  ||
         (policy_rule->destination && strcmp(policy_rule->destination,
                                                  dmsg->destination))     ||
         (policy_rule->path && strcmp(policy_rule->path, dmsg->path))     ||
@@ -147,64 +199,25 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
         (policy_rule->member && strcmp(policy_rule->member, dmsg->member)))
         return -1;
 
-    int policy = policy_rule->policy;
-
     if (policy_rule->if_bool || policy_rule->domtype) {
         conn = create_dbus_connection();
-        struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
-        size_t len;
-        char path[256] = { 0 };
-        snprintf(path, 255, "/local/domain/%d/vm", domid);
-        uuid = (char *) xs_read(xsh, XBT_NULL, path, &len);
-        xs_close(xsh);
+        uuid = get_uuid(conn, domid);
 
-        if (policy_rule->if_bool) {
-            DBUS_REQ_ARG(arg, "%s/%s", uuid, policy_rule->if_bool);
-            attr_cond = db_query(conn, arg);
-            free(arg); 
-            if (!attr_cond || (attr_cond[0] == 't' &&
-                               policy_rule->if_bool_flag == 0) ||
-                              (attr_cond[0] == 'f' &&
-                               policy_rule->if_bool_flag == 1)) {  
-                policy = -1;
-                goto filtered;
-            }
-
-            if (arg) 
-                free(arg);
+        if (policy_rule->if_bool && 
+            filter_if_bool(conn, uuid, policy_rule->if_bool, 
+                                       policy_rule->if_bool_flag) < 0) {
+            return -1;
         }
 
-        if (policy_rule->domtype) {
-            DBUS_REQ_ARG(arg, "%s/type", uuid);
-            free(uuid);
-            dom_type = db_query(conn, arg);
-            if (!dom_type || strcmp(policy_rule->domtype, dom_type)) {
-                policy = -1;
-                goto filtered;
-            }
+        if (policy_rule->domtype && 
+            filter_dom_type(conn, uuid, policy_rule->domtype) < 0) {
+            return -1;
         }
-
-        if (uuid)
-            free(uuid);
-
-        if (arg)
-            free(arg);
     }
 
-filtered:
+    if (uuid)
+        free(uuid);
 
-    if (arg)
-        free(arg);
-
-    if (attr_cond)
-        free(attr_cond);
-
-    if (dom_type)
-        free(dom_type);
-
-    if (policy == policy_rule->policy)
-        return policy_rule->policy;
-
-    return policy;
+    return policy_rule->policy;
 }
 
