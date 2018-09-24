@@ -205,8 +205,10 @@ DBusMessage *db_list(void)
 
     DBusMessage *vms = make_dbus_call(conn, &dmsg);
 
-    if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) 
+    if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) {
+        dbus_message_unref(vms); 
         vms = NULL;
+    }
 
     return vms;
 }

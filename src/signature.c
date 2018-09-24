@@ -81,11 +81,13 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
 
     while (name && !strcmp((const char *) name, XML_IN_FIELD)) {
         xmlFree(name);
+        name = NULL;
         type = xmlGetProp(member_node, (const xmlChar *) XML_TYPE_FIELD);
 
         if (type) {
             args[idx++] = type[0];
             xmlFree(type);
+            type = NULL;
         }
 
         member_node = xmlNextElementSibling(member_node);
