@@ -157,15 +157,16 @@ static int filter_if_bool(DBusConnection *conn, char *uuid,
     return 0;
 }
 
-static int filter_domtype(DBusConnection *conn, char *uuid, char *domtype)
+static int filter_domtype(DBusConnection *conn, char *uuid, 
+                                                char *policy_domtype)
 {
     char *arg;
 
     DBUS_REQ_ARG(arg, "%s/type", uuid);
-    dom_type = db_query(conn, arg);
+    char *dom_type = db_query(conn, arg);
     free(arg);
 
-    if (strcmp(policy_rule->domtype, dom_type)) {
+    if (strcmp(policy_domtype, dom_type)) {
         free(uuid); 
         return -1;
     }
