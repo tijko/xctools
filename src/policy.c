@@ -26,7 +26,7 @@ static inline void create_rule(struct rule *current, char *rule)
 
     current->rule_string = strdup(rule);
     char *ruleptr;
-    char *delimiter = " ";
+    const char *delimiter = " ";
     char *token = strtok_r(rule, delimiter, &ruleptr);
 
     current->policy = token[0] == 'a' ? 1 : 0;
