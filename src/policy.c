@@ -108,7 +108,7 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
         struct rule *policy_rule = &(dom->rules[rule_idx]);
 
         if (create_rule(policy_rule, rulestring) < 0)
-            free_rule(policy_rule);
+            free_rule(*policy_rule);
         else
             dom->count++;
 
@@ -178,7 +178,7 @@ static inline void get_etc_policy(struct etc_policy *etc,
             char *line = strdup(rule_token);
             struct rule *current = &(etc->rules[idx]);
             if (create_rule(current, line) < 0)
-                free_rule(current);
+                free_rule(*current);
             else
                 idx++;
             free(line);
