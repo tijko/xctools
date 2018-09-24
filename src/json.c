@@ -71,37 +71,6 @@ struct json_response *make_json_request(struct json_request *jreq)
     return jrsp;
 }
 
-static inline char json_arg_to_dbus_type(int jtype)
-{
-    char dbus_type;
-
-    switch (jtype) {
-
-        case (json_type_boolean):
-            dbus_type = 'b';
-            break;
-
-        case (json_type_int):
-            dbus_type = 'i';
-            break;
-
-        case (json_type_string):
-            dbus_type = 's';
-            break;
-
-        case (json_type_double):
-            dbus_type = 'd';
-            break;
-
-        default:
-            DBUS_BROKER_WARNING("Json unknown argument <%d>", jtype);
-            dbus_type = 'z';
-            break;
-    }
-
-    return dbus_type;
-}
-
 static void append_dbus_message_arg(int type, int idx, void **args, 
                                           struct json_object *jarg)
 {
@@ -138,8 +107,9 @@ static void append_dbus_message_arg(int type, int idx, void **args,
         }
 
         case ('v'): {
+            // check range of jtype
             int jtype = json_object_get_type(jarg);
-            type = json_arg_to_dbus_type(jtype);
+            type = json_dbus_types[jtype];
             append_dbus_message_arg(type, idx, args, jarg);
             break;
         }
@@ -217,8 +187,8 @@ static signed int parse_json_args(struct json_object *jarray,
             ((char *) jreq->dmsg.args[i])[0] = '\0';
             continue;
         }
-
-        jreq->dmsg.json_sig[i] = json_arg_to_dbus_type(jtype);
+// check range of jtype
+        jreq->dmsg.json_sig[i] = json_dbus_types[jtype];
         append_dbus_message_arg(*sigptr, i, jreq->dmsg.args, jarg);
         sigptr++;
     }

@@ -78,7 +78,6 @@ struct dbus_link *dlinks;
    (see re-assigning) Use a linked list instead....
 */
 
-//
 
 #define DBUS_BROKER_WARNING(fmt, ...) DBUS_LOG(LOG_WARNING, fmt, __VA_ARGS__)
 #define DBUS_BROKER_EVENT(fmt, ...)   DBUS_LOG(LOG_INFO, fmt, __VA_ARGS__)
@@ -214,6 +213,12 @@ struct json_response {
     char type[JSON_TYPE_MAX];
     char arg_sig[DBUS_MAX_ARG_LEN];
     struct json_object *args;
+};
+
+const char json_dbus_types[] = {
+    [json_type_boolean]='b',
+    [json_type_double]='d',
+    [json_type_string]='s'
 };
 
 static const xmlChar XML_NAME_PROPERTY[]      = "name";
