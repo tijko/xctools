@@ -33,7 +33,7 @@ static int create_rule(struct rule *current, char *rule)
     if (!token)
         return -1;
 
-    current->policy = token[0] == 'a' ? 1 : 0;
+    current->policy = token[0] == 'a';
     token = strtok_r(NULL, delimiter, &ruleptr);
 
     while (token) {
@@ -58,7 +58,7 @@ static int create_rule(struct rule *current, char *rule)
                 else {
                     current->if_bool = strdup(field);
                     token = strtok_r(NULL, delimiter, &ruleptr);
-                    current->if_bool_flag = token[0] == 't' ? 1 : 0;
+                    current->if_bool_flag = token[0] == 't';
                 }
                 break;
             }
@@ -93,7 +93,9 @@ static int create_rule(struct rule *current, char *rule)
 
 static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
 {
-    for (int rule_idx=0; rule_idx < MAX_RULES; rule_idx++) {
+    int rule_idx;
+
+    for (rule_idx=0; rule_idx < MAX_RULES; rule_idx++) {
         char *arg;
         DBUS_REQ_ARG(arg, "/vm/%s/rpc-firewall-rules/%d",
                      dom->uuid, rule_idx);
@@ -117,9 +119,7 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
 
 }
 
-// XXX split up 
-static inline void get_etc_policy(struct etc_policy *etc,
-                                  const char *rule_filepath)
+static void get_etc_policy(struct etc_policy *etc, const char *rule_filepath)
 {
     struct stat policy_stat;
     etc->count = 0;
@@ -141,13 +141,13 @@ static inline void get_etc_policy(struct etc_policy *etc,
 
     size_t policy_size = policy_stat.st_size;
 
+    // There is no officially defined limit on policy file size.
+    // Rpc-broker defines a buffer size and for now limit based on that size.
     if (policy_size > ETC_MAX_FILE) {
         DBUS_BROKER_WARNING("/etc policy file %s exceeds buffer size <%d>",
                              rule_filepath, policy_size);
         return;
     }
-
-    etc->filepath = rule_filepath;
 
     int policy_fd = open(rule_filepath, O_RDONLY);
 
@@ -230,7 +230,7 @@ struct policy *build_policy(const char *rule_filename)
         dbus_message_iter_get_basic(&sub, &arg);
 
         struct domain_policy *current = &(dbus_policy->domains[dom_idx]);
-        strcpy(arg, current->uuid);
+        strcpy(current->uuid, arg);
         current->domid = strtol(arg + DOMID_SECTION, NULL, 10);
 
         get_rules(conn, current);

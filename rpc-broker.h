@@ -109,7 +109,6 @@ struct rule {
 
 struct etc_policy {
     const char *filename;
-    const char *filepath;
     const size_t filesize;
     char etc_file[ETC_MAX_FILE];
     uid_t  file_owner;
