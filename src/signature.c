@@ -46,8 +46,16 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
 {
     int idx = 0;
     char *error = NULL;
+    const xmlChar *name = NULL;
+    const xmlChar *type = NULL;
 
     xmlDocPtr doc = xmlParseDoc(xml_dump);
+
+    if (doc == NULL) {
+        error = "doc";
+        goto xml_error;
+    }
+
     xmlNodePtr root = xmlDocGetRootElement(doc);
 
     if (root == NULL) {
@@ -68,9 +76,6 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
         error = "member";
         goto xml_error;
     }
-
-    const xmlChar *name = NULL;
-    const xmlChar *type = NULL;
 
     name = xmlGetProp(member_node, XML_DIRECTION_PROPERTY);
 
