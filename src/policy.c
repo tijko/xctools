@@ -19,15 +19,19 @@
 #include "../rpc-broker.h"
 
 
-static inline void create_rule(struct rule *current, char *rule)
+static int create_rule(struct rule *current, char *rule)
 {
     if (!rule || rule[0] == '\0')
-        return;
+        return -1;
 
     current->rule_string = strdup(rule);
+
     char *ruleptr;
     const char *delimiter = " ";
     char *token = strtok_r(rule, delimiter, &ruleptr);
+
+    if (!token)
+        return -1;
 
     current->policy = token[0] == 'a' ? 1 : 0;
     token = strtok_r(NULL, delimiter, &ruleptr);
@@ -35,6 +39,9 @@ static inline void create_rule(struct rule *current, char *rule)
     while (token) {
 
         char *field = strtok_r(NULL, delimiter, &ruleptr);
+
+        if (!field && token[0] != 's')
+            return -1;
 
         switch (token[0]) {
             case ('d'): {
@@ -69,6 +76,7 @@ static inline void create_rule(struct rule *current, char *rule)
                 break;
 
 			case ('a'):
+                // "out any"
 				break;
 
             default:
@@ -79,6 +87,8 @@ static inline void create_rule(struct rule *current, char *rule)
 
         token = strtok_r(NULL, delimiter, &ruleptr);
     }
+
+    return 0;
 }
 
 static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
@@ -96,9 +106,12 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
             break;
 
         struct rule *policy_rule = &(dom->rules[rule_idx]);
-        create_rule(policy_rule, rulestring);
 
-        dom->count++;
+        if (create_rule(policy_rule, rulestring) < 0)
+            free_rule(policy_rule);
+        else
+            dom->count++;
+
         free(rulestring);
     }
 
@@ -163,8 +176,11 @@ static inline void get_etc_policy(struct etc_policy *etc,
     while (rule_token &&  idx < MAX_RULES) {
         if (isalpha(rule_token[0])) {
             char *line = strdup(rule_token);
-            struct rule *current = &(etc->rules[idx++]);
-            create_rule(current, line);
+            struct rule *current = &(etc->rules[idx]);
+            if (create_rule(current, line) < 0)
+                free_rule(current);
+            else
+                idx++;
             free(line);
         }
 
