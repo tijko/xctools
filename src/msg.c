@@ -113,9 +113,12 @@ int exchange(int rsock, int ssock,
     if (rbytes < 1)
         return rbytes;
 
-    snd(ssock, buf, rbytes, 0);
+    int wbytes = snd(ssock, buf, rbytes, 0);
 
-    return rbytes;
+    if (wbytes < 0)
+        DBUS_BROKER_WARNING("DBus-Message incomplete send %s", "");
+
+    return wbytes;
 }
 
 /*
