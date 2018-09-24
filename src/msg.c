@@ -129,7 +129,7 @@ static inline char *get_uuid(DBusConnection *conn, uint16_t domid)
     struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
     snprintf(path, 255, "/local/domain/%d/vm", domid);
 
-    uuid = (char *) xs_read(xsh, XBT_NULL, path, &len);
+    char *uuid = (char *) xs_read(xsh, XBT_NULL, path, &len);
     xs_close(xsh);
 
     return uuid;
