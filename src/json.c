@@ -94,7 +94,7 @@ static inline char json_arg_to_dbus_type(int jtype)
             break;
 
         default:
-            printf("Missed setting jtype\n");
+            DBUS_BROKER_WARNING("Json unknown argument <%d>", jtype);
             dbus_type = 'z';
             break;
     }
@@ -102,8 +102,8 @@ static inline char json_arg_to_dbus_type(int jtype)
     return dbus_type;
 }
 
-static inline void append_dbus_message_arg(int type, int idx, void **args,
-                                                 struct json_object *jarg)
+static void append_dbus_message_arg(int type, int idx, void **args, 
+                                          struct json_object *jarg)
 {
     // The "argument" array -> `void **args` will be set-up as an array of
     // `struct arg` and these types won't need to be declared;
@@ -153,8 +153,7 @@ static const char *get_json_str_obj(struct json_object *jobj, char *field)
 {
     struct json_object *jfield;
     json_object_object_get_ex(jobj, field, &jfield);
-    const char *json_str = strdup(json_object_get_string(jfield));
-    return json_str;
+    return strdup(json_object_get_string(jfield));
 }
 
 void load_json_response(DBusMessage *msg, struct json_response *jrsp)
@@ -174,13 +173,18 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
         iter = sub;
         // This accomodates the legacy code in `rpc-proxy` where the 
         // signatures are being mis-handled.
-        if (jrsp->arg_sig[1] == 'o' ||
-            jrsp->arg_sig[1] == 'a' ||
-            jrsp->arg_sig[1] == 'i' ||
-            jrsp->arg_sig[1] == 's') {
-            struct json_object *array = json_object_new_array();
-            json_object_array_add(jrsp->args, array);
-            args = array;
+        switch (jrsp->arg_sig[1]) {
+            case 'a':
+            case 'i':
+            case 's':
+            case 'o': 
+                struct json_object *array = json_object_new_array();
+                json_object_array_add(jrsp->args, array);
+                args = array;
+                break;
+
+            default:
+                break;
         }
     }
 
