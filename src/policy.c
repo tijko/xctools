@@ -224,9 +224,10 @@ struct policy *build_policy(const char *rule_filename)
     dbus_message_iter_init(vms, &iter);
     dbus_message_iter_recurse(&iter, &sub);
 
-    for (int dom_idx=0;
-             dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_INVALID;
-             dom_idx++) {
+    int dom_idx;
+    for (dom_idx=0;
+         dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_INVALID;
+         dom_idx++) {
 
         void *arg;
         dbus_message_iter_get_basic(&sub, &arg);
@@ -277,17 +278,18 @@ void free_policy(void)
 {
     int count = dbus_broker_policy->domain_number;
 
-    for (int i=0; i < count; i++) {
+    int i, j;
+    for (i=0; i < count; i++) {
 
         struct domain_policy domain = dbus_broker_policy->domains[i];
-        for (int i=0; i < domain.count; i++)
-            free_rule(domain.rules[i]);
+        for (j=0; j < domain.count; j++)
+            free_rule(domain.rules[j]);
     }
 
     struct etc_policy etc = dbus_broker_policy->etc; 
     count = etc.count;
 
-    for (int i=0; i < count; i++) 
+    for (i=0; i < count; i++) 
         free_rule(etc.rules[i]);
 
     free(dbus_broker_policy);
