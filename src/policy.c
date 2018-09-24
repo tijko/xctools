@@ -234,7 +234,12 @@ struct policy *build_policy(const char *rule_filename)
 
         struct domain_policy *current = &(dbus_policy->domains[dom_idx]);
         strcpy(current->uuid, arg);
+        errno = 0;
         current->domid = strtol(arg + DOMID_SECTION, NULL, 10);
+        if (errno != 0) {
+            DBUS_BROKER_WARNING("Domain ID error <%s>", strerror(errno));
+            continue;
+        }
 
         get_rules(conn, current);
 
