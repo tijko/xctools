@@ -211,7 +211,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
         }
 
         if (policy_rule->domtype && 
-            filter_dom_type(conn, uuid, policy_rule->domtype) < 0) {
+            filter_domtype(conn, uuid, policy_rule->domtype) < 0) {
             return -1;
         }
     }
