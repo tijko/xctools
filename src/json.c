@@ -177,11 +177,12 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
             case 'a':
             case 'i':
             case 's':
-            case 'o': 
+            case 'o': { 
                 struct json_object *array = json_object_new_array();
                 json_object_array_add(jrsp->args, array);
                 args = array;
                 break;
+            }
 
             default:
                 break;
