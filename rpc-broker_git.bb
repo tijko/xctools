@@ -14,7 +14,7 @@ SRC_URI = "git://github.com/tijko/rpc-broker;protocol=https;branch=master \
 S = "${WORKDIR}/git"
 
 INITSCRIPT_NAME = "rpc-broker"
-INITSCRIPT_PARAMS = "defaults 40"
+INITSCRIPT_PARAMS = "defaults 72"
 
 
 inherit autotools pkgconfig update-rc.d
