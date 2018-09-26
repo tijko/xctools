@@ -234,7 +234,6 @@ pthread_mutex_t ring_lock;
 pthread_mutex_t policy_lock;
 
 int dbus_broker_running;
-int connection_open;
 
 struct broker_signal {
     DBusConnection *conn;
