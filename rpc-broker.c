@@ -251,7 +251,6 @@ static void run(struct dbus_broker_args *args)
                         BROKER_UI_PORT);
 
     dbus_broker_running = 1;
-    connection_open = 1;
     dlinks = NULL;
 
     while (dbus_broker_running) {
