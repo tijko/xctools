@@ -96,7 +96,7 @@ static void append_dbus_message_arg(int type, int idx, void **args,
 
         case ('s'): {
             const char *json_str = json_object_get_string(jarg);
-            args[idx] = malloc(sizeof(char) * strlen(json_str) + 1);
+            args[idx] = malloc(strlen(json_str) + 1);
             if (json_str)
                 memcpy(args[idx], (void *) json_str, strlen(json_str) + 1);
             else

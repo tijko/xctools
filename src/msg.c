@@ -43,10 +43,9 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
     }
 
     struct etc_policy etc = dbus_broker_policy->etc;
-    int etc_count = etc.count;
 
     int i, j;
-    for (i=0; i < etc_count; i++)
+    for (i=0; i < etc.count; i++)
         policy = filter(&(etc.rules[i]), dmsg, domid);
 
     int domains = dbus_broker_policy->domain_number;
@@ -127,6 +126,10 @@ static inline char *get_uuid(DBusConnection *conn, uint16_t domid)
     char path[256] = { 0 };
 
     struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
+
+    if (!xsh)
+       return NULL;
+
     snprintf(path, 255, "/local/domain/%d/vm", domid);
 
     char *uuid = (char *) xs_read(xsh, XBT_NULL, path, &len);
@@ -203,7 +206,8 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
 
     if (policy_rule->if_bool || policy_rule->domtype) {
         conn = create_dbus_connection();
-        uuid = get_uuid(conn, domid);
+        if (!(uuid = get_uuid(conn, domid)));
+            break;
 
         if (policy_rule->if_bool && 
             filter_if_bool(conn, uuid, policy_rule->if_bool, 
