@@ -64,7 +64,7 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
     }
 
     xmlNodePtr interface_node = find_xml_property(interface, XML_NAME_PROPERTY,
-                                              xmlFirstElementChild(root));
+                                                   xmlFirstElementChild(root));
     if (interface_node == NULL) {
         error = "interface";
         goto xml_error;

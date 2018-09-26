@@ -309,6 +309,26 @@ char *dbus_introspect(struct json_request *jreq)
     return signature;
 }
 
+void add_dbus_signal(DBusConnection *conn, struct lws *wsi)
+{
+    struct dbus_link *curr;
+
+    if (!dlinks) {
+        dlinks = malloc(sizeof *dlinks);
+        curr = dlinks;
+    } else {
+        curr = dlinks;
+        while (curr->next)
+            curr = curr->next;
+        curr->next = malloc(sizeof *dlinks);
+        curr = curr->next;
+    }
+
+    curr->wsi = wsi;
+    curr->dconn = conn;
+    curr->next = NULL;
+}
+
 void free_dlinks(void)
 {
     struct dbus_link *curr = dlinks;

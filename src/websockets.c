@@ -132,24 +132,8 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     lws_ring_insert(ring, reply, 1);
     free(reply);
 
-    if (strcmp("AddMatch", jreq->dmsg.member) == 0) {
-        // XXX separate logic into individual functions...        
-        struct dbus_link *curr;
-        if (!dlinks) {
-            dlinks = malloc(sizeof *dlinks);
-            curr = dlinks;
-        } else {
-            curr = dlinks;
-            while (curr->next)
-                curr = curr->next;
-            curr->next = malloc(sizeof *dlinks);
-            curr = curr->next;
-        }
-
-        curr->wsi = jreq->wsi;
-        curr->dconn = jreq->conn;
-        curr->next = NULL;
-    } 
+    if (strcmp("AddMatch", jreq->dmsg.member) == 0) 
+        add_dbus_signal(jreq->conn, wsi);
 
     ret = 0;
 

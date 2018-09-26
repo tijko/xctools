@@ -207,7 +207,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
     if (policy_rule->if_bool || policy_rule->domtype) {
         conn = create_dbus_connection();
         if (!(uuid = get_uuid(conn, domid)));
-            break;
+            return -1;
 
         if (policy_rule->if_bool && 
             filter_if_bool(conn, uuid, policy_rule->if_bool, 

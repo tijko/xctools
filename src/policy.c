@@ -224,18 +224,20 @@ struct policy *build_policy(const char *rule_filename)
     dbus_message_iter_init(vms, &iter);
     dbus_message_iter_recurse(&iter, &sub);
 
-    int dom_idx;
-    for (dom_idx=0;
-         dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_INVALID;
-         dom_idx++) {
+    int dom_idx = 0;
+
+    while (dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_INVALID) {
 
         void *arg;
         dbus_message_iter_get_basic(&sub, &arg);
 
         struct domain_policy *current = &(dbus_policy->domains[dom_idx]);
         strcpy(current->uuid, arg);
+
         errno = 0;
+        // XXX domain ID's set?
         current->domid = strtol(arg + DOMID_SECTION, NULL, 10);
+
         if (errno != 0) {
             DBUS_BROKER_WARNING("Domain ID error <%s>", strerror(errno));
             continue;
@@ -244,8 +246,10 @@ struct policy *build_policy(const char *rule_filename)
         get_rules(conn, current);
 
         dbus_message_iter_next(&sub);
-        dbus_policy->domain_number++;
+        dom_idx++;
     }
+
+    dbus_policy->domain_number = dom_idx;
 
     struct etc_policy *etc = &(dbus_policy->etc);
     get_etc_policy(etc, rule_filename);

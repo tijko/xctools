@@ -292,6 +292,8 @@ char *db_query(DBusConnection *conn, char *arg);
 
 char *dbus_introspect(struct json_request *jreq);
 
+void add_dbus_signal(DBusConnection *conn, struct lws *wsi);
+
 void free_dlinks(void);
 
 #define DBUS_DB_DEST     "com.citrix.xenclient.db"
