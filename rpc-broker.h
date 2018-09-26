@@ -187,6 +187,9 @@ struct dbus_message {
 #define DOMID_UUID_LEN 8
 #define DOMID_SECTION 24
 
+#define XENSTORE_TARGET_LEN 8
+#define XENSTORE_TARGET "/target"
+
 #define WS_RING_BUFFER_MEMBER_SIZE 4096
 #define WS_RING_BUFFER_MEMBER_NUM    64
 
@@ -221,6 +224,8 @@ static const char json_dbus_types[] = {
     [json_type_int]='i',
     [json_type_string]='s'
 };
+
+#define XML_SIGNATURE_MAX 16
 
 static const xmlChar XML_NAME_PROPERTY[]      = "name";
 static const xmlChar XML_DIRECTION_PROPERTY[] = "direction";

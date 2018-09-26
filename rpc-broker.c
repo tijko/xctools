@@ -91,8 +91,8 @@ signed int is_stubdom(uint16_t domid)
 
     char *path = xs_get_domain_path(xsh, domid);
 
-    path = realloc(path, sizeof(char) * strlen(path) + 8);
-    strcat(path, "/target");
+    path = realloc(path, strlen(path) + XENSTORE_TARGET_LEN);
+    strcat(path, XENSTORE_TARGET);
 
     void *ret = xs_read(xsh, XBT_NULL, path, &len);
 
@@ -181,9 +181,9 @@ static inline void service_signals(void)
     while (curr) { 
         dbus_connection_read_write(curr->dconn, 0);
         DBusMessage *msg = dbus_connection_pop_message(curr->dconn);
+        curr = curr->next;
 
         if (!msg || dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL) {
-            curr = curr->next; 
             if (msg)
                 dbus_message_unref(msg);
             continue;
@@ -209,7 +209,6 @@ static inline void service_signals(void)
 
         dbus_message_unref(msg);
         free(jrsp);
-        curr = curr->next;
     }
 }
 

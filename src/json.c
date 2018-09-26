@@ -21,8 +21,7 @@
 
 struct json_response *init_jrsp(void)
 {
-    struct json_response *jrsp = calloc(sizeof *jrsp +
-                                       (sizeof(char *) * JSON_REQ_MAX), 1);
+    struct json_response *jrsp = calloc(1, sizeof *jrsp);
 
     jrsp->args = json_object_new_array();
     jrsp->id = rand() % 4096;
