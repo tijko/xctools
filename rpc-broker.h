@@ -288,6 +288,8 @@ char *db_query(DBusConnection *conn, char *arg);
 
 char *dbus_introspect(struct json_request *jreq);
 
+void free_dlinks(void);
+
 #define DBUS_DB_DEST     "com.citrix.xenclient.db"
 #define DBUS_DB_IFACE    "com.citrix.xenclient.db"
 #define DBUS_VM_PATH     "/vm"

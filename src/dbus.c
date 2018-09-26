@@ -309,3 +309,12 @@ char *dbus_introspect(struct json_request *jreq)
     return signature;
 }
 
+void free_dlinks(void)
+{
+    struct dbus_link *curr = dlinks;
+    while (curr) {
+        struct dbus_link *tmp = curr->next;
+        free(curr);
+        curr = tmp;
+    }
+}
