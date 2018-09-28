@@ -97,7 +97,8 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
 xml_error:
 
     if (error)
-        DBUS_BROKER_WARNING("Invalid xml-%s", error);
+        DBUS_BROKER_WARNING("Invalid xml-%s <Inteface:%s and Member:%s", 
+                             error, interface, member);
 
     if (name)
         xmlFree(name);
