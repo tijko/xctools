@@ -204,8 +204,10 @@ DBusMessage *db_list(void)
     dmsg.args[0] = (void *) DBUS_VM_PATH;
 
     DBusMessage *vms = make_dbus_call(conn, &dmsg);
-
-    if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) {
+    if (!vms) 
+        DBUS_BROKER_WARNING("DBus message request failed <db-list> %s", "");
+    else if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) {
+        DBUS_BROKER_WARNING("DBus message return error <db-list> %s", "");
         dbus_message_unref(vms); 
         vms = NULL;
     }
