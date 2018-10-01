@@ -301,7 +301,7 @@ char *dbus_introspect(struct json_request *jreq)
     dbus_connection_flush(jreq->conn);
 
     char *signature = NULL;
-    char *xml = malloc(strlen(reply) + 1);
+    char *xml = malloc(DBUS_INTROSPECT_MAX);
 
     DBusMessage *introspect = make_dbus_call(jreq->conn, &dmsg);
 

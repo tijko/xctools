@@ -154,12 +154,14 @@ struct dbus_broker_server {
 #define DBUS_BROKER_TIMEOUT 100
 
 // DBus-Broker messages
-#define DBUS_REQ_TIMEOUT 1000
-#define DBUS_MSG_LEN     8192
-#define DBUS_ARG_LEN     1024
+#define DBUS_REQ_TIMEOUT    1000
+#define DBUS_MSG_LEN        8192
+#define DBUS_ARG_LEN        1024
 
-#define DBUS_BUS_ADDR_LEN 256
-#define DBUS_MAX_ARG_LEN   16
+#define DBUS_INTROSPECT_MAX 0xFFFF
+
+#define DBUS_BUS_ADDR_LEN   256
+#define DBUS_MAX_ARG_LEN    16
 
 struct dbus_message {
     const char *destination;
