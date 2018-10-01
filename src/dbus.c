@@ -299,14 +299,21 @@ char *dbus_introspect(struct json_request *jreq)
                                  .arg_number=0 };
 
     dbus_connection_flush(jreq->conn);
+
+    char *signature = NULL;
+    char *xml = malloc(strlen(reply) + 1);
+
     DBusMessage *introspect = make_dbus_call(jreq->conn, &dmsg);
+
     if (!introspect) {
         DBUS_BROKER_WARNING("DBus Introspection message failed %s", "");
-        return NULL;
+        goto msg_error;
     }
 
-    if (dbus_message_get_type(introspect) == DBUS_MESSAGE_TYPE_ERROR)
-        return NULL;
+    if (dbus_message_get_type(introspect) == DBUS_MESSAGE_TYPE_ERROR) {
+        DBUS_BROKER_WARNING("DBus Introspection message failed %s", "");
+        goto msg_return_error;
+    }
 
     char *reply;
 
@@ -315,19 +322,21 @@ char *dbus_introspect(struct json_request *jreq)
 
     if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRING) {
         DBUS_BROKER_WARNING("DBus Introspect return invalid type %s", "");
-        dbus_message_unref(introspect);
-        return NULL;
+        goto msg_return_error;
     }
 
     dbus_message_iter_get_basic(&iter, &reply);
-    char *xml = malloc(strlen(reply) + 1);
+
     strcpy(xml, reply);
-    char *signature = calloc(1, XML_SIGNATURE_MAX);
+    signature = calloc(1, XML_SIGNATURE_MAX);
     if (retrieve_xml_signature((const xmlChar *) xml, signature,
                                 jreq->dmsg.interface, jreq->dmsg.member) < 1)
         signature[0] = '\0';
 
+msg_return_error:
     dbus_message_unref(introspect);
+
+msg_error:
     free(xml);
 
     return signature;
