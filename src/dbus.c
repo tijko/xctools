@@ -240,6 +240,8 @@ char *db_query(DBusConnection *conn, char *arg)
 {
     char *buf;
     char *reply = calloc(1, RULE_MAX_LENGTH);
+    char *error_msg = "DBus DB-Query %s";
+    char *error_name = NULL;
 
     struct dbus_message dmsg;
     dbus_default(&dmsg);
@@ -247,22 +249,41 @@ char *db_query(DBusConnection *conn, char *arg)
     dmsg.args[0] = (void *) arg;
 
     DBusMessage *msg = make_dbus_call(conn, &dmsg);
+    if (!msg) {
+        error_name = "message request failed";
+        goto free_reply;
+    }
 
     DBusMessageIter iter;
     if (!dbus_message_iter_init(msg, &iter)) {
-        free(reply);
-        return NULL;
+        error_name = "invalid return";
+        goto free_msg;
+    }
+
+    if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRING) {
+        error_name = "invalid type";
+        goto free_msg;
     }
 
     dbus_message_iter_get_basic(&iter, &buf);
+
+    if (buf[0] != '\0') 
+        goto ret;
+
+    error_name = "not a valid entry";
+
+free_msg:
     dbus_message_unref(msg);
 
-    if (buf[0] == '\0') {
-        free(reply);
-        return NULL;
-    }
+free_reply:
+    free(reply);
 
+    DBUS_BROKER_WARNING(error_msg, error_name);
+    return NULL;
+
+ret:
     strcpy(reply, buf);
+    dbus_message_unref(msg);
 
     return reply;
 }
@@ -295,6 +316,7 @@ char *dbus_introspect(struct json_request *jreq)
 
     DBusMessageIter iter;
     dbus_message_iter_init(introspect, &iter);
+    // XXX check type dbus_message_iter_get_type
     dbus_message_iter_get_basic(&iter, &reply);
     char *xml = malloc(strlen(reply) + 1);
     strcpy(xml, reply);
