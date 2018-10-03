@@ -202,6 +202,9 @@ static inline void service_signals(void)
         jrsp->path = dbus_message_get_path(msg);
         char *reply = prepare_json_reply(jrsp);
 
+        if (!reply) 
+            goto free_msg;
+
         pthread_mutex_lock(&ring_lock);
         lws_ring_insert(ring, reply, 1);
         free(reply);
@@ -209,6 +212,7 @@ static inline void service_signals(void)
 
         pthread_mutex_unlock(&ring_lock);
 
+free_msg:
         dbus_message_unref(msg);
         free(jrsp);
     }
