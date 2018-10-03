@@ -222,6 +222,9 @@ struct policy *build_policy(const char *rule_filename)
 
     struct policy *dbus_policy = calloc(1, sizeof *dbus_policy);
 
+    if (!vms)
+        return dbus_policy;
+
     DBusMessageIter iter, sub;
     dbus_message_iter_init(vms, &iter);
     dbus_message_iter_recurse(&iter, &sub);

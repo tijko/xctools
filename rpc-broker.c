@@ -183,9 +183,11 @@ static inline void service_signals(void)
         DBusMessage *msg = dbus_connection_pop_message(curr->dconn);
         curr = curr->next;
 
-        if (!msg || dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL) {
-            if (msg)
-                dbus_message_unref(msg);
+        if (!msg)
+            continue;
+    
+        if (dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL) {
+            dbus_message_unref(msg);
             continue;
         }
 
