@@ -19,6 +19,11 @@
 #include "../rpc-broker.h"
 
 
+/*
+ * Recursively traverse the XML DocTree of a given dbus destination to find the
+ * target property.  This arranged in a generic/opaque manner where you could 
+ * use this for any xml-property you want.
+ */
 xmlNodePtr find_xml_property(const char *target, const xmlChar *property,
                              xmlNodePtr node)
 {
@@ -41,6 +46,13 @@ xmlNodePtr find_xml_property(const char *target, const xmlChar *property,
     return node;
 }
 
+/*
+ * The main function for handling the dbus xml signature parsing.  Parsing XML
+ * schema for each dbus request is necessary because there is no way to rely
+ * on the JSON object returning the correct argument type required for each
+ * request.  JSON doesn't handle signedness, thus dbus will fail if adding
+ * a request argument based solely on `json_object_get_type`
+ */
 int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
                            const char *interface, const char *member)
 {
@@ -63,6 +75,7 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
         goto xml_error;
     }
 
+    /* Find the interface for the request */
     xmlNodePtr interface_node = find_xml_property(interface, XML_NAME_PROPERTY,
                                                    xmlFirstElementChild(root));
     if (interface_node == NULL) {
@@ -70,6 +83,7 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
         goto xml_error;
     }
 
+    /* Find the method being requested */
     xmlNodePtr member_node = find_xml_property(member, XML_NAME_PROPERTY,
                                                interface_node);
     if (member_node == NULL) {
@@ -79,6 +93,7 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
 
     name = xmlGetProp(member_node, XML_DIRECTION_PROPERTY);
 
+    /* Loop over method properties looking for "in" (holds the signature) */
     while (name && !strcmp((const char *) name, XML_IN_FIELD)) {
         xmlFree(name);
         name = NULL;
