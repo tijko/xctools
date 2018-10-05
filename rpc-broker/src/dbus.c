@@ -98,7 +98,8 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
         return -1;
     }
 
-    dmsg->destination = dbus_message_get_destination(dbus_msg);
+    const char *destination = dbus_message_get_destination(dbus_msg);
+    dmsg->destination = destination ? destination : "NULL";
 
     const char *path = dbus_message_get_path(dbus_msg);
     dmsg->path = path ? path : "/";
@@ -108,6 +109,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
 
     const char *member = dbus_message_get_member(dbus_msg);
     dmsg->member = member ? member : "NULL";
+
     dbus_message_unref(dbus_msg);
 
     return 0;
