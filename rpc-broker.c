@@ -276,6 +276,7 @@ static void run(struct dbus_broker_args *args)
 
     free(server);
     free_policy();
+    free_dlinks();
     close(default_socket);
 
     lws_ring_destroy(ring);
