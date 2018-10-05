@@ -299,6 +299,7 @@ int main(int argc, char *argv[])
     int option_index;
 
     bool logging = false;
+    verbose_logging = false;
 
     char *bus_file = NULL;
     char *logging_file = "";
