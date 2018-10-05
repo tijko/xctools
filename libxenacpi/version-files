@@ -1,0 +1,7 @@
+src/xenacpi-head.h.in
+src/xenacpi-tail.h
+src/prototypes.h
+src/ext_prototypes.h
+src/libxenacpi.c
+src/version.c
+src/project.h

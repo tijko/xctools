@@ -1,0 +1,15 @@
+Name:                compleat
+Version:             1.0
+Description:         Generate command-line completions from simple usage descriptions.
+License:             MIT
+License-file:        README.markdown
+Author:              Matt Brubeck
+Maintainer:          mbrubeck@limpet.net
+Build-Type:          Simple
+Cabal-Version:       >=1.2
+Data-Files:          compleat_setup
+Executable compleat
+  Main-is:           compleat.hs
+  Build-Depends:     base,
+                     parsec,
+                     directory, process, unix

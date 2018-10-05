@@ -1,0 +1,3 @@
+src/version.c
+src/project.h
+src/qmp_helper.c

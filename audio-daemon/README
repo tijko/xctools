@@ -1,0 +1,7 @@
+This is a PV audio user mode backend implementation from an earlier project
+that is now unmaintained. It has been removed from OpenXT (no longer built
+or installed) on 5/10/2016. It is being left here in case it is useful for
+some future PV audio implementation. It is used in conjunction with the PV
+audio Linux frontend named openxt-audio in pv-linux-driver.git which has also
+been removed from OpenXT at this time. The recipes, Xen patches and extra
+files related to this project are checked in under "file" in this dir.

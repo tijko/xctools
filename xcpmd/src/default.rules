@@ -1,0 +1,11 @@
+# This file contains a default set of rules for XCPMD that will be loaded 
+# when no rules or vars exist in the DB. Customize for your use case.
+
+# Variable section
+#samplevar(10)
+
+# Section separator
+=
+
+# Rules section
+#samplerule | sampleCondition() | sampleAction($sampleVar) | sampleUndo($sampleVar)

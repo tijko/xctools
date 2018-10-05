@@ -1,0 +1,15 @@
+#! /bin/sh
+#
+# make_distn:
+#
+# $Id:$
+#
+# $Log:$
+#
+#
+#
+#
+./autogen.sh
+./configure
+make dist
+make distclean

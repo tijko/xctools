@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# tag:
+#
+# $Id:$
+#
+# $Log:$
+#
+#
+#
+cvs commit -m ""
+
+FILES=`cat version-files`
+CHK=`cat $FILES | md5sum | awk '{print $1}'`
+TG=`grep $CHK version-md5sums | awk '{print $2}'`
+if [ .$TG != . ]; then
+	echo This code already tagged as Version $TG
+	exit 0
+fi
+
+MAJOR=`cat version-major`
+MINOR=`cat version-minor`
+MICRO=$[ `cat version-micro` + 1 ]
+
+echo $MICRO > version-micro
+
+echo "$CHK	${MAJOR}.${MINOR}.${MICRO}" >> version-md5sums
+
+cvs commit -m ""
+cvs tag libxenacpi-$MAJOR_$MINOR_$MICRO .
