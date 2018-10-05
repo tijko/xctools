@@ -1,5 +1,24 @@
-CC=gcc
-CFLAGS=-g -Wall
+AM_CFLAGS = -g -Wall -lpthread \
+	$(DBUS_CFLAGS) $(V4V_CFLAGS) $(LIBWEBSOCKETS_CFLAGS) \
+    $(JSON_C_CFLAGS) $(LIBXML_CFLAGS) 
 
-rpc-broker:
-	$(CC) broker.c -o broker $(CFLAGS)
+sbin_PROGRAMS = rpc-broker
+rpc_broker_SOURCES = \
+    rpc-broker.c \
+    src/websockets.c \
+    src/policy.c \
+    src/dbus.c \
+    src/msg.c \
+    src/json.c \
+    src/signature.c \
+    rpc-broker.h
+
+noinst_HEADERS = rpc-broker.h
+
+rpc_broker_LDADD = \
+	$(DBUS_LIBS) \
+    $(LIBV4V_LIBS) \
+    $(LIBWEBSOCKETS_LIBS) \
+    $(JSON_C_LIBS) \
+    $(LIBXML_LIBS) \
+    -lxenstore
