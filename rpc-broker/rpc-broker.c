@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
     int option_index;
 
     bool logging = false;
-    bool verbose = false;
+    verbose_logging = false;
 
     char *bus_file = NULL;
     char *logging_file = "";
@@ -326,7 +326,7 @@ int main(int argc, char *argv[])
                 break;
 
             case ('v'):
-                verbose = true;
+                verbose_logging = true;
                 break;
 
             case ('h'):
@@ -339,7 +339,7 @@ int main(int argc, char *argv[])
 
     struct dbus_broker_args args = {
         .logging=logging,
-        .verbose=verbose,
+        .verbose=verbose_logging,
         .bus_name=bus_file,
         .logging_file=logging_file,
         .rule_file=rule_file,

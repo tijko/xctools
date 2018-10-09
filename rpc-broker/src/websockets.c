@@ -70,7 +70,7 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
             DBUS_BROKER_EVENT("<WS client request> %s", "");
             break;
 
-        case LWS_CALLBACK_DESTROY:
+        case LWS_CALLBACK_WSI_DESTROY:
             free_dlinks();
             break;
 
