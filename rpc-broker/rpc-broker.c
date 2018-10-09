@@ -276,6 +276,7 @@ static void run(struct dbus_broker_args *args)
 
     free(server);
     free_policy();
+    free_dlinks();
     close(default_socket);
 
     lws_ring_destroy(ring);
@@ -299,7 +300,7 @@ int main(int argc, char *argv[])
     int option_index;
 
     bool logging = false;
-    verbose_logging = false;
+    bool verbose = false;
 
     char *bus_file = NULL;
     char *logging_file = "";
@@ -325,7 +326,7 @@ int main(int argc, char *argv[])
                 break;
 
             case ('v'):
-                verbose_logging = true;
+                verbose = true;
                 break;
 
             case ('h'):
@@ -338,7 +339,7 @@ int main(int argc, char *argv[])
 
     struct dbus_broker_args args = {
         .logging=logging,
-        .verbose=verbose_logging,
+        .verbose=verbose,
         .bus_name=bus_file,
         .logging_file=logging_file,
         .rule_file=rule_file,

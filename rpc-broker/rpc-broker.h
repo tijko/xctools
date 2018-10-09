@@ -262,8 +262,6 @@ struct dbus_broker_args {
     const char *rule_file;
 };
 
-bool verbose_logging;
-
 // rpc-broker.c
 void *broker_message(void *request);
 
