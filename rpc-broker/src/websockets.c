@@ -67,8 +67,11 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
         }
 
         case LWS_CALLBACK_PROTOCOL_INIT:
-            /* better handling of this; coordinate array of threads */
             DBUS_BROKER_EVENT("<WS client request> %s", "");
+            break;
+
+        case LWS_CALLBACK_DESTORY:
+            free_dlinks();
             break;
 
         default:
