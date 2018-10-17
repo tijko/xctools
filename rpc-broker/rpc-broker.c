@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
         { "bus-name",    required_argument, 0, 'b' },
         { "help",        no_argument,       0, 'h' },
         { "logging",     optional_argument, 0, 'l' },
-        { "rule-file",   required_argument, 0, 'p' },
+        { "rule-file",   required_argument, 0, 'r' },
         { "verbose",     no_argument,       0, 'v' },
         {  0,            0,        0,           0  }
     };
