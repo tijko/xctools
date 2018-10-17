@@ -130,17 +130,21 @@ int init_request(int client)
 
 void print_usage(void)
 {
-    printf("dbus-broker\n");
-    printf("\t-b  [--bus-name=BUS]                ");
+    printf("rpc-broker\n");
+    printf("\t-b  [--bus-name=BUS]                    ");
     printf("A dbus bus name to make the connection to.\n");
-    printf("\t-h  [--help]                        ");
+    printf("\t-h  [--help]                            ");
     printf("Prints this usage description.\n");
-    printf("\t-l  [--logging[=optional FILENAME]  ");
+    printf("\t-l  [--logging[=optional FILENAME]      ");
     printf("Enables logging to a default path, optionally set.\n");
-    printf("\t-r  [--rule-file=FILENAME]          ");
+    printf("\t-r  [--rule-file=FILENAME]              ");
     printf("Provide a policy file to run against.\n");
-    printf("\t-v  [--verbose]                     ");
+    printf("\t-R [--raw-dbus=DOM-ID:PORT]             ");
+    printf("Sets rpc-broker to run on given port as raw DBus.\n");
+    printf("\t-v  [--verbose]                         ");
     printf("Adds extra information (run with logging).\n");
+    printf("\t-W [--websockets=INET-ADDR:PORT]        ");
+    printf("Sets rpc-broker to run on given address/port as websockets.\n");
 }
 
 static void reload_policy(void *arg)
