@@ -242,15 +242,15 @@ struct dbus_request {
 struct dbus_broker_args {
     bool logging;
     bool verbose;
+    int port;
     const char *bus_name;
     const char *logging_file;
     const char *rule_file;
+    const char *address;
 };
 
 // rpc-broker.c
-void *broker_message(void *request);
-
-int init_request(int client);
+int broker_message(struct dbus_request *request);
 
 signed int is_stubdom(uint16_t domid);
 

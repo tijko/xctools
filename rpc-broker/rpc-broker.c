@@ -38,13 +38,14 @@
  * Polling on the client & server file-descriptors until the connection 
  * communication is finished.
  */
-void *broker_message(void *request)
+int broker_message(struct dbus_request *request)
 {
-    if (!request)
-        return NULL;
+    int ret = -1;
 
-    struct dbus_request *req = (struct dbus_request *) request;
-    int client = req->client;
+    if (!request)
+        goto err;
+
+    int client = request->client;
 
     fd_set ex_set;
 
@@ -68,16 +69,18 @@ void *broker_message(void *request)
         // Depending on which fd is ready to be read, determines which
         // function pointer to pass to `exchange` 
         if (FD_ISSET(srv, &ex_set))
-            bytes = exchange(srv, client, recv, v4v_send, req);
+            bytes = exchange(srv, client, recv, v4v_send, request);
         else
-            bytes = exchange(client, srv, v4v_recv, send, req);
+            bytes = exchange(client, srv, v4v_recv, send, request);
 
     } while (bytes > 0);
 
     close(srv);
-    free(req);
 
-    return NULL;
+err:
+    free(request);
+
+    return ret;
 }
 
 signed int is_stubdom(uint16_t domid)
@@ -105,29 +108,6 @@ signed int is_stubdom(uint16_t domid)
     return len;
 }
 
-int init_request(int client)
-{
-    int ret;
-    pthread_t dbus_req_thread;
-
-    struct dbus_request *dreq = malloc(sizeof *dreq);
-    dreq->client = client;
-
-    v4v_addr_t client_addr = { .domain=0, .port=0 };
-    
-    if ((ret = v4v_getpeername(client, &client_addr)) < 0) {
-        DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
-        free(dreq);
-        return ret;
-    }
-
-    dreq->domid = client_addr.domain;
-    ret = pthread_create(&dbus_req_thread, NULL,
-                        (void *(*)(void *)) broker_message, (void *) dreq);
-
-    return ret;
-}
-
 void print_usage(void)
 {
     printf("rpc-broker\n");
@@ -137,9 +117,9 @@ void print_usage(void)
     printf("Prints this usage description.\n");
     printf("\t-l  [--logging[=optional FILENAME]      ");
     printf("Enables logging to a default path, optionally set.\n");
-    printf("\t-r  [--rule-file=FILENAME]              ");
+    printf("\t-p  [--policy-file=FILENAME]            ");
     printf("Provide a policy file to run against.\n");
-    printf("\t-R [--raw-dbus=DOM-ID:PORT]             ");
+    printf("\t-r [--raw-dbus=PORT]                    ");
     printf("Sets rpc-broker to run on given port as raw DBus.\n");
     printf("\t-v  [--verbose]                         ");
     printf("Adds extra information (run with logging).\n");
@@ -219,25 +199,16 @@ free_msg:
     }
 }
 
-static void run(struct dbus_broker_args *args)
+static void load_policy(const char *policy_file)
 {
     srand48(time(NULL));
-
-    dbus_broker_policy = build_policy(args->rule_file);
-
-    struct etc_policy etc = dbus_broker_policy->etc;
-
+    dbus_broker_policy = build_policy(policy_file);
     if (pthread_mutex_init(&policy_lock, NULL) < 0)
         DBUS_BROKER_ERROR("initializing policy-lock");
+}
 
-    struct dbus_broker_server *server = start_server(BROKER_DEFAULT_PORT);
-    DBUS_BROKER_EVENT("<Server has started listening> [Port: %d]",
-                        BROKER_DEFAULT_PORT);
-
-    int default_socket = server->dbus_socket;
-
-    fd_set server_set;
-
+static void run_websockets(struct dbus_broker_args *args)
+{
     struct lws_context *ws_context = NULL;
     ws_context = create_ws_context(BROKER_UI_PORT);
 
@@ -247,8 +218,27 @@ static void run(struct dbus_broker_args *args)
     DBUS_BROKER_EVENT("<WebSockets-Server has started listening> [Port: %d]",
                         BROKER_UI_PORT);
 
-    dbus_broker_running = 1;
-    dlinks = NULL;
+    while (dbus_broker_running) {
+
+        service_signals(); 
+        lws_service(ws_context, WS_LOOP_TIMEOUT);
+    }
+
+    lws_ring_destroy(ring);
+    lws_context_destroy(ws_context);
+}
+
+// XXX could use one eventloop and make check on every turn
+// just call an init function first, for which ever one is being used 
+
+static void run_rawdbus(struct dbus_broker_args *args)
+{
+    struct dbus_broker_server *server = start_server(args->port);
+    DBUS_BROKER_EVENT("<Server has started listening> [Port: %d]", args->port);
+
+    int default_socket = server->dbus_socket;
+
+    fd_set server_set;
 
     while (dbus_broker_running) {
 
@@ -256,30 +246,28 @@ static void run(struct dbus_broker_args *args)
         FD_SET(default_socket, &server_set);
 
         struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_TIMEOUT };
-        // Poll on port-5555
         int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
 
         if (ret > 0) {
             int client = v4v_accept(default_socket, &server->peer);
             DBUS_BROKER_EVENT("<Client has made a connection> [Dom: %d Client: %d]",
                                 server->peer.domain, client);
-            init_request(client);
+
+            v4v_addr_t client_addr = { .domain=0, .port=0 };
+            
+            if (v4v_getpeername(client, &client_addr) != 0) { 
+                struct dbus_request dreq = { .client=client, .domid=client_addr.domain }; 
+                broker_message(&dreq); 
+            } else
+                DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
         }
 
         // check signal subscriptions
         service_signals(); 
-
-        // websocket servicing event-loop
-        lws_service(ws_context, WS_LOOP_TIMEOUT);
     }
 
     free(server);
-    free_policy();
-    free_dlinks();
     close(default_socket);
-
-    lws_ring_destroy(ring);
-    lws_context_destroy(ws_context);
 }
 
 int main(int argc, char *argv[])
@@ -300,12 +288,16 @@ int main(int argc, char *argv[])
     int opt;
     int option_index;
 
+    int port;
+
     bool logging = false;
     verbose_logging = false;
+    void (*mainloop)(struct dbus_broker_args *args);
 
     char *bus_file = NULL;
     char *raw_dbus = NULL;
     char *websockets = NULL;
+    char *address = NULL;
     char *logging_file = "";
     char *policy_file  = RULES_FILENAME;
 
@@ -356,8 +348,19 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (!proto)
+    if (raw_dbus) {
+        if ((port = strtol(raw_dbus, NULL, 0)) == LONG_MAX);
+            DBUS_BROKER_ERROR("Invalid raw-dbus port <%s>", raw_dbus);
+        mainloop = run_rawdbus;
+    else if (websockets)
+        char *address = strchr(websockets, ':');
+        if (!address || (port = strtol(address + 1, NULL, 0)) == LONG_MAX)
+            DBUS_BROKER_ERROR("Invalid websockets address <%s>", websockets);
+        mainloop = run_websockets;
+    else
         goto conn_type_error;
+
+    load_policy(policy_file);
 
     struct dbus_broker_args args = {
         .logging=logging,
@@ -365,6 +368,8 @@ int main(int argc, char *argv[])
         .bus_name=bus_file,
         .logging_file=logging_file,
         .rule_file=policy_file,
+        .port=port,
+        .address=address
     };
 
     struct sigaction sa = { .sa_handler=sigint_handler };
@@ -372,7 +377,13 @@ int main(int argc, char *argv[])
     if (sigaction(SIGINT, &sa, NULL) < 0)
         DBUS_BROKER_ERROR("sigaction");
 
-    run(&args);
+    dbus_broker_running = 1;
+    dlinks = NULL;
+
+    mainloop(&args);
+
+    free_policy();
+    free_dlinks();
 
     return 0;
 
