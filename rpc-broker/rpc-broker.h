@@ -221,7 +221,6 @@ static const char XML_TYPE_FIELD[]         = "type";
 
 struct lws_ring *ring;
 
-pthread_mutex_t ring_lock;
 pthread_mutex_t policy_lock;
 
 bool verbose_logging;

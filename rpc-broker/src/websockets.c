@@ -42,17 +42,14 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
     switch (reason) {
 
         case LWS_CALLBACK_RECEIVE: {
-            pthread_mutex_lock(&ring_lock);
             memset(user, '\0', WS_USER_MEM_SIZE);
             memcpy(user, in, len);
             if (ws_request_handler(wsi, user) == 0)
                 lws_callback_on_writable(wsi);
-            pthread_mutex_unlock(&ring_lock);
             break;
         }
 
         case LWS_CALLBACK_SERVER_WRITEABLE: {
-            pthread_mutex_lock(&ring_lock);
             if (lws_ring_get_count_waiting_elements(ring, NULL) > 0) {
                 char *rsp = (char *) lws_ring_get_element(ring, NULL);
                 lws_ring_consume(ring, NULL, NULL, 1);
@@ -62,7 +59,6 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
                 lws_callback_on_writable(wsi);
             }
 
-            pthread_mutex_unlock(&ring_lock);
             break;
         }
 

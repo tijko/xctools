@@ -177,10 +177,7 @@ static void get_etc_policy(struct etc_policy *etc, const char *rule_filepath)
         if (isalpha(rule_token[0])) {
             char *line = strdup(rule_token);
             struct rule *current = &(etc->rules[idx]);
-            if (create_rule(current, line) < 0)
-                free_rule(*current);
-            else
-                idx++;
+            create_rule(current, line) < 0 ? free_rule(*current) : idx++;
             free(line);
         }
 
@@ -188,6 +185,7 @@ static void get_etc_policy(struct etc_policy *etc, const char *rule_filepath)
     }
 
     etc->count = idx;
+    close(policy_fd);
 }
 
 DBusMessage *db_list(void)

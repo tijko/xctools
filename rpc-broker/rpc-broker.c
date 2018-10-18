@@ -209,12 +209,9 @@ static inline void service_signals(void)
         if (!reply) 
             goto free_msg;
 
-        pthread_mutex_lock(&ring_lock);
         lws_ring_insert(ring, reply, 1);
         free(reply);
         lws_callback_on_writable(curr->wsi);
-
-        pthread_mutex_unlock(&ring_lock);
 
 free_msg:
         dbus_message_unref(msg);
@@ -229,9 +226,6 @@ static void run(struct dbus_broker_args *args)
     dbus_broker_policy = build_policy(args->rule_file);
 
     struct etc_policy etc = dbus_broker_policy->etc;
-
-    if (pthread_mutex_init(&ring_lock, NULL) < 0)
-        DBUS_BROKER_ERROR("initializing ring-lock");
 
     if (pthread_mutex_init(&policy_lock, NULL) < 0)
         DBUS_BROKER_ERROR("initializing policy-lock");
@@ -273,7 +267,8 @@ static void run(struct dbus_broker_args *args)
         }
 
         // check signal subscriptions
-        service_signals();
+        service_signals(); 
+
         // websocket servicing event-loop
         lws_service(ws_context, WS_LOOP_TIMEOUT);
     }
@@ -289,15 +284,17 @@ static void run(struct dbus_broker_args *args)
 
 int main(int argc, char *argv[])
 {
-    const char *dbus_broker_opt_str = "b:hl::r:v";
+    const char *dbus_broker_opt_str = "b:hl::p:r:vw:";
 
     struct option dbus_broker_opts[] = {
-        { "bus-name",    required_argument, 0, 'b' },
-        { "help",        no_argument,       0, 'h' },
-        { "logging",     optional_argument, 0, 'l' },
-        { "rule-file",   required_argument, 0, 'r' },
-        { "verbose",     no_argument,       0, 'v' },
-        {  0,            0,        0,           0  }
+        { "bus-name",    required_argument,   0, 'b' },
+        { "help",        no_argument,         0, 'h' },
+        { "logging",     optional_argument,   0, 'l' },
+        { "policy-file", required_argument,   0, 'p' },
+        { "raw-dbus",    required_argument,   0, 'r' },
+        { "verbose",     no_argument,         0, 'v' },
+        { "websockets",  required_argument,   0, 'w' }, 
+        {  0,            0,        0,         0      }
     };
 
     int opt;
@@ -307,8 +304,12 @@ int main(int argc, char *argv[])
     verbose_logging = false;
 
     char *bus_file = NULL;
+    char *raw_dbus = NULL;
+    char *websockets = NULL;
     char *logging_file = "";
-    char *rule_file  = RULES_FILENAME;
+    char *policy_file  = RULES_FILENAME;
+
+    bool proto = false;
 
     while ((opt = getopt_long(argc, argv, dbus_broker_opt_str,
                               dbus_broker_opts, &option_index)) != -1) {
@@ -325,12 +326,26 @@ int main(int argc, char *argv[])
                     logging_file = optarg;
                 break;
 
+            case ('p'):
+                policy_file = optarg;
+                break;
+
             case ('r'):
-                rule_file = optarg;
+                if (proto)
+                    goto conn_type_error; 
+                raw_dbus = optarg;
+                proto = true;
                 break;
 
             case ('v'):
                 verbose_logging = true;
+                break;
+
+            case ('w'):
+                if (proto)
+                    goto conn_type_error; 
+                websockets = optarg;
+                proto = true;
                 break;
 
             case ('h'):
@@ -341,12 +356,15 @@ int main(int argc, char *argv[])
         }
     }
 
+    if (!proto)
+        goto conn_type_error;
+
     struct dbus_broker_args args = {
         .logging=logging,
         .verbose=verbose_logging,
         .bus_name=bus_file,
         .logging_file=logging_file,
-        .rule_file=rule_file,
+        .rule_file=policy_file,
     };
 
     struct sigaction sa = { .sa_handler=sigint_handler };
@@ -355,6 +373,13 @@ int main(int argc, char *argv[])
         DBUS_BROKER_ERROR("sigaction");
 
     run(&args);
+
+    return 0;
+
+conn_type_error:
+
+    printf("Must supply at least one (and no more than one) connection type.\n");
+    print_usage();
 
     return 0;
 }
