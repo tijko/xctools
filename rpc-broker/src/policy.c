@@ -44,7 +44,7 @@ static int create_rule(struct rule *current, char *rule)
             return -1;
         } else if (!strcmp("destination", token)) {
             current->destination = strdup(field);
-        } else if (!strcmp("domtype", token)) {
+        } else if (!strcmp("dom-type", token)) {
             current->domtype = strdup(field);
         } else if (!strcmp("interface", token)) {
             current->interface = strdup(field);
