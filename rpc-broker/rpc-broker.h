@@ -246,7 +246,6 @@ struct dbus_broker_args {
     const char *bus_name;
     const char *logging_file;
     const char *rule_file;
-    const char *address;
 };
 
 // rpc-broker.c

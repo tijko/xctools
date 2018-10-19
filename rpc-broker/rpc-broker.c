@@ -297,7 +297,6 @@ int main(int argc, char *argv[])
     char *bus_file = NULL;
     char *raw_dbus = NULL;
     char *websockets = NULL;
-    char *address = NULL;
     char *logging_file = "";
     char *policy_file  = RULES_FILENAME;
 
@@ -353,8 +352,7 @@ int main(int argc, char *argv[])
             DBUS_BROKER_ERROR("Invalid raw-dbus port <%s>", raw_dbus);
         mainloop = run_rawdbus;
     else if (websockets)
-        char *address = strchr(websockets, ':');
-        if (!address || (port = strtol(address + 1, NULL, 0)) == LONG_MAX)
+        if ((port = strtol(address + 1, NULL, 0)) == LONG_MAX)
             DBUS_BROKER_ERROR("Invalid websockets address <%s>", websockets);
         mainloop = run_websockets;
     else
@@ -369,7 +367,6 @@ int main(int argc, char *argv[])
         .logging_file=logging_file,
         .rule_file=policy_file,
         .port=port,
-        .address=address
     };
 
     struct sigaction sa = { .sa_handler=sigint_handler };
