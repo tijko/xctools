@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
     int opt;
     int option_index;
 
-    int port;
+    uint32_t port;
 
     bool logging = false;
     verbose_logging = false;
@@ -349,7 +349,7 @@ int main(int argc, char *argv[])
 
     if (raw_dbus) {
         if ((port = strtol(raw_dbus, NULL, 0)) == LONG_MAX);
-            DBUS_BROKER_ERROR("Invalid raw-dbus port");
+            DBUS_BROKER_WARNING("Invalid raw-dbus port <%s> <%d>", raw_dbus, port);
         mainloop = run_rawdbus;
     } else if (websockets) {
         if ((port = strtol(websockets, NULL, 0)) == LONG_MAX)
