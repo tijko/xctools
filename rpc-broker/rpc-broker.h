@@ -73,6 +73,7 @@ struct dbus_link *dlinks;
 #define RULE_MAX_LENGTH  256
 
 struct rule {
+    uint8_t out:1;
     uint8_t policy:1;
     uint8_t stubdom:1;
     uint8_t if_bool_flag:1;

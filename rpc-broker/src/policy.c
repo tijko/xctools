@@ -40,49 +40,29 @@ static int create_rule(struct rule *current, char *rule)
 
         char *field = strtok_r(NULL, delimiter, &ruleptr);
 
-        if (!field && token[0] != 's')
+        if (!field && token[0] != 's') {
             return -1;
-
-        switch (token[0]) {
-            case ('d'): {
-                if (token[1] == 'e')
-                    current->destination = strdup(field);
-                else
-                    current->domtype = strdup(field);
-                break;
-            }
-
-            case ('i'): {
-                if (token[1] == 'n')
-                    current->interface = strdup(field);
-                else {
-                    current->if_bool = strdup(field);
-                    token = strtok_r(NULL, delimiter, &ruleptr);
-                    current->if_bool_flag = token[0] == 't';
-                }
-                break;
-            }
-
-            case ('s'):
-                current->stubdom = 1;
-                break;
-
-            case ('p'):
-                current->path = strdup(field);
-                break;
-
-            case ('m'):
-                current->member = strdup(field);
-                break;
-
-			case ('a'):
-                // "out any"
-				break;
-
-            default:
-                DBUS_BROKER_WARNING("Unrecognized Rule-Token: %s", token);
-                current = NULL;
-                break;
+        } else if (!strcmp("destination", token)) {
+            current->destination = strdup(field);
+        } else if (!strcmp("domtype", token)) {
+            current->domtype = strdup(field);
+        } else if (!strcmp("interface", token)) {
+            current->interface = strdup(field);
+        } else if (!strcmp("if-boolean", token)) {
+            current->if_bool = strdup(field);
+            token = strtok_r(NULL, delimiter, &ruleptr);
+            current->if_bool_flag = strcmp("true", token) == 0 ? 1 : 0;
+        } else if (!strcmp("stubdom", token)) {
+            current->stubdom = 1;
+        } else if (!strcmp("path", token)) {
+            current->path = strdup(field);
+        } else if (!strcmp("member", token)) {
+            current->member = strdup(field);
+        } else if (!strcmp("out-any", token)) {
+            current->out = 1;
+        } else {
+            DBUS_BROKER_WARNING("Unrecognized Rule-Token: %s", token);
+            current = NULL;
         }
 
         token = strtok_r(NULL, delimiter, &ruleptr);
