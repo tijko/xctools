@@ -110,7 +110,7 @@ signed int is_stubdom(uint16_t domid)
 
 void print_usage(void)
 {
-    printf("rpc-broker\n");
+    printf("rpc-broker <flag> <argument>\n");
     printf("\t-b  [--bus-name=BUS]                    ");
     printf("A dbus bus name to make the connection to.\n");
     printf("\t-h  [--help]                            ");
@@ -119,11 +119,11 @@ void print_usage(void)
     printf("Enables logging to a default path, optionally set.\n");
     printf("\t-p  [--policy-file=FILENAME]            ");
     printf("Provide a policy file to run against.\n");
-    printf("\t-r [--raw-dbus=PORT]                    ");
+    printf("\t-r  [--raw-dbus=PORT]                   ");
     printf("Sets rpc-broker to run on given port as raw DBus.\n");
     printf("\t-v  [--verbose]                         ");
     printf("Adds extra information (run with logging).\n");
-    printf("\t-w [--websockets=PORT]                  ");
+    printf("\t-w  [--websockets=PORT]                 ");
     printf("Sets rpc-broker to run on given address/port as websockets.\n");
 }
 
