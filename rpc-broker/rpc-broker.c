@@ -123,7 +123,7 @@ void print_usage(void)
     printf("Sets rpc-broker to run on given port as raw DBus.\n");
     printf("\t-v  [--verbose]                         ");
     printf("Adds extra information (run with logging).\n");
-    printf("\t-W [--websockets=INET-ADDR:PORT]        ");
+    printf("\t-w [--websockets=PORT]                  ");
     printf("Sets rpc-broker to run on given address/port as websockets.\n");
 }
 
