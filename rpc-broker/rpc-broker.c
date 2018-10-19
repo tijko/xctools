@@ -349,13 +349,13 @@ int main(int argc, char *argv[])
 
     if (raw_dbus) {
         if ((port = strtol(raw_dbus, NULL, 0)) == LONG_MAX);
-            DBUS_BROKER_ERROR("Invalid raw-dbus port <%s>", raw_dbus);
+            DBUS_BROKER_ERROR("Invalid raw-dbus port");
         mainloop = run_rawdbus;
-    else if (websockets)
-        if ((port = strtol(address + 1, NULL, 0)) == LONG_MAX)
-            DBUS_BROKER_ERROR("Invalid websockets address <%s>", websockets);
+    } else if (websockets) {
+        if ((port = strtol(websockets, NULL, 0)) == LONG_MAX)
+            DBUS_BROKER_ERROR("Invalid websockets address");
         mainloop = run_websockets;
-    else
+    } else
         goto conn_type_error;
 
     load_policy(policy_file);
