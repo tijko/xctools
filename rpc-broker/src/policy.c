@@ -62,7 +62,9 @@ static int create_rule(struct rule *current, char *rule)
             current->out = 1;
         } else {
             DBUS_BROKER_WARNING("Unrecognized Rule-Token: %s", token);
+            free_rule(*current);
             current = NULL;
+            return -1;
         }
 
         token = strtok_r(NULL, delimiter, &ruleptr);
