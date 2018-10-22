@@ -218,6 +218,8 @@ static void run_websockets(struct dbus_broker_args *args)
     DBUS_BROKER_EVENT("<WebSockets-Server has started listening> [Port: %d]",
                         BROKER_UI_PORT);
 
+    load_policy(policy_file);
+
     while (dbus_broker_running) {
 
         service_signals(); 
@@ -236,6 +238,7 @@ static void run_rawdbus(struct dbus_broker_args *args)
     int default_socket = server->dbus_socket;
 
     fd_set server_set;
+    load_policy(policy_file);
 
     while (dbus_broker_running) {
 
@@ -354,8 +357,6 @@ int main(int argc, char *argv[])
         mainloop = run_websockets;
     } else
         goto conn_type_error;
-
-    load_policy(policy_file);
 
     struct dbus_broker_args args = {
         .logging=logging,
