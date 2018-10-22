@@ -158,7 +158,7 @@ static inline void service_signals(void)
 
         DBusMessage *msg = NULL;
 
-        if (dbus_connection_get_is_connected(curr->dconn)) {
+        if (curr->dconn && dbus_connection_get_is_connected(curr->dconn)) {
             dbus_connection_read_write(curr->dconn, 0);
             msg = dbus_connection_pop_message(curr->dconn);
         }
