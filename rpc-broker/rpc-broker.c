@@ -77,9 +77,6 @@ int broker_message(struct dbus_request *request)
 
     close(srv);
 
-err:
-    free(request);
-
     return ret;
 }
 
