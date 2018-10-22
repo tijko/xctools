@@ -62,7 +62,7 @@ int broker_message(struct dbus_request *request)
         if (ret == 0)
             continue;
         if (ret < 0)
-            return -1;
+            return ret;
 
         // Depending on which fd is ready to be read, determines which
         // function pointer to pass to `exchange` 
@@ -154,12 +154,15 @@ static inline void service_signals(void)
 {
     struct dbus_link *curr = dlinks;
 
-    // Make check on the status of the connection
-    // add-link remove-link functions
-
     while (curr) { 
-        dbus_connection_read_write(curr->dconn, 0);
-        DBusMessage *msg = dbus_connection_pop_message(curr->dconn);
+
+        DBusMessage *msg = NULL;
+
+        if (dbus_connection_get_is_connected(curr->dconn)) {
+            dbus_connection_read_write(curr->dconn, 0);
+            msg = dbus_connection_pop_message(curr->dconn);
+        }
+
         curr = curr->next;
 
         if (!msg)
