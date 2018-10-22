@@ -372,4 +372,7 @@ void free_dlinks(void)
         free(curr);
         curr = tmp;
     }
+
+    curr = NULL;
+    dlinks = NULL;
 }
