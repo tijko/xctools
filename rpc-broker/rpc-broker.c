@@ -228,9 +228,6 @@ static void run_websockets(struct dbus_broker_args *args)
     lws_context_destroy(ws_context);
 }
 
-// XXX could use one eventloop and make check on every turn
-// just call an init function first, for which ever one is being used 
-
 static void run_rawdbus(struct dbus_broker_args *args)
 {
     struct dbus_broker_server *server = start_server(args->port);
@@ -239,7 +236,9 @@ static void run_rawdbus(struct dbus_broker_args *args)
     int default_socket = server->dbus_socket;
 
     fd_set server_set;
-
+    //
+    sleep(10);
+    // long sleep; testing if this is OpenXT's issue setting up
     while (dbus_broker_running) {
 
         FD_ZERO(&server_set);
