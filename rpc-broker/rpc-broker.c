@@ -40,10 +40,8 @@
  */
 int broker_message(struct dbus_request *request)
 {
-    int ret = -1;
-
     if (!request)
-        goto err;
+        return -1; 
 
     int client = request->client;
 
@@ -64,7 +62,7 @@ int broker_message(struct dbus_request *request)
         if (ret == 0)
             continue;
         if (ret < 0)
-            DBUS_BROKER_ERROR("select");
+            return -1;
 
         // Depending on which fd is ready to be read, determines which
         // function pointer to pass to `exchange` 
@@ -77,7 +75,7 @@ int broker_message(struct dbus_request *request)
 
     close(srv);
 
-    return ret;
+    return 0;
 }
 
 signed int is_stubdom(uint16_t domid)
