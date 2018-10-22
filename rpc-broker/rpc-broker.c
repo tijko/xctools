@@ -236,9 +236,7 @@ static void run_rawdbus(struct dbus_broker_args *args)
     int default_socket = server->dbus_socket;
 
     fd_set server_set;
-    //
-    sleep(10);
-    // long sleep; testing if this is OpenXT's issue setting up
+
     while (dbus_broker_running) {
 
         FD_ZERO(&server_set);
