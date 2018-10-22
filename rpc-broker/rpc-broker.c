@@ -251,11 +251,12 @@ static void run_rawdbus(struct dbus_broker_args *args)
                                 server->peer.domain, client);
             v4v_addr_t client_addr = { .domain=0, .port=0 };
             
-            if (v4v_getpeername(client, &client_addr) == 0) {  
+            if (v4v_getpeername(client, &client_addr) < 0) 
+                DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
+            else {
                 struct dbus_request dreq = { .client=client, .domid=client_addr.domain }; 
                 broker_message(&dreq); 
-            } else
-                DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
+            }
         }
 
         // check signal subscriptions
