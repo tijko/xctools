@@ -55,7 +55,7 @@ int broker_message(struct dbus_request *request)
         FD_SET(client, &ex_set);
         FD_SET(srv, &ex_set);
 
-        struct timeval tv = { .tv_sec=1, .tv_usec=0 };
+        struct timeval tv = { .tv_sec=0, .tv_usec=100 };
         // Poll on read-ready
         int ret = select(srv + 1, &ex_set, NULL, NULL, &tv);
 
@@ -356,6 +356,7 @@ int main(int argc, char *argv[])
     } else
         goto conn_type_error;
 
+    display_port = port;
     struct dbus_broker_args args = {
         .logging=logging,
         .verbose=verbose_logging,

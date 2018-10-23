@@ -64,7 +64,7 @@ struct json_response *make_json_request(struct json_request *jreq)
         DBUS_REQ_ARG(err, "<Destination=%s Path=%s Interface=%s Member=%s>",
                      jreq->dmsg.destination, jreq->dmsg.path,
                      jreq->dmsg.interface, jreq->dmsg.member);
-        DBUS_BROKER_WARNING("response to <%d> request failed %s", id, err);
+        DBUS_BROKER_WARNING("response to <%d> request failed %s -> %d", id, err, display_port);
         free(err);
         free(jrsp);
         return NULL;
