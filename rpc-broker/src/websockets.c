@@ -103,7 +103,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
 {
     v4v_addr_t addr;
     int client = lws_get_socket_fd(wsi);
-    int ret = 1;
+    int ret = 0;
 
     if (v4v_getpeername(client, &addr) < 0) {
         DBUS_BROKER_WARNING("getpeername call failed <%d>", client);
