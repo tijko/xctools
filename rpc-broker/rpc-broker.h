@@ -136,7 +136,7 @@ struct dbus_broker_server {
 
 #define WS_LOOP_TIMEOUT     100   // length of time each service of the websocket
                                   // event-loop (millisecs)
-#define DBUS_BROKER_TIMEOUT 1000
+#define DBUS_BROKER_TIMEOUT 100
 
 // DBus-Broker messages
 #define DBUS_REQ_TIMEOUT    1000
