@@ -82,6 +82,7 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
         DBUS_REQ_ARG(arg, "/vm/%s/rpc-firewall-rules/%d",
                      dom->uuid, rule_idx);
 
+        printf("Query: %s\n", arg);
         char *rulestring = db_query(conn, arg);
 
         free(arg);
