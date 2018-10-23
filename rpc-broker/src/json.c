@@ -65,6 +65,27 @@ struct json_response *make_json_request(struct json_request *jreq)
                      jreq->dmsg.destination, jreq->dmsg.path,
                      jreq->dmsg.interface, jreq->dmsg.member);
         DBUS_BROKER_WARNING("response to <%d> request failed %s -> %d", id, err, display_port);
+
+        for (int i=0; i < jreq->dmsg.arg_number; i++) {
+            switch (jreq->dmsg.arg_sig[i]) {
+
+                case ('s'):
+                    DBUS_BROKER_WARNING("Arg: %s", (char *) jreq->dmsg.args[i]);
+                    break;
+
+                case ('u'):
+                case ('d'):
+                case ('i'):
+                case ('b'):
+                    DBUS_BROKER_WARNING("Arg: %d", *(int *) jreq->dmsg.args[i]);
+                    break;
+
+                default:
+                    DBUS_BROKER_WARNING("Unknown arg %s", "");
+                    break;
+            }
+        }
+
         free(err);
         free(jrsp);
         return NULL;
