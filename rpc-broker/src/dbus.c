@@ -270,7 +270,7 @@ char *db_query(DBusConnection *conn, char *arg)
 
     // XXX
     if (buf[0] == '\0') {
-        DBUS_BROKER_WARNING("DB-Query entry not found %d", display_port); 
+        DBUS_BROKER_WARNING("DB-Query entry not found %d %s", display_port, arg); 
         goto free_msg;
     }
     
