@@ -57,7 +57,7 @@ struct json_response *make_json_request(struct json_request *jreq)
 
     snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, "%d", jreq->id);
     DBusMessage *msg = make_dbus_call(conn, &(jreq->dmsg));
-
+/*
     if (!msg || dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) {
         char *err;
         int id = jreq->id;
@@ -81,7 +81,7 @@ struct json_response *make_json_request(struct json_request *jreq)
                     break;
 
                 default:
-                    DBUS_BROKER_WARNING("Unknown arg %s", "");
+                    DBUS_BROKER_WARNING("Unknown arg %c", jreq->dmsg.arg_sig[i]);
                     break;
             }
         }
@@ -90,6 +90,7 @@ struct json_response *make_json_request(struct json_request *jreq)
         free(jrsp);
         return NULL;
     }
+*/
 
     load_json_response(msg, jrsp);
     dbus_message_unref(msg);
