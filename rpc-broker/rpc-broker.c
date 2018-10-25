@@ -344,12 +344,12 @@ int main(int argc, char *argv[])
     if (raw_dbus) {
         port = strtol(raw_dbus, NULL, 0);
         if (errno != 0)
-            DBUS_BROKER_ERROR("Invalid raw-dbus port <%s>", raw_dbus);
+            DBUS_BROKER_ERROR("Invalid raw-dbus port");
         mainloop = run_rawdbus;
     } else if (websockets) {
         port = strtol(websockets, NULL, 0);
         if (errno != 0)
-            DBUS_BROKER_ERROR("Invalid websockets address");
+            DBUS_BROKER_ERROR("Invalid websockets port");
         mainloop = run_websockets;
     } else
         goto conn_type_error;
