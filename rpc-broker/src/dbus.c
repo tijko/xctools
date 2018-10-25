@@ -250,28 +250,20 @@ char *db_query(DBusConnection *conn, char *arg)
 
     DBusMessage *msg = make_dbus_call(conn, &dmsg);
 
-    if (!msg) {
-        DBUS_BROKER_WARNING("DB-Query message request failed %s", "");
+    if (!msg) 
         return NULL;
-    }
 
     DBusMessageIter iter;
-    if (!dbus_message_iter_init(msg, &iter)) {
-        DBUS_BROKER_WARNING("DB-Query invalid return %s", "");
+    if (!dbus_message_iter_init(msg, &iter)) 
         goto free_msg;
-    }
 
-    if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRING) {
-        DBUS_BROKER_WARNING("DB-Query returned incorrect type %s", "");
+    if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRING) 
         goto free_msg;
-    }
 
     dbus_message_iter_get_basic(&iter, &buf);
 
-    if (buf[0] == '\0') {
-        DBUS_BROKER_WARNING("DB-Query entry not found <%s>", arg); 
+    if (buf[0] == '\0') 
         goto free_msg;
-    }
     
     reply = calloc(1, RULE_MAX_LENGTH);
     strcpy(reply, buf);
