@@ -57,20 +57,19 @@ struct json_response *make_json_request(struct json_request *jreq)
 
     snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, "%d", jreq->id);
     DBusMessage *msg = make_dbus_call(conn, &(jreq->dmsg));
-/*
+
     if (!msg || dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) {
         char *err;
         int id = jreq->id;
         DBUS_REQ_ARG(err, "<Destination=%s Path=%s Interface=%s Member=%s>",
                      jreq->dmsg.destination, jreq->dmsg.path,
                      jreq->dmsg.interface, jreq->dmsg.member);
-        DBUS_BROKER_WARNING("response to <%d> request failed %s -> %d", id, err, display_port);
+        DBUS_BROKER_WARNING("response to <%d> request failed %s", id, err);
 
         free(err);
         free(jrsp);
         return NULL;
     }
-*/
 
     load_json_response(msg, jrsp);
     dbus_message_unref(msg);

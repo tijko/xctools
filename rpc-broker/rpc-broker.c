@@ -351,7 +351,6 @@ int main(int argc, char *argv[])
     } else
         goto conn_type_error;
 
-    display_port = port;
     struct dbus_broker_args args = {
         .logging=logging,
         .verbose=verbose_logging,

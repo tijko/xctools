@@ -229,9 +229,6 @@ pthread_mutex_t policy_lock;
 bool verbose_logging;
 
 int dbus_broker_running;
-//
-int display_port;
-//
 
 struct broker_signal {
     DBusConnection *conn;
