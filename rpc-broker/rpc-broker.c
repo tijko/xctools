@@ -20,7 +20,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
-#include <pthread.h>
 #include <signal.h>
 #include <sys/select.h>
 #include <sys/stat.h>
@@ -122,14 +121,6 @@ void print_usage(void)
     printf("Sets rpc-broker to run on given address/port as websockets.\n");
 }
 
-static void reload_policy(void *arg)
-{
-    pthread_mutex_lock(&policy_lock);
-    free_policy();
-    dbus_broker_policy = build_policy(RULES_FILENAME);
-    pthread_mutex_unlock(&policy_lock);
-}
-
 void sigint_handler(int signal)
 {
     DBUS_BROKER_WARNING("<received signal interrupt> %s", "");
@@ -141,8 +132,7 @@ void sigint_handler(int signal)
 
 void sighup_handler(int signal)
 {
-    pthread_t reload_thr;
-    pthread_create(&reload_thr, NULL, (void *(*)(void *)) reload_policy, NULL);
+    reload_policy = true;
     DBUS_BROKER_EVENT("Re-loading policy %s", "");
 }
 
@@ -222,6 +212,12 @@ static void run_websockets(struct dbus_broker_args *args)
 
         service_dbus_signals(); 
         lws_service(ws_context, WS_LOOP_TIMEOUT);
+
+        if (reload_policy) {
+            free_policy();
+            dbus_broker_policy = build_policy(RULES_FILENAME);
+            reload_policy = false;
+        }
     }
 
     lws_ring_destroy(ring);
@@ -262,6 +258,12 @@ static void run_rawdbus(struct dbus_broker_args *args)
 
         // check signal subscriptions
         service_dbus_signals(); 
+
+        if (reload_policy) {
+            free_policy();
+            dbus_broker_policy = build_policy(RULES_FILENAME);
+            reload_policy = false;
+        }
     }
 
     free(server);
@@ -373,6 +375,7 @@ int main(int argc, char *argv[])
 
     dbus_broker_running = 1;
     dlinks = NULL;
+    reload_policy = false;
 
     mainloop(&args);
 

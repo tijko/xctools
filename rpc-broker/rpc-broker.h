@@ -124,6 +124,8 @@ struct policy {
 
 struct policy *dbus_broker_policy;
 
+bool reload_policy;
+
 // DBus-Broker server
 #define BROKER_DEFAULT_PORT 5555
 #define BROKER_UI_PORT      8080

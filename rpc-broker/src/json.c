@@ -56,6 +56,7 @@ struct json_response *make_json_request(struct json_request *jreq)
     }
 
     snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, "%d", jreq->id);
+    // XXX call `broker` on jreq->dmsg
     DBusMessage *msg = make_dbus_call(conn, &(jreq->dmsg));
 /*
     if (!msg || dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) {
@@ -65,26 +66,6 @@ struct json_response *make_json_request(struct json_request *jreq)
                      jreq->dmsg.destination, jreq->dmsg.path,
                      jreq->dmsg.interface, jreq->dmsg.member);
         DBUS_BROKER_WARNING("response to <%d> request failed %s -> %d", id, err, display_port);
-
-        for (int i=0; i < jreq->dmsg.arg_number; i++) {
-            switch (jreq->dmsg.arg_sig[i]) {
-
-                case ('s'):
-                    DBUS_BROKER_WARNING("Arg: %s", (char *) jreq->dmsg.args[i]);
-                    break;
-
-                case ('u'):
-                case ('d'):
-                case ('i'):
-                case ('b'):
-                    DBUS_BROKER_WARNING("Arg: %d", *(int *) jreq->dmsg.args[i]);
-                    break;
-
-                default:
-                    DBUS_BROKER_WARNING("Unknown arg %c", jreq->dmsg.arg_sig[i]);
-                    break;
-            }
-        }
 
         free(err);
         free(jrsp);
