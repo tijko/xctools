@@ -85,7 +85,7 @@ int broker(struct dbus_message *dmsg, int domid)
 int exchange(int rsock, int ssock,
              ssize_t (*rcv)(int, void *, size_t, int),
              ssize_t (*snd)(int, const void *, size_t, int),
-             struct dbus_request *req)
+             int domid)
 {
     char buf[DBUS_MSG_LEN] = { 0 };
     int rbytes = rcv(rsock, buf, DBUS_MSG_LEN, 0);
@@ -102,7 +102,7 @@ int exchange(int rsock, int ssock,
                 return 0;
             }
 
-            if (broker(&dmsg, req) == 0)
+            if (broker(&dmsg, domid) == 0)
                 return 0;
         }
     }
