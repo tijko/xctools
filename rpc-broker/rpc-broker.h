@@ -240,11 +240,6 @@ struct broker_signal {
     // give timestamp too?
 };
 
-struct dbus_request {
-    uint16_t domid;
-    uint16_t client;
-};
-
 struct dbus_broker_args {
     bool logging;
     bool verbose;
@@ -255,7 +250,7 @@ struct dbus_broker_args {
 };
 
 // rpc-broker.c
-int broker_message(struct dbus_request *request);
+int broker_message(int client, int domid);
 
 signed int is_stubdom(uint16_t domid);
 
@@ -319,12 +314,12 @@ void free_json_request(struct json_request *jreq);
 
 
 // src/msg.c
-int broker(struct dbus_message *dmsg, struct dbus_request *req);
+int broker(struct dbus_message *dmsg, int domid);
 
 int exchange(int rsock, int ssock,
              ssize_t (*rcv)(int, void *, size_t, int),
              ssize_t (*snd)(int, const void *, size_t, int),
-             struct dbus_request *req);
+             int domid);
 
 int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid);
 

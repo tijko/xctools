@@ -103,17 +103,17 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
 {
     v4v_addr_t addr;
     int client = lws_get_socket_fd(wsi);
-    int ret = 0;
 
     if (v4v_getpeername(client, &addr) < 0) {
         DBUS_BROKER_WARNING("getpeername call failed <%d>", client);
-        return ret;
+        return -1;
     }
 
     struct json_request *jreq = convert_json_request(raw_req);
+    // XXX call `broker` on jreq->dmsg
 
-    if (!jreq)
-        return ret;
+    if (!jreq || broker(jreq->dmsg, addr.domain) > 0)
+        return -1;
 
     jreq->wsi = wsi;
 
@@ -133,14 +133,12 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     if (strcmp("AddMatch", jreq->dmsg.member) == 0) 
         add_dbus_signal(jreq->conn, wsi);
 
-    ret = 0;
-
 free_req:
     free_json_request(jreq);
 
 free_resp:
     free(jrsp);
 
-    return ret;
+    return 0;
 }
 

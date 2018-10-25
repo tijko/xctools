@@ -56,7 +56,6 @@ struct json_response *make_json_request(struct json_request *jreq)
     }
 
     snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, "%d", jreq->id);
-    // XXX call `broker` on jreq->dmsg
     DBusMessage *msg = make_dbus_call(conn, &(jreq->dmsg));
 /*
     if (!msg || dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) {

@@ -26,14 +26,12 @@
  * rules listed in xenclient database are passed to `filter` to determine
  * whether or not to be dropped or passed through.
  */
-int broker(struct dbus_message *dmsg, struct dbus_request *req)
+int broker(struct dbus_message *dmsg, int domid)
 {
-    if (!dmsg || !req) {
+    if (!dmsg) {
         DBUS_BROKER_WARNING("Invalid args to broker-request %s", "");
         return 1;
     }
-
-    uint16_t domid = req->domid;
 
     int policy = 0;
 
@@ -61,8 +59,6 @@ int broker(struct dbus_message *dmsg, struct dbus_request *req)
             break;
         }
     }
-
-    policy = 1;
 
     if (verbose_logging) {
         char req_msg[1024];

@@ -37,13 +37,8 @@
  * Polling on the client & server file-descriptors until the connection 
  * communication is finished.
  */
-int broker_message(struct dbus_request *request)
+int broker_message(int client, int domid)
 {
-    if (!request)
-        return -1; 
-
-    int client = request->client;
-
     fd_set ex_set;
 
     int srv = connect_to_system_bus();
@@ -66,9 +61,9 @@ int broker_message(struct dbus_request *request)
         // Depending on which fd is ready to be read, determines which
         // function pointer to pass to `exchange` 
         if (FD_ISSET(srv, &ex_set))
-            bytes = exchange(srv, client, recv, v4v_send, request);
+            bytes = exchange(srv, client, recv, v4v_send, domid);
         else
-            bytes = exchange(client, srv, v4v_recv, send, request);
+            bytes = exchange(client, srv, v4v_recv, send, domid);
 
     } while (bytes > 0);
 
@@ -250,10 +245,8 @@ static void run_rawdbus(struct dbus_broker_args *args)
             
             if (v4v_getpeername(client, &client_addr) < 0) 
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
-            else {
-                struct dbus_request dreq = { .client=client, .domid=client_addr.domain }; 
-                broker_message(&dreq); 
-            }
+            else 
+                broker_message(client, client_addr.domain); 
         }
 
         // check signal subscriptions
