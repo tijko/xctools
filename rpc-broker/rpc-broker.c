@@ -121,7 +121,8 @@ void sigint_handler(int signal)
     DBUS_BROKER_WARNING("<received signal interrupt> %s", "");
     free_dlinks();
     free_policy();
-    lws_ring_destroy(ring);
+    if (ring)
+        lws_ring_destroy(ring);
     exit(0);
 }
 
@@ -249,8 +250,6 @@ static void run_rawdbus(struct dbus_broker_args *args)
                 broker_message(client, client_addr.domain); 
         }
 
-        //service_dbus_signals(); 
-
         if (reload_policy) {
             free_policy();
             dbus_broker_policy = build_policy(RULES_FILENAME);
@@ -369,6 +368,7 @@ int main(int argc, char *argv[])
 
     dbus_broker_running = 1;
     dlinks = NULL;
+    ring = NULL;
     reload_policy = false;
 
     mainloop(&args);
