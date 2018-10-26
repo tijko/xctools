@@ -67,6 +67,8 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
             break;
 
         case LWS_CALLBACK_WSI_DESTROY:
+            DBUS_BROKER_WARNING("WS client session closed %s", "");
+            free_dlinks();
             break;
 
         default:
