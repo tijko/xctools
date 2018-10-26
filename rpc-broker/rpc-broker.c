@@ -49,7 +49,7 @@ int broker_message(int client, int domid)
         FD_SET(client, &ex_set);
         FD_SET(srv, &ex_set);
 
-        struct timeval tv = { .tv_sec=0, .tv_usec=100 };
+        struct timeval tv = { .tv_sec=1, .tv_usec=0 };
         // Poll on read-ready
         int ret = select(srv + 1, &ex_set, NULL, NULL, &tv);
 
