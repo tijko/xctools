@@ -249,8 +249,7 @@ static void run_rawdbus(struct dbus_broker_args *args)
                 broker_message(client, client_addr.domain); 
         }
 
-        // check signal subscriptions
-        service_dbus_signals(); 
+        //service_dbus_signals(); 
 
         if (reload_policy) {
             free_policy();
