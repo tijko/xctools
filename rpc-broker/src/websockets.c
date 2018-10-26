@@ -44,8 +44,10 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
         case LWS_CALLBACK_RECEIVE: {
             memset(user, '\0', WS_USER_MEM_SIZE);
             memcpy(user, in, len);
-            if (ws_request_handler(wsi, user) == 0)
-                lws_callback_on_writable(wsi);
+//            if (ws_request_handler(wsi, user) == 0)
+//                lws_callback_on_writable(wsi);
+            ws_request_handler(wsi, user); 
+            lws_callback_on_writable(wsi);
             break;
         }
 

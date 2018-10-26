@@ -121,8 +121,10 @@ void sigint_handler(int signal)
     DBUS_BROKER_WARNING("<received signal interrupt> %s", "");
     free_dlinks();
     free_policy();
+
     if (ring)
         lws_ring_destroy(ring);
+
     exit(0);
 }
 
