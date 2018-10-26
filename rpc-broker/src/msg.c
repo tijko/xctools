@@ -106,7 +106,7 @@ int exchange(int rsock, int ssock,
             DBUS_BROKER_EVENT("%s %s %s", dmsg.destination, dmsg.interface, dmsg.member);
             for (int i=0; i < dmsg.arg_number; i++) {
                 // dmsg.args
-                switch (arg_sig[i]) {
+                switch (dmsg.arg_sig[i]) {
                     case ('u'):
                     case ('i'):
                         DBUS_BROKER_EVENT("Arg: %d", *(int *) dmsg.args[i]);
