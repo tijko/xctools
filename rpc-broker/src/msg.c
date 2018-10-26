@@ -103,6 +103,7 @@ int exchange(int rsock, int ssock,
             }
 
             // Allow for check if msg is signal subscription...
+            DBUS_BROKER_EVENT("%s %s %s", dmsg.destination, dmsg.interface, dmsg.member);
             if (broker(&dmsg, domid) == 0)
                 return 0;
         }
