@@ -104,6 +104,29 @@ int exchange(int rsock, int ssock,
 
             // Allow for check if msg is signal subscription...
             DBUS_BROKER_EVENT("%s %s %s", dmsg.destination, dmsg.interface, dmsg.member);
+            for (int i=0; i < dmsg.arg_number; i++) {
+                // dmsg.args
+                switch (arg_sig[i]) {
+                    case ('u'):
+                    case ('i'):
+                        DBUS_BROKER_EVENT("Arg: %d", *(int *) dmsg.args[i]);
+                        break;
+                    case ('s'):
+                        DBUS_BROKER_EVENT("Arg: %s", (char *) dmsg.args[i]);
+                        break;
+                    case ('b'):
+                        DBUS_BROKER_EVENT("Arg: %b", *(bool *) dmsg.args[i]);
+                        break;
+                    case ('d'):
+                        DBUS_BROKER_EVENT("Arg: %g", *(double *) dmsg.args[i]);
+                        break;
+                    default:
+                        DBUS_BROKER_EVENT("Arg: Unknown %s", "");
+                        break;
+                        
+                }
+            }
+
             if (broker(&dmsg, domid) == 0)
                 return 0;
         }
