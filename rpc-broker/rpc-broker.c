@@ -222,6 +222,27 @@ static void run_websockets(struct dbus_broker_args *args)
     lws_context_destroy(ws_context);
 }
 
+static int loop(int rsock, int ssock,
+                ssize_t (*rcv)(int, void *, size_t, int),
+                ssize_t (*snd)(int, const void *, size_t, int))
+{
+    int total = 0;
+    
+    char buf[4096];
+
+    while (1) {
+
+        int ret = rcv(rsock, buf, 4096, 0);
+        if (ret <= 0)
+            break;
+        total += ret; 
+
+        snd(ssock, buf, ret);
+    }
+
+    return total;
+}
+
 static void run_rawdbus(struct dbus_broker_args *args)
 {
     struct dbus_broker_server *server = start_server(args->port);
@@ -248,8 +269,20 @@ static void run_rawdbus(struct dbus_broker_args *args)
             
             if (v4v_getpeername(client, &client_addr) < 0) 
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
-            else 
-                broker_message(client, client_addr.domain); 
+            else {
+                // while both loops finish...
+                int srv = connect_to_system_bus();
+                fnctl(srv, F_SETFL, O_NONBLOCK);
+                fnctl(client, F_SETFL, O_NONBLOCK);
+                int sret = 1, cret = 1;
+                while (sret > 0 || cret > 0) {
+                    // client recv loop
+                    cret = loop(client, srv, v4v_recv, send);
+                    // server recv loop
+                    sret = loop(srv, client, recv, v4v_send);
+                }
+                //broker_message(client, client_addr.domain); 
+            }
         }
 
         if (reload_policy) {
