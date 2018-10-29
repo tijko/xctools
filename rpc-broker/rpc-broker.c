@@ -272,8 +272,8 @@ static void run_rawdbus(struct dbus_broker_args *args)
             else {
                 // while both loops finish...
                 int srv = connect_to_system_bus();
-                fnctl(srv, F_SETFL, O_NONBLOCK);
-                fnctl(client, F_SETFL, O_NONBLOCK);
+                fcntl(srv, F_SETFL, O_NONBLOCK);
+                fcntl(client, F_SETFL, O_NONBLOCK);
                 int sret = 1, cret = 1;
                 while (sret > 0 || cret > 0) {
                     // client recv loop
