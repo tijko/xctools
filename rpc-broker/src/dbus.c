@@ -118,7 +118,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
 
     void *reply;
 
-    while (dbus_message_iter_next(&iter)) {
+    while (dbus_message_iter_has_next(&iter)) {
         
         dbus_message_iter_get_basic(&iter, &reply);
 
@@ -148,6 +148,8 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
                 printf("Debug: unknown type\n");
                 break;
         }
+
+        dbus_message_iter_next(&iter);
     }
     //
     dbus_message_unref(dbus_msg);
