@@ -111,6 +111,8 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
     dmsg->member = member ? member : "NULL";
 
     // Grab arguments...
+    printf("%s %s %s\n", dmsg->destination, dmsg->interface, dmsg->member);
+
     DBusMessageIter iter;
     dbus_message_iter_init(dbus_msg, &iter);
 
