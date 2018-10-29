@@ -116,11 +116,11 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
 
     void *reply;
 
-    while (dbus_message_iter_get_next(&iter)) {
+    while (dbus_message_iter_next(&iter)) {
         
         dbus_message_iter_get_basic(&iter, &reply);
 
-        switch (dbus_message_get_arg_type(&iter)) {
+        switch (dbus_message_iter_get_arg_type(&iter)) {
 
             case (DBUS_TYPE_STRING):
                 printf("String: %s\n", (char *) reply);
