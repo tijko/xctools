@@ -110,6 +110,44 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
     const char *member = dbus_message_get_member(dbus_msg);
     dmsg->member = member ? member : "NULL";
 
+    // Grab arguments...
+    DBusMessageIter iter;
+    dbus_message_iter_init(dbus_msg, &iter);
+
+    void *reply;
+
+    while (dbus_message_iter_get_next(&iter)) {
+        
+        dbus_message_iter_get_basic(&iter, &reply);
+
+        switch (dbus_message_get_arg_type(&iter)) {
+
+            case (DBUS_TYPE_STRING):
+                printf("String: %s\n", (char *) reply);
+                break;
+
+            case (DBUS_TYPE_BOOLEAN):
+                printf("Boolean: %d\n", *(boolean *) reply);
+                break;
+
+            case (DBUS_TYPE_INT):
+                printf("Int: %d\n", *(int *) reply);
+                break;
+
+            case (DBUS_TYPE_UINT):
+                printf("Uint: %d\n", *(uint32_t *) reply);
+                break;
+
+            case (DBUS_TYPE_DOUBLE):
+                printf("Dbl: %d\n", *(double *) reply);
+                break;
+
+            default:
+                printf("Debug: unknown type\n");
+                break;
+        }
+    }
+    //
     dbus_message_unref(dbus_msg);
 
     return 0;
