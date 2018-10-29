@@ -258,10 +258,10 @@ static void run_rawdbus(struct dbus_broker_args *args)
         FD_ZERO(&server_set);
         FD_SET(default_socket, &server_set);
 
-        struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_TIMEOUT };
+        struct timeval tv = { .tv_sec=1, .tv_usec=0 };//DBUS_BROKER_TIMEOUT };
         int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
-
         if (ret > 0) {
+
             int client = v4v_accept(default_socket, &server->peer);
             DBUS_BROKER_EVENT("<Client has made a connection> [Dom: %d Client: %d]",
                                 server->peer.domain, client);
