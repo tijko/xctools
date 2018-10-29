@@ -228,11 +228,11 @@ static int loop(int rsock, int ssock,
 {
     int total = 0;
     
-    char buf[4096];
+    char buf[8192];
 
     while (1) {
 
-        int ret = rcv(rsock, buf, 4096, 0);
+        int ret = rcv(rsock, buf, 8192, 0);
         if (ret <= 0)
             break;
         total += ret; 
