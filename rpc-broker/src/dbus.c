@@ -127,19 +127,19 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
                 break;
 
             case (DBUS_TYPE_BOOLEAN):
-                printf("Boolean: %d\n", *(boolean *) reply);
+                printf("Boolean: %d\n", *(bool *) reply);
                 break;
 
-            case (DBUS_TYPE_INT):
+            case (DBUS_TYPE_INT32):
                 printf("Int: %d\n", *(int *) reply);
                 break;
 
-            case (DBUS_TYPE_UINT):
+            case (DBUS_TYPE_UINT32):
                 printf("Uint: %d\n", *(uint32_t *) reply);
                 break;
 
             case (DBUS_TYPE_DOUBLE):
-                printf("Dbl: %d\n", *(double *) reply);
+                printf("Dbl: %g\n", *(double *) reply);
                 break;
 
             default:
