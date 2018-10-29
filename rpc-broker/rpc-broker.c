@@ -237,7 +237,7 @@ static int loop(int rsock, int ssock,
             break;
         total += ret; 
 
-        snd(ssock, buf, ret);
+        snd(ssock, buf, ret, 0);
     }
 
     return total;
