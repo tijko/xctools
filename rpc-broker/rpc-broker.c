@@ -243,7 +243,7 @@ static int loop(int rsock, int ssock,
     return total;
 }
 
-static void run_rawdbus(struct dbus_broker_args *args)
+void run_rawdbus(struct dbus_broker_args *args)
 {
     struct dbus_broker_server *server = start_server(args->port);
     DBUS_BROKER_EVENT("<Server has started listening> [Port: %d]", args->port);
