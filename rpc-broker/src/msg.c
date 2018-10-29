@@ -103,8 +103,8 @@ int exchange(int rsock, int ssock,
             }
 
             // Allow for check if msg is signal subscription...
-            if (broker(&dmsg, domid) == 0)
-                return 0;
+            //if (broker(&dmsg, domid) == 0)
+            //    return 0;
         }
     }
 

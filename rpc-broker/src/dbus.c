@@ -112,7 +112,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
 
     // Grab arguments...
     printf("%s %s %s\n", dmsg->destination, dmsg->interface, dmsg->member);
-
+/*
     DBusMessageIter iter;
     dbus_message_iter_init(dbus_msg, &iter);
 
@@ -151,6 +151,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
 
         dbus_message_iter_next(&iter);
     }
+    */
     //
     dbus_message_unref(dbus_msg);
 
