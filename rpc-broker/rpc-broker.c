@@ -234,7 +234,7 @@ static int loop(int rsock, int ssock,
 
         int ret = rcv(rsock, buf, 8192, 0);
         DBUS_BROKER_EVENT("%d", ret);
-        if (ret <= 0)
+        if (ret < 0)
             break;
         total += ret; 
 
