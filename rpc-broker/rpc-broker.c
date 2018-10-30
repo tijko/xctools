@@ -231,7 +231,7 @@ static int loop(int rsock, int ssock,
     char buf[8192];
 
     struct timeval tv = { .tv_sec=1, .tv_usec=0 };
-    fd_set_t recv_fd;
+    fd_set recv_fd;
     FD_ZERO(&recv_fd);
     FD_SET(rsock, &recv_fd);
 
