@@ -276,7 +276,7 @@ void run_rawdbus(struct dbus_broker_args *args)
                 fcntl(srv, F_SETFL, O_NONBLOCK);
                 fcntl(client, F_SETFL, O_NONBLOCK);
                 int sret = 1, cret = 1;
-                while (sret > 0 || cret > 0) {
+                while (sret >= 0 || cret >= 0) {
                     // client recv loop
                     DBUS_BROKER_EVENT("client %s", "");
                     cret = loop(client, srv, v4v_recv, send);
