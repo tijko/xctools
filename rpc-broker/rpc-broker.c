@@ -230,13 +230,21 @@ static int loop(int rsock, int ssock,
     
     char buf[8192];
 
+    struct timeval tv = { .tv_sec=1, .tv_usec=0 };
+    fd_set_t recv_fd;
+    FD_ZERO(&recv_fd);
+    FD_SET(rsock, &recv_fd);
+
     while (1) {
 
-        int ret = rcv(rsock, buf, 8192, 0);
+        int ret = select(rsock + 1, &recv_fd, NULL, NULL, &tv);
+
         if (ret < 0)
             break;
-        total += ret; 
+        else
+            ret = rcv(rsock, buf, 8192, 0);
 
+        total += ret; 
         snd(ssock, buf, ret, 0);
     }
 
@@ -270,10 +278,9 @@ void run_rawdbus(struct dbus_broker_args *args)
             if (v4v_getpeername(client, &client_addr) < 0) 
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
             else {
-                // while both loops finish...
                 int srv = connect_to_system_bus();
-                fcntl(srv, F_SETFL, O_NONBLOCK);
-                fcntl(client, F_SETFL, O_NONBLOCK);
+//                fcntl(srv, F_SETFL, O_NONBLOCK);
+//                fcntl(client, F_SETFL, O_NONBLOCK);
                 int sret = 1, cret = 1;
                 while ( 1 ) {
 //                while (sret >= 0 || cret >= 0) {
@@ -283,6 +290,7 @@ void run_rawdbus(struct dbus_broker_args *args)
                     sret = loop(srv, client, recv, v4v_send);
                 }
                 //broker_message(client, client_addr.domain); 
+                close(srv);
             }
         }
 
