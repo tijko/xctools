@@ -233,7 +233,6 @@ static int loop(int rsock, int ssock,
     while (1) {
 
         int ret = rcv(rsock, buf, 8192, 0);
-        DBUS_BROKER_EVENT("%d", ret);
         if (ret < 0)
             break;
         total += ret; 
@@ -276,12 +275,11 @@ void run_rawdbus(struct dbus_broker_args *args)
                 fcntl(srv, F_SETFL, O_NONBLOCK);
                 fcntl(client, F_SETFL, O_NONBLOCK);
                 int sret = 1, cret = 1;
-                while (sret >= 0 || cret >= 0) {
+                while ( 1 ) {
+//                while (sret >= 0 || cret >= 0) {
                     // client recv loop
-                    DBUS_BROKER_EVENT("client %s", "");
                     cret = loop(client, srv, v4v_recv, send);
                     // server recv loop
-                    DBUS_BROKER_EVENT("server %s", "");
                     sret = loop(srv, client, recv, v4v_send);
                 }
                 //broker_message(client, client_addr.domain); 
