@@ -227,18 +227,14 @@ static int loop(int rsock, int ssock,
                 ssize_t (*snd)(int, const void *, size_t, int))
 {
     int total = 0;
-    
     char buf[8192];
-
-    struct timeval tv = { .tv_sec=0, .tv_usec=100000 };
     fd_set recv_fd;
-    FD_ZERO(&recv_fd);
-    FD_SET(rsock, &recv_fd);
-    // sending null-byte back?
-    // check for Signal Subscriptions...
-    //
-    // print-out msg's
+
     while (1) {
+
+        struct timeval tv = { .tv_sec=0, .tv_usec=100000 };
+        FD_ZERO(&recv_fd);
+        FD_SET(rsock, &recv_fd);
 
         int ret = select(rsock + 1, &recv_fd, NULL, NULL, &tv);
 
