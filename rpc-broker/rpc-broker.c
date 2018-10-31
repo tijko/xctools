@@ -246,6 +246,9 @@ static int loop(int rsock, int ssock,
             break;
 
         ret = rcv(rsock, buf, 8192, 0);
+        if (ret <= 0)
+            break;
+
         printf("Received: %d\n", ret);
         sleep(1);
         for (int i=0; i < ret; i++) {
