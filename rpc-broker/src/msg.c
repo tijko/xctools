@@ -90,7 +90,6 @@ int exchange(int rsock, int ssock,
     char buf[DBUS_MSG_LEN] = { 0 };
     int rbytes = rcv(rsock, buf, DBUS_MSG_LEN, 0);
 
-/*
     if (rbytes >= 8) {
 
         int len = dbus_message_demarshal_bytes_needed(buf, rbytes);
@@ -108,7 +107,7 @@ int exchange(int rsock, int ssock,
                 return 0;
         }
     }
-*/
+
     if (rbytes < 1)
         return rbytes;
 
