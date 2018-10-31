@@ -174,10 +174,17 @@ static inline void service_dbus_signals(void)
 
         if (!reply) 
             goto free_msg;
+        // XXX grab FD upon insertion (ie add a field)
+        // removal...
+        if (fcntl(curr->wsi_fd, F_GETFD) < 0) {
+            DBUS_BROKER_WARNING("Signal File Descriptor Closed <%d>", curr->wsi_fd);
+            free(reply);
+            goto free_msg;
+        }
 
+        lws_callback_on_writable(curr->wsi);
         lws_ring_insert(ring, reply, 1);
         free(reply);
-        lws_callback_on_writable(curr->wsi);
 
 free_msg:
         dbus_message_unref(msg);
@@ -222,6 +229,7 @@ static void run_websockets(struct dbus_broker_args *args)
     lws_context_destroy(ws_context);
 }
 
+// get the DOM-ID passed
 static int loop(int rsock, int ssock,
                 ssize_t (*rcv)(int, void *, size_t, int),
                 ssize_t (*snd)(int, const void *, size_t, int))
@@ -239,6 +247,9 @@ static int loop(int rsock, int ssock,
         if (select(rsock + 1, &recv_fd, NULL, NULL, &tv) <= 0)
             break;
 
+        // demarshall messages in order to filter...
+        // shorten loop up move from below this line to 
+        // pass dom-id for filtering
         int rbytes = rcv(rsock, buf, DBUS_MSG_LEN, 0);
 
         if (rbytes <= 0)
@@ -297,8 +308,11 @@ void run_rawdbus(struct dbus_broker_args *args)
                     // server recv loop
                     printf("Server..\n");
                     sret = loop(srv, client, recv, v4v_send);
+                    // check for signals....store and move along
                 }
+
                 //broker_message(client, client_addr.domain); 
+                // if not signal do not close...
                 close(srv);
             }
         }

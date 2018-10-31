@@ -395,6 +395,7 @@ void add_dbus_signal(DBusConnection *conn, struct lws *wsi)
     }
 
     curr->wsi = wsi;
+    curr->wsi_fd = lws_get_socket_fd(wsi);
     curr->dconn = conn;
     curr->next = NULL;
 }
