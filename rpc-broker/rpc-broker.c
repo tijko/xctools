@@ -234,15 +234,15 @@ static int loop(int rsock, int ssock,
     fd_set recv_fd;
     FD_ZERO(&recv_fd);
     FD_SET(rsock, &recv_fd);
-
+    // sending null-byte back?
     while (1) {
 
         int ret = select(rsock + 1, &recv_fd, NULL, NULL, &tv);
 
         if (ret < 0)
             break;
-        else
-            ret = rcv(rsock, buf, 8192, 0);
+
+        ret = rcv(rsock, buf, ret, 0);
 
         total += ret; 
         snd(ssock, buf, ret, 0);
