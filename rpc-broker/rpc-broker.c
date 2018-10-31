@@ -235,6 +235,9 @@ static int loop(int rsock, int ssock,
     FD_ZERO(&recv_fd);
     FD_SET(rsock, &recv_fd);
     // sending null-byte back?
+    // check for Signal Subscriptions...
+    //
+    // print-out msg's
     while (1) {
 
         int ret = select(rsock + 1, &recv_fd, NULL, NULL, &tv);
@@ -242,8 +245,15 @@ static int loop(int rsock, int ssock,
         if (ret < 0)
             break;
 
-        ret = rcv(rsock, buf, ret, 0);
-
+        ret = rcv(rsock, buf, 8192, 0);
+        for (int i=0; i < ret; i++) {
+            if (buf[i] == '\0')
+                printf("-");
+            else
+                printf("%c", buf[i]);
+        }
+        printf("\n");
+            
         total += ret; 
         snd(ssock, buf, ret, 0);
     }
