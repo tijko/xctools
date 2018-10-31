@@ -293,6 +293,7 @@ void run_rawdbus(struct dbus_broker_args *args)
 //                fcntl(client, F_SETFL, O_NONBLOCK);
                 int sret = 1, cret = 1;
                 while ( 1 ) {
+//
 //                while (sret >= 0 || cret >= 0) {
                     // client recv loop
                     cret = loop(client, srv, v4v_recv, send);
