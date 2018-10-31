@@ -250,7 +250,6 @@ static int loop(int rsock, int ssock,
             break;
 
         printf("Received: %d\n", ret);
-        sleep(1);
         for (int i=0; i < ret; i++) {
             if (buf[i] == '\0' || buf[i] == '\n' || buf[i] == '\r')
                 printf("-");
@@ -306,7 +305,7 @@ void run_rawdbus(struct dbus_broker_args *args)
                     sret = loop(srv, client, recv, v4v_send);
                 }
                 //broker_message(client, client_addr.domain); 
-                //close(srv);
+                close(srv);
             }
         }
 
