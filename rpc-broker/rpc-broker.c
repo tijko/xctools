@@ -227,26 +227,27 @@ static int loop(int rsock, int ssock,
                 ssize_t (*snd)(int, const void *, size_t, int))
 {
     int total = 0;
+    // Macro for max-msg size
     char buf[8192];
     fd_set recv_fd;
 
     while (1) {
-
+        // Macro for timeout value
         struct timeval tv = { .tv_sec=0, .tv_usec=100000 };
         FD_ZERO(&recv_fd);
         FD_SET(rsock, &recv_fd);
 
-        int ret = select(rsock + 1, &recv_fd, NULL, NULL, &tv);
-
-        if (ret <= 0)
+        if (select(rsock + 1, &recv_fd, NULL, NULL, &tv) <= 0)
             break;
 
-        ret = rcv(rsock, buf, 8192, 0);
-        if (ret <= 0)
+        int rbytes = rcv(rsock, buf, 8192, 0);
+
+        if (rbytes <= 0)
             break;
 
-        printf("Received: %d\n", ret);
-        for (int i=0; i < ret; i++) {
+
+        printf("Received: %d\n", rbytes);
+        for (int i=0; i < rbytes; i++) {
             if (buf[i] == '\0' || buf[i] == '\n' || buf[i] == '\r')
                 printf("-");
             else
@@ -254,8 +255,8 @@ static int loop(int rsock, int ssock,
         }
         printf("\n");
             
-        total += ret; 
-        snd(ssock, buf, ret, 0);
+        total += rbytes; 
+        snd(ssock, buf, rbytes, 0);
     }
 
     return total;
@@ -276,7 +277,7 @@ void run_rawdbus(struct dbus_broker_args *args)
         FD_ZERO(&server_set);
         FD_SET(default_socket, &server_set);
 
-        struct timeval tv = { .tv_sec=1, .tv_usec=0 };//DBUS_BROKER_TIMEOUT };
+        struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_TIMEOUT };
         int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
         if (ret > 0) {
 
