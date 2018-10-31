@@ -227,20 +227,19 @@ static int loop(int rsock, int ssock,
                 ssize_t (*snd)(int, const void *, size_t, int))
 {
     int total = 0;
-    // Macro for max-msg size
-    char buf[8192];
+    char buf[DBUS_MSG_LEN];
     fd_set recv_fd;
 
     while (1) {
-        // Macro for timeout value
-        struct timeval tv = { .tv_sec=0, .tv_usec=100000 };
+
+        struct timeval tv = { .tv_sec=0, .tv_usec= DBUS_BROKER_MSG_TIMEOUT };
         FD_ZERO(&recv_fd);
         FD_SET(rsock, &recv_fd);
 
         if (select(rsock + 1, &recv_fd, NULL, NULL, &tv) <= 0)
             break;
 
-        int rbytes = rcv(rsock, buf, 8192, 0);
+        int rbytes = rcv(rsock, buf, DBUS_MSG_LEN, 0);
 
         if (rbytes <= 0)
             break;
@@ -277,7 +276,7 @@ void run_rawdbus(struct dbus_broker_args *args)
         FD_ZERO(&server_set);
         FD_SET(default_socket, &server_set);
 
-        struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_TIMEOUT };
+        struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_CLIENT_TIMEOUT };
         int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
         if (ret > 0) {
 
@@ -290,8 +289,6 @@ void run_rawdbus(struct dbus_broker_args *args)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
             else {
                 int srv = connect_to_system_bus();
-//                fcntl(srv, F_SETFL, O_NONBLOCK);
-//                fcntl(client, F_SETFL, O_NONBLOCK);
                 int sret = 1, cret = 1;
                 while (sret > 0 || cret > 0) {
                     // client recv loop
