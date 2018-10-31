@@ -242,7 +242,7 @@ static int loop(int rsock, int ssock,
 
         int ret = select(rsock + 1, &recv_fd, NULL, NULL, &tv);
 
-        if (ret < 0)
+        if (ret <= 0)
             break;
 
         ret = rcv(rsock, buf, 8192, 0);
