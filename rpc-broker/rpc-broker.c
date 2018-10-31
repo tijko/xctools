@@ -246,8 +246,10 @@ static int loop(int rsock, int ssock,
             break;
 
         ret = rcv(rsock, buf, 8192, 0);
+        printf("Received: %d\n", ret);
+        sleep(1);
         for (int i=0; i < ret; i++) {
-            if (buf[i] == '\0')
+            if (buf[i] == '\0' || buf[i] == '\n' || buf[i] == '\r')
                 printf("-");
             else
                 printf("%c", buf[i]);
