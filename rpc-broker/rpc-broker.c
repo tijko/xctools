@@ -301,7 +301,7 @@ void run_rawdbus(struct dbus_broker_args *args)
                     sret = loop(srv, client, recv, v4v_send);
                 }
                 //broker_message(client, client_addr.domain); 
-                close(srv);
+                //close(srv);
             }
         }
 
