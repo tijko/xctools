@@ -92,8 +92,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
     DBusMessage *dbus_msg = NULL;
     dbus_msg = dbus_message_demarshal(msg, len, &error);
 
-    if (dbus_error_is_set(&error) || 
-        dbus_message_get_type(dbus_msg) == DBUS_MESSAGE_TYPE_METHOD_CALL) {
+    if (dbus_error_is_set(&error)) { 
         DBUS_BROKER_WARNING("<De-Marshal failed> [Length: %d] error: %s",
                               len, error.message);
         return -1;
@@ -111,6 +110,9 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
     const char *member = dbus_message_get_member(dbus_msg);
     dmsg->member = member ? member : "NULL";
 
+    if (dbus_message_get_type(dbus_msg) == DBUS_MESSAGE_TYPE_METHOD_CALL) 
+        printf("%s %s %s\n", dmsg.destination, dmsg.interface, dmsg.member);
+        
     dbus_message_unref(dbus_msg);
 
     return 0;

@@ -156,9 +156,8 @@ int exchange(int rsock, int ssock,
                     return 0;
                 }
 
-                printf("%s %s %s\n", dmsg.destination, dmsg.interface, dmsg.member);
-                if (broker(&dmsg, domid) == 0)
-                    return 0;
+                // check return
+                broker(&dmsg, domid); 
             }
         }
 
