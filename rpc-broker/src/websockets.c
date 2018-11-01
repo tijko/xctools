@@ -76,6 +76,7 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
             break;
     }
 
+    DBUS_BROKER_EVENT("Websockets <%d>", reason);
     return 0;
 }
 
