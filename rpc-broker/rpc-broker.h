@@ -291,6 +291,7 @@ void free_dlinks(void);
 #define DBUS_INTRO_IFACE "org.freedesktop.DBus.Introspectable"
 #define DBUS_INTRO_METH  "Introspect"
 
+#define DBUS_COMM_MIN     56
 
 // src/json.c
 struct json_response *init_jrsp(void);
