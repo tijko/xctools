@@ -154,7 +154,8 @@ int exchange(int rsock, int ssock,
                 struct dbus_message dmsg;
                 // Handle malformed msg (propagate to broker-msg)
                 if (convert_raw_dbus(&dmsg, buf, len) > 0)   
-                    broker(&dmsg, domid); // check return; 
+                    if (broker(&dmsg, domid) < 1); 
+                        return -1;
             }
         }
 

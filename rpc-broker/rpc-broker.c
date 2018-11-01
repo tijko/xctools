@@ -72,15 +72,16 @@ int broker_message(int client, int domid)
 */
     int srv = connect_to_system_bus();
     int sret = 1, cret = 1;
+
     while (sret > 0 || cret > 0) {
+
         // client recv loop
-        printf("Client...\n");
         cret = exchange(client, srv, v4v_recv, send, domid);
         // server recv loop
-        printf("Server..\n");
         sret = exchange(srv, client, recv, v4v_send, domid);
-        // check for signals....store and move along
-        printf("cret <%d> sret <%d>\n", cret, sret);
+
+        if (cret < 0)
+            break;
     }
 
     close(srv);
