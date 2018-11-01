@@ -132,9 +132,6 @@ int exchange(int rsock, int ssock,
         if (select(rsock + 1, &recv_fd, NULL, NULL, &tv) <= 0)
             break;
 
-        // demarshall messages in order to filter...
-        // shorten loop up move from below this line to 
-        // pass dom-id for filtering
         int rbytes = rcv(rsock, buf, DBUS_MSG_LEN, 0);
 
         if (rbytes <= 0)
@@ -149,8 +146,22 @@ int exchange(int rsock, int ssock,
                 printf("%c", buf[i]);
         }
         printf("\n");
-        // Test if message gt 32 (avoid filtering on handshake)
-        // demarshall and filter...
+
+        if (rbytes > 56) { 
+            int len = dbus_message_demarshal_bytes_needed(buf, rbytes);
+            if (len == rbytes) {
+                struct dbus_message dmsg;
+                if (convert_raw_dbus(&dmsg, buf, len) < 0) {
+                    DBUS_BROKER_WARNING("DBus-message conversion failed %s", "");
+                    return 0;
+                }
+
+                printf("%s %s %s\n", dmsg.destination, dmsg.interface, dmsg.member);
+                if (broker(&dmsg, domid) == 0)
+                    return 0;
+            }
+        }
+
         total += rbytes; 
         snd(ssock, buf, rbytes, 0);
     }
