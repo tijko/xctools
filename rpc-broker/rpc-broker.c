@@ -206,7 +206,7 @@ static void run_websockets(struct dbus_broker_args *args)
 
     while (dbus_broker_running) {
 
-        service_dbus_signals(); 
+        //service_dbus_signals(); 
         lws_service(ws_context, WS_LOOP_TIMEOUT);
 
         if (reload_policy) {
