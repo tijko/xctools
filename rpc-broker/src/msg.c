@@ -137,6 +137,19 @@ int exchange(int rsock, int ssock,
         if (rbytes <= 0)
             break;
 
+        if (rbytes > DBUS_COMM_MIN) { 
+
+            struct dbus_message dmsg;
+            int len = dbus_message_demarshal_bytes_needed(buf, rbytes);
+
+            // Handle malformed msg (propagate to broker-msg)
+            if ((len == rbytes) && 
+                (convert_raw_dbus(&dmsg, buf, len) > 0) && 
+                (broker(&dmsg, domid) < 1)) { 
+                return -1;
+            }
+        }
+
         printf("Received: %d\n", rbytes);
         for (int i=0; i < rbytes; i++) {
             if (buf[i] == '\0' || buf[i] == '\n' || buf[i] == '\r')
@@ -146,21 +159,9 @@ int exchange(int rsock, int ssock,
         }
         printf("\n");
 
-        if (rbytes > DBUS_COMM_MIN) { 
-
-            int len = dbus_message_demarshal_bytes_needed(buf, rbytes);
-
-            if (len == rbytes) {
-                struct dbus_message dmsg;
-                // Handle malformed msg (propagate to broker-msg)
-                if (convert_raw_dbus(&dmsg, buf, len) > 0)   
-                    if (broker(&dmsg, domid) < 1); 
-                        return -1;
-            }
-        }
-
         total += rbytes; 
         snd(ssock, buf, rbytes, 0);
+        printf("Sent-->\n");
     }
 
     return total;            

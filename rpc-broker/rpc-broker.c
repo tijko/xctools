@@ -39,37 +39,6 @@
  */
 int broker_message(int client, int domid)
 {
-/*
-    fd_set ex_set;
-
-    int srv = connect_to_system_bus();
-    int bytes = 0;
-
-    do {
-        FD_ZERO(&ex_set);
-        FD_SET(client, &ex_set);
-        FD_SET(srv, &ex_set);
-
-        struct timeval tv = { .tv_sec=2, .tv_usec=0 };
-        // Poll on read-ready
-        int ret = select(srv + 1, &ex_set, NULL, NULL, &tv);
-
-        if (ret == 0)
-            continue;
-        if (ret < 0)
-            return ret;
-
-        // Depending on which fd is ready to be read, determines which
-        // function pointer to pass to `exchange` 
-        if (FD_ISSET(srv, &ex_set))
-            bytes = exchange(srv, client, recv, v4v_send, domid);
-        else
-            bytes = exchange(client, srv, v4v_recv, send, domid);
-
-    } while (bytes > 0);
-
-    close(srv);
-*/
     int srv = connect_to_system_bus();
     int sret = 1, cret = 1;
 
@@ -77,11 +46,12 @@ int broker_message(int client, int domid)
 
         // client recv loop
         cret = exchange(client, srv, v4v_recv, send, domid);
-        // server recv loop
-        sret = exchange(srv, client, recv, v4v_send, domid);
-
+        printf("Client: %d\n", cret);
         if (cret < 0)
             break;
+
+        // server recv loop
+        sret = exchange(srv, client, recv, v4v_send, domid);
     }
 
     close(srv);
