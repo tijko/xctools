@@ -87,38 +87,6 @@ int exchange(int rsock, int ssock,
              ssize_t (*snd)(int, const void *, size_t, int),
              int domid)
 {
-/*
-    char buf[DBUS_MSG_LEN] = { 0 };
-    int rbytes = rcv(rsock, buf, DBUS_MSG_LEN, 0);
-
-    if (rbytes >= 8) {
-
-        int len = dbus_message_demarshal_bytes_needed(buf, rbytes);
-
-        if (len == rbytes) {
-
-            struct dbus_message dmsg;
-            if (convert_raw_dbus(&dmsg, buf, len) < 0) {
-                DBUS_BROKER_WARNING("DBus-message conversion failed %s", "");
-                return 0;
-            }
-
-            // Allow for check if msg is signal subscription...
-            if (broker(&dmsg, domid) == 0)
-                return 0;
-        }
-    }
-
-    if (rbytes < 1)
-        return rbytes;
-
-    int wbytes = snd(ssock, buf, rbytes, 0);
-
-    if (wbytes < 0)
-        DBUS_BROKER_WARNING("DBus-Message incomplete send %s", "");
-
-    return wbytes;
-*/
     int total = 0;
     char buf[DBUS_MSG_LEN] = { 0 };
     fd_set recv_fd;
@@ -143,9 +111,10 @@ int exchange(int rsock, int ssock,
             int len = dbus_message_demarshal_bytes_needed(buf, rbytes);
 
             // Handle malformed msg (propagate to broker-msg)
+            // Handle handshake --> pull fields to cmp against
             if ((len == rbytes) && 
                 (convert_raw_dbus(&dmsg, buf, len) > 0) && 
-                (broker(&dmsg, domid) < 1)) { 
+                (broker(&dmsg, domid) == 11)) { 
                 return -1;
             }
         }
