@@ -87,6 +87,7 @@ int exchange(int rsock, int ssock,
              ssize_t (*snd)(int, const void *, size_t, int),
              int domid)
 {
+/*
     char buf[DBUS_MSG_LEN] = { 0 };
     int rbytes = rcv(rsock, buf, DBUS_MSG_LEN, 0);
 
@@ -117,6 +118,44 @@ int exchange(int rsock, int ssock,
         DBUS_BROKER_WARNING("DBus-Message incomplete send %s", "");
 
     return wbytes;
+*/
+    int total = 0;
+    char buf[DBUS_MSG_LEN] = { 0 };
+    fd_set recv_fd;
+
+    while (1) {
+
+        struct timeval tv = { .tv_sec=0, .tv_usec= DBUS_BROKER_MSG_TIMEOUT };
+        FD_ZERO(&recv_fd);
+        FD_SET(rsock, &recv_fd);
+
+        if (select(rsock + 1, &recv_fd, NULL, NULL, &tv) <= 0)
+            break;
+
+        // demarshall messages in order to filter...
+        // shorten loop up move from below this line to 
+        // pass dom-id for filtering
+        int rbytes = rcv(rsock, buf, DBUS_MSG_LEN, 0);
+
+        if (rbytes <= 0)
+            break;
+
+
+        printf("Received: %d\n", rbytes);
+        for (int i=0; i < rbytes; i++) {
+            if (buf[i] == '\0' || buf[i] == '\n' || buf[i] == '\r')
+                printf("-");
+            else
+                printf("%c", buf[i]);
+        }
+        printf("\n");
+        // Test if message gt 32 (avoid filtering on handshake)
+        // demarshall and filter...
+        total += rbytes; 
+        snd(ssock, buf, rbytes, 0);
+    }
+
+    return total;            
 }
 
 static inline char *get_uuid(DBusConnection *conn, uint16_t domid)

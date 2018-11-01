@@ -39,6 +39,7 @@
  */
 int broker_message(int client, int domid)
 {
+/*
     fd_set ex_set;
 
     int srv = connect_to_system_bus();
@@ -66,6 +67,20 @@ int broker_message(int client, int domid)
             bytes = exchange(client, srv, v4v_recv, send, domid);
 
     } while (bytes > 0);
+
+    close(srv);
+*/
+    int srv = connect_to_system_bus();
+    int sret = 1, cret = 1;
+    while (sret > 0 || cret > 0) {
+        // client recv loop
+        printf("Client...\n");
+        cret = exchange(client, srv, v4v_recv, send, domid);
+        // server recv loop
+        printf("Server..\n");
+        sret = exchange(srv, client, recv, v4v_send, domid);
+        // check for signals....store and move along
+    }
 
     close(srv);
 
@@ -174,7 +189,7 @@ static inline void service_dbus_signals(void)
 
         if (!reply) 
             goto free_msg;
-        // XXX grab FD upon insertion (ie add a field)
+
         // removal...
         if (fcntl(curr->wsi_fd, F_GETFD) < 0) {
             DBUS_BROKER_WARNING("Signal File Descriptor Closed <%d>", curr->wsi_fd);
@@ -229,49 +244,6 @@ static void run_websockets(struct dbus_broker_args *args)
     lws_context_destroy(ws_context);
 }
 
-// get the DOM-ID passed
-static int loop(int rsock, int ssock,
-                ssize_t (*rcv)(int, void *, size_t, int),
-                ssize_t (*snd)(int, const void *, size_t, int))
-{
-    int total = 0;
-    char buf[DBUS_MSG_LEN];
-    fd_set recv_fd;
-
-    while (1) {
-
-        struct timeval tv = { .tv_sec=0, .tv_usec= DBUS_BROKER_MSG_TIMEOUT };
-        FD_ZERO(&recv_fd);
-        FD_SET(rsock, &recv_fd);
-
-        if (select(rsock + 1, &recv_fd, NULL, NULL, &tv) <= 0)
-            break;
-
-        // demarshall messages in order to filter...
-        // shorten loop up move from below this line to 
-        // pass dom-id for filtering
-        int rbytes = rcv(rsock, buf, DBUS_MSG_LEN, 0);
-
-        if (rbytes <= 0)
-            break;
-
-
-        printf("Received: %d\n", rbytes);
-        for (int i=0; i < rbytes; i++) {
-            if (buf[i] == '\0' || buf[i] == '\n' || buf[i] == '\r')
-                printf("-");
-            else
-                printf("%c", buf[i]);
-        }
-        printf("\n");
-            
-        total += rbytes; 
-        snd(ssock, buf, rbytes, 0);
-    }
-
-    return total;
-}
-
 void run_rawdbus(struct dbus_broker_args *args)
 {
     struct dbus_broker_server *server = start_server(args->port);
@@ -282,6 +254,7 @@ void run_rawdbus(struct dbus_broker_args *args)
     fd_set server_set;
     load_policy(args->rule_file);
 
+    // XXX signal-subscription handling 
     while (dbus_broker_running) {
 
         FD_ZERO(&server_set);
@@ -298,23 +271,8 @@ void run_rawdbus(struct dbus_broker_args *args)
             
             if (v4v_getpeername(client, &client_addr) < 0) 
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
-            else {
-                int srv = connect_to_system_bus();
-                int sret = 1, cret = 1;
-                while (sret > 0 || cret > 0) {
-                    // client recv loop
-                    printf("Client...\n");
-                    cret = loop(client, srv, v4v_recv, send);
-                    // server recv loop
-                    printf("Server..\n");
-                    sret = loop(srv, client, recv, v4v_send);
-                    // check for signals....store and move along
-                }
-
-                //broker_message(client, client_addr.domain); 
-                // if not signal do not close...
-                close(srv);
-            }
+            else 
+                broker_message(client, client_addr.domain); 
         }
 
         if (reload_policy) {
