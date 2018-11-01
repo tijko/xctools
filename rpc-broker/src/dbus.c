@@ -111,7 +111,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
     dmsg->member = member ? member : "NULL";
 
     if (dbus_message_get_type(dbus_msg) == DBUS_MESSAGE_TYPE_METHOD_CALL) 
-        printf("%s %s %s\n", dmsg.destination, dmsg.interface, dmsg.member);
+        printf("%s %s %s\n", dmsg->destination, dmsg->interface, dmsg->member);
         
     dbus_message_unref(dbus_msg);
 
