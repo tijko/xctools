@@ -137,7 +137,6 @@ int exchange(int rsock, int ssock,
         if (rbytes <= 0)
             break;
 
-
         printf("Received: %d\n", rbytes);
         for (int i=0; i < rbytes; i++) {
             if (buf[i] == '\0' || buf[i] == '\n' || buf[i] == '\r')
@@ -147,19 +146,15 @@ int exchange(int rsock, int ssock,
         }
         printf("\n");
 
-        if (rbytes > 56) { 
+        if (rbytes > DBUS_COMM_MIN) { 
 
             int len = dbus_message_demarshal_bytes_needed(buf, rbytes);
-            printf("Marshal: %d\n", len);
+
             if (len == rbytes) {
                 struct dbus_message dmsg;
-                if (convert_raw_dbus(&dmsg, buf, len) < 0) {
-                    DBUS_BROKER_WARNING("DBus-message conversion failed %s", "");
-                    return 0;
-                }
-
-                // check return
-                broker(&dmsg, domid); 
+                // Handle malformed msg (propagate to broker-msg)
+                if (convert_raw_dbus(&dmsg, buf, len) > 0)   
+                    broker(&dmsg, domid); // check return; 
             }
         }
 

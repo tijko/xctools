@@ -80,6 +80,7 @@ int broker_message(int client, int domid)
         printf("Server..\n");
         sret = exchange(srv, client, recv, v4v_send, domid);
         // check for signals....store and move along
+        printf("cret <%d> sret <%d>\n", cret, sret);
     }
 
     close(srv);

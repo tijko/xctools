@@ -110,12 +110,10 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
     const char *member = dbus_message_get_member(dbus_msg);
     dmsg->member = member ? member : "NULL";
 
-    printf("%s %s %s %d \n", dmsg->destination, dmsg->interface, dmsg->member,
-                             dbus_message_get_type(dbus_msg));
-        
+    int ret = dbus_message_get_type(dbus_msg);
     dbus_message_unref(dbus_msg);
 
-    return 0;
+    return ret;
 }
 
 static inline void append_variant(DBusMessageIter *iter, int type, void *data)
