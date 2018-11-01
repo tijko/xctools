@@ -162,12 +162,17 @@ static inline void service_dbus_signals(void)
             goto free_msg;
 
         // removal...
-        if (fcntl(curr->wsi_fd, F_GETFD) < 0) {
+        int ret = fcntl(curr->wsi_fd, F_GETFD);
+        if (ret < 0) {
             DBUS_BROKER_WARNING("Signal File Descriptor Closed <%d>", curr->wsi_fd);
             free(reply);
             goto free_msg;
         }
 
+        DBUS_BROKER_EVENT("Fd-Status <%d>", ret);
+        if (curr->wsi)
+            DBUS_BROKER_EVENT("Websocket non-null %s", "");
+        //
         lws_callback_on_writable(curr->wsi);
         lws_ring_insert(ring, reply, 1);
         free(reply);
