@@ -76,7 +76,6 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
             break;
     }
 
-    DBUS_BROKER_EVENT("Websockets <%d>", reason);
     return 0;
 }
 
@@ -96,7 +95,6 @@ struct lws_context *create_ws_context(int port)
     memset(&info, 0, sizeof(info));
     info.port = port;
     info.protocols = server_protos;
-    info.ws_ping_pong_interval = 1;
 
     struct lws_context *context = NULL;
     context = lws_create_context(&info);
