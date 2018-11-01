@@ -46,7 +46,6 @@ int broker_message(int client, int domid)
 
         // client recv loop
         cret = exchange(client, srv, v4v_recv, send, domid);
-        printf("Client: %d\n", cret);
         if (cret < 0)
             break;
 

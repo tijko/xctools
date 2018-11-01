@@ -110,8 +110,6 @@ int exchange(int rsock, int ssock,
             struct dbus_message dmsg;
             int len = dbus_message_demarshal_bytes_needed(buf, rbytes);
 
-            // Handle malformed msg (propagate to broker-msg)
-            // Handle handshake --> pull fields to cmp against
             if ((len == rbytes) && 
                 (convert_raw_dbus(&dmsg, buf, len) == 1) && 
                 (broker(&dmsg, domid) == 1)) { 
@@ -119,18 +117,8 @@ int exchange(int rsock, int ssock,
             }
         }
 
-        printf("Received: %d\n", rbytes);
-        for (int i=0; i < rbytes; i++) {
-            if (buf[i] == '\0' || buf[i] == '\n' || buf[i] == '\r')
-                printf("-");
-            else
-                printf("%c", buf[i]);
-        }
-        printf("\n");
-
         total += rbytes; 
         snd(ssock, buf, rbytes, 0);
-        printf("Sent-->\n");
     }
 
     return total;            
