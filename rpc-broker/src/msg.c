@@ -113,8 +113,8 @@ int exchange(int rsock, int ssock,
             // Handle malformed msg (propagate to broker-msg)
             // Handle handshake --> pull fields to cmp against
             if ((len == rbytes) && 
-                (convert_raw_dbus(&dmsg, buf, len) > 0) && 
-                (broker(&dmsg, domid) == 11)) { 
+                (convert_raw_dbus(&dmsg, buf, len) == 1) && 
+                (broker(&dmsg, domid) == 1)) { 
                 return -1;
             }
         }
