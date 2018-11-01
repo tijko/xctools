@@ -148,6 +148,7 @@ int exchange(int rsock, int ssock,
         printf("\n");
 
         if (rbytes > 56) { 
+
             int len = dbus_message_demarshal_bytes_needed(buf, rbytes);
             printf("Marshal: %d\n", len);
             if (len == rbytes) {
