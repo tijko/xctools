@@ -46,11 +46,7 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
             memcpy(user, in, len);
             if (ws_request_handler(wsi, user) == 0)
                 lws_callback_on_writable(wsi);
-            else if (dbus_sig_pending > 0) {
-                lws_callback_on_writable(wsi);
-                dbus_sig_pending--;                
-            }
-
+        
             break;
         }
 
@@ -62,9 +58,6 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
                 lws_write(wsi, user + LWS_SEND_BUFFER_PRE_PADDING,
                           strlen(rsp), LWS_WRITE_TEXT);
                 lws_callback_on_writable(wsi);
-            } else if (dbus_sig_pending > 0) {
-                lws_callback_on_writable(wsi);
-                dbus_sig_pending--;
             } 
 
             break;

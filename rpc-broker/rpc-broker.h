@@ -124,7 +124,6 @@ struct policy {
 };
 
 struct policy *dbus_broker_policy;
-uint8_t dbus_sig_pending;
 bool reload_policy;
 
 // DBus-Broker server

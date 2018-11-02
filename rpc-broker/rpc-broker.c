@@ -160,15 +160,14 @@ static inline void service_dbus_signals(void)
 
         if (!reply) 
             goto free_msg;
-/*
+
         if (fcntl(curr->wsi_fd, F_GETFD) < 0) {
             DBUS_BROKER_WARNING("Signal File Descriptor Closed <%d>", curr->wsi_fd);
             free(reply);
             goto free_msg;
         }
-*/
-        //lws_callback_on_writable(curr->wsi);
-        dbus_sig_pending++;
+
+        lws_callback_on_writable(curr->wsi);
         lws_ring_insert(ring, reply, 1);
         free(reply);
 
@@ -363,7 +362,6 @@ int main(int argc, char *argv[])
         DBUS_BROKER_ERROR("sigaction");
 
     dbus_broker_running = 1;
-    dbus_sig_pending = 0;
     dlinks = NULL;
     ring = NULL;
     reload_policy = false;
