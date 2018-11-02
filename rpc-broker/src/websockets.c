@@ -62,12 +62,23 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
             break;
         }
 
+        case LWS_CALLBACK_UNLOCK_POLL: {
+
+            if (dbus_sig_pending > 0) {
+                lws_callback_on_writable(wsi);
+                dbus_sig_pending--;
+            }
+
+            break;
+        }
+        
+
         case LWS_CALLBACK_PROTOCOL_INIT:
             DBUS_BROKER_EVENT("<WS client request> %s", "");
             break;
 
         case LWS_CALLBACK_CLOSED:
-        case LWS_CALLBACK_CLIENT_CLOSED:
+        case LWS_CALLBACK_WSI_DESTROY:
             DBUS_BROKER_WARNING("WS client session closed %s", "");
             free_dlinks();
             break;
