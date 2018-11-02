@@ -58,7 +58,6 @@ struct dbus_link {
     // meta-fields
     // name-of-signal
     // ...
-    int wsi_fd;
     struct dbus_link *next;
 };
 
