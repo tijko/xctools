@@ -137,15 +137,11 @@ static inline void service_dbus_signals(void)
             msg = dbus_connection_pop_message(curr->dconn);
         }
 
-        curr = curr->next;
-
         if (!msg)
-            continue;
-    
-        if (dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL) {
-            dbus_message_unref(msg);
-            continue;
-        }
+            goto next_link;
+ 
+        if (dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL) 
+            goto unref_msg;
 
         struct json_response *jrsp = init_jrsp();
         jrsp->response_to[0] = '\0';
@@ -163,17 +159,23 @@ static inline void service_dbus_signals(void)
 
         if (fcntl(curr->wsi_fd, F_GETFD) < 0) {
             DBUS_BROKER_WARNING("Signal File Descriptor Closed <%d>", curr->wsi_fd);
-            free(reply);
-            goto free_msg;
+            goto free_repl;
         }
 
         lws_callback_on_writable(curr->wsi);
         lws_ring_insert(ring, reply, 1);
+
+free_reply:
         free(reply);
 
 free_msg:
-        dbus_message_unref(msg);
         free(jrsp);
+
+unref_msg:
+        dbus_message_unref(msg);
+
+next_link:
+        curr = curr->next;
     }
 }
 
