@@ -159,7 +159,7 @@ static inline void service_dbus_signals(void)
 
         if (fcntl(curr->wsi_fd, F_GETFD) < 0) {
             DBUS_BROKER_WARNING("Signal File Descriptor Closed <%d>", curr->wsi_fd);
-            goto free_repl;
+            goto free_reply;
         }
 
         lws_callback_on_writable(curr->wsi);
