@@ -182,7 +182,7 @@ static void service_raw_signals(void)
         int ret = select(curr->client_fd + 1, &signal_set, NULL, NULL, &tv);
 
         if (ret > 0) {
-            char buf[1024]
+            char buf[1024];
             int rbytes = read(curr->client_fd, buf, 1024);
             if (rbytes > 0) {
                 buf[rbytes] = '\0';
