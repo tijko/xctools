@@ -43,16 +43,10 @@ int broker_message(int client, int domid)
     int sret = 1, cret = 1;
 
     while (sret > 0 || cret > 0) {
-
-        // client recv loop
         cret = exchange(client, srv, v4v_recv, send, domid);
-        DBUS_BROKER_EVENT("Client: <%d>", cret);
         if (cret < 0)
             break;
-
-        // server recv loop
         sret = exchange(srv, client, recv, v4v_send, domid);
-        DBUS_BROKER_EVENT("Server: <%d>", sret);
     }
 
     close(srv);
@@ -158,10 +152,9 @@ static inline void service_dbus_signals(void)
 
         if (!reply) 
             goto free_msg;
-// if wsi ->
+
         lws_callback_on_writable(curr->wsi);
         lws_ring_insert(ring, reply, 1);
-// else marshall and send on client       
         free(reply);
 
 free_msg:
