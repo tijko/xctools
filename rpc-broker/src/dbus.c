@@ -337,7 +337,7 @@ msg_error:
     return signature;
 }
 
-static void add_dbus_signal(void)
+static struct dbus_link *add_dbus_signal(void)
 {
     struct dbus_link *curr;
 
