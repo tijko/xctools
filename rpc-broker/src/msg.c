@@ -30,14 +30,14 @@ int broker(struct dbus_message *dmsg, int domid)
 {
     if (!dmsg) {
         DBUS_BROKER_WARNING("Invalid args to broker-request %s", "");
-        return -1;
+        return 1;
     }
 
     int policy = 0;
 
     if (!dbus_broker_policy) {
         DBUS_BROKER_WARNING("No policy in place %s", "");
-        return -1;
+        return 1;
     }
 
     struct etc_policy etc = dbus_broker_policy->etc;
