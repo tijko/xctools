@@ -134,7 +134,7 @@ struct dbus_broker_server {
     v4v_addr_t peer;
 };
 
-#define WS_LOOP_TIMEOUT           1000   // length of time each service of the websocket
+#define WS_LOOP_TIMEOUT            100   // length of time each service of the websocket
                                          // event-loop (millisecs)
 #define DBUS_BROKER_CLIENT_TIMEOUT 100
 #define DBUS_BROKER_MSG_TIMEOUT 100000

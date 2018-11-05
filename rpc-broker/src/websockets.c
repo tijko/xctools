@@ -113,6 +113,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
         return -1;
     }
 
+    DBUS_BROKER_EVENT("%s", raw_req);
     struct json_request *jreq = convert_json_request(raw_req);
     // XXX call `broker` on jreq->dmsg
 
@@ -127,9 +128,9 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
         goto free_req;
 
     char *reply = prepare_json_reply(jrsp);
-
     if (!reply) 
         goto free_resp;
+    DBUS_BROKER_EVENT("%s", reply);
 
     lws_ring_insert(ring, reply, 1);
     free(reply);
