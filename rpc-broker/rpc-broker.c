@@ -120,7 +120,7 @@ void sighup_handler(int signal)
  * Cycle through linked-list of current dbus-signals being subscribed to.
  * If there are any signals queued up, start the exchange of communication.
  */
-static inline void service_ws_signals(void)
+static void service_ws_signals(void)
 {
     struct dbus_link *curr = dlinks;
 
@@ -168,10 +168,20 @@ next_link:
     }
 }
 
+static void service_raw_signals(void)
+{
+    struct dbus_link *curr = dlinks;
+
+    while (curr) {
+
+        curr = curr->next;
+    }
+}
+
 static void run_websockets(struct dbus_broker_args *args)
 {
     struct lws_context *ws_context = NULL;
-    ws_context = create_ws_context(BROKER_UI_PORT);
+    ws_context = create_ws_context(args->port);
 
     if (!ws_context)
         DBUS_BROKER_ERROR("WebSockets-Server");
@@ -186,7 +196,7 @@ static void run_websockets(struct dbus_broker_args *args)
 
         if (reload_policy) {
             free_policy();
-            dbus_broker_policy = build_policy(RULES_FILENAME);
+            dbus_broker_policy = build_policy(args->rule_file);
             reload_policy = false;
         }
     }
@@ -225,9 +235,11 @@ void run_rawdbus(struct dbus_broker_args *args)
                 broker_message(client, client_addr.domain); 
         }
 
+        service_raw_signals();
+
         if (reload_policy) {
             free_policy();
-            dbus_broker_policy = build_policy(RULES_FILENAME);
+            dbus_broker_policy = build_policy(args->rule_file);
             reload_policy = false;
         }
     }
