@@ -178,7 +178,7 @@ struct dbus_message {
 #define XENSTORE_TARGET_LEN 8
 #define XENSTORE_TARGET "/target"
 
-#define WS_RING_BUFFER_MEMBER_SIZE 4096
+#define WS_RING_BUFFER_MEMBER_SIZE 8192 
 #define WS_RING_BUFFER_MEMBER_NUM    64
 
 #define WS_USER_MEM_SIZE 8192  // the amount memory that is allocated for user

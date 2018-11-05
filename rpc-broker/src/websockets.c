@@ -113,7 +113,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
         return -1;
     }
 
-    printf("%s", raw_req);
+    printf("%s\n", raw_req);
     struct json_request *jreq = convert_json_request(raw_req);
 
     if (!jreq)// || broker(&(jreq->dmsg), addr.domain) < 0)
@@ -129,7 +129,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     char *reply = prepare_json_reply(jrsp);
     if (!reply) 
         goto free_resp;
-    printf("%s", reply);
+    printf("%s\n\n", reply);
 
     lws_ring_insert(ring, reply, 1);
     free(reply);
