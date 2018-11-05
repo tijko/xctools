@@ -55,9 +55,8 @@
 struct dbus_link {
     DBusConnection *dconn;
     struct lws *wsi;
-    // meta-fields
-    // name-of-signal
-    // ...
+    int client_fd;
+    int server_fd;
     struct dbus_link *next;
 };
 

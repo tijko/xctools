@@ -30,14 +30,14 @@ int broker(struct dbus_message *dmsg, int domid)
 {
     if (!dmsg) {
         DBUS_BROKER_WARNING("Invalid args to broker-request %s", "");
-        return 1;
+        return -1;
     }
 
     int policy = 0;
 
     if (!dbus_broker_policy) {
         DBUS_BROKER_WARNING("No policy in place %s", "");
-        return 1;
+        return -1;
     }
 
     struct etc_policy etc = dbus_broker_policy->etc;
@@ -110,12 +110,21 @@ int exchange(int rsock, int ssock,
             struct dbus_message dmsg;
             int len = dbus_message_demarshal_bytes_needed(buf, rbytes);
 
-            if ((len == rbytes) && 
-                (convert_raw_dbus(&dmsg, buf, len) == 1) && 
-                (broker(&dmsg, domid) == 1)) { 
-                return -1;
+            if (len == rbytes) {
+
+                if (convert_raw_dbus(&dmsg, buf, len) < 1)
+                    return -1;
+
+                if (!strcmp(dmsg.member, "AddMatch")) {
+                    add_raw_signal(rsock, ssock);
+                    DBUS_BROKER_EVENT("%s %s %s", dmsg.destination, dmsg.interface, dmsg.member); 
+                }
+
+                if (broker(&dmsg, domid) < 1)
+                    return -1;
             }
         }
+
 
         total += rbytes; 
         snd(ssock, buf, rbytes, 0);

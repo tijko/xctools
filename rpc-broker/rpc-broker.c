@@ -120,7 +120,7 @@ void sighup_handler(int signal)
  * Cycle through linked-list of current dbus-signals being subscribed to.
  * If there are any signals queued up, start the exchange of communication.
  */
-static inline void service_dbus_signals(void)
+static inline void service_ws_signals(void)
 {
     struct dbus_link *curr = dlinks;
 
@@ -182,7 +182,7 @@ static void run_websockets(struct dbus_broker_args *args)
     while (dbus_broker_running) {
 
         lws_service(ws_context, WS_LOOP_TIMEOUT);
-        service_dbus_signals(); 
+        service_ws_signals(); 
 
         if (reload_policy) {
             free_policy();
