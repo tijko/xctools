@@ -38,9 +38,7 @@ struct json_response *make_json_request(struct json_request *jreq)
     DBusConnection *conn = jreq->conn;
     dbus_connection_flush(conn);
 
-    // request "id" #1 is a dbus "hello" and there is no response back to 
-    // client (XXX use `strcmp` instead?)
-    if (jreq->id == 1) {
+    if (!strcmp(jreq->dmsg.member, "Hello")) {
 
         const char *busname = dbus_bus_get_unique_name(conn);
 
@@ -66,9 +64,16 @@ struct json_response *make_json_request(struct json_request *jreq)
                      jreq->dmsg.interface, jreq->dmsg.member);
         DBUS_BROKER_WARNING("response to <%d> request failed %s", id, err);
 
+        //
+        snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, "2");
+        jrsp->arg_sig[0] = '\0';
+        return jrsp;
+        //
+        /*
         free(err);
         free(jrsp);
         return NULL;
+        */
     }
 
     load_json_response(msg, jrsp);
