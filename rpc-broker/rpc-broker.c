@@ -168,14 +168,6 @@ next_link:
     }
 }
 
-static void load_policy(const char *policy_file)
-{
-    srand48(time(NULL));
-    dbus_broker_policy = build_policy(policy_file);
-    if (pthread_mutex_init(&policy_lock, NULL) < 0)
-        DBUS_BROKER_ERROR("initializing policy-lock");
-}
-
 static void run_websockets(struct dbus_broker_args *args)
 {
     struct lws_context *ws_context = NULL;
@@ -186,8 +178,6 @@ static void run_websockets(struct dbus_broker_args *args)
 
     DBUS_BROKER_EVENT("<WebSockets-Server has started listening> [Port: %d]",
                         BROKER_UI_PORT);
-
-    load_policy(args->rule_file);
 
     while (dbus_broker_running) {
 
@@ -213,7 +203,6 @@ void run_rawdbus(struct dbus_broker_args *args)
     int default_socket = server->dbus_socket;
 
     fd_set server_set;
-    load_policy(args->rule_file);
 
     // XXX signal-subscription handling 
     while (dbus_broker_running) {
@@ -356,6 +345,8 @@ int main(int argc, char *argv[])
     dlinks = NULL;
     ring = NULL;
     reload_policy = false;
+    srand48(time(NULL));
+    dbus_broker_policy = build_policy(policy_file);
 
     mainloop(&args);
 

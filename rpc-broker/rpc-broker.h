@@ -223,19 +223,9 @@ static const char XML_IN_FIELD[]           = "in";
 static const char XML_TYPE_FIELD[]         = "type";
 
 struct lws_ring *ring;
-
-pthread_mutex_t policy_lock;
-
 bool verbose_logging;
-
 int dbus_broker_running;
 
-struct broker_signal {
-    DBusConnection *conn;
-    struct lws *wsi;
-    // track original signal-call
-    // give timestamp too?
-};
 
 struct dbus_broker_args {
     bool logging;
