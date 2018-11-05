@@ -184,11 +184,6 @@ static void service_raw_signals(void)
         if (ret > 0) {
             char buf[1024];
             int rbytes = read(curr->client_fd, buf, 1024);
-            if (rbytes > 0) {
-                buf[rbytes] = '\0';
-                DBUS_BROKER_EVENT("Sig: %s", buf);
-            } else
-                DBUS_BROKER_EVENT("Sig Fail %s", ""); 
         }
 
         curr = curr->next;
@@ -197,7 +192,6 @@ static void service_raw_signals(void)
 
 static void run_websockets(struct dbus_broker_args *args)
 {
-    sleep(5);
     struct lws_context *ws_context = NULL;
     ws_context = create_ws_context(args->port);
 

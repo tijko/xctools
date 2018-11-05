@@ -64,16 +64,9 @@ struct json_response *make_json_request(struct json_request *jreq)
                      jreq->dmsg.interface, jreq->dmsg.member);
         DBUS_BROKER_WARNING("response to <%d> request failed %s", id, err);
 
-        //
-        snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, "2");
-        jrsp->arg_sig[0] = '\0';
-        return jrsp;
-        //
-        /*
         free(err);
         free(jrsp);
         return NULL;
-        */
     }
 
     load_json_response(msg, jrsp);
