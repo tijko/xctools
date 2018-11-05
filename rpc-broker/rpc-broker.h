@@ -265,7 +265,9 @@ char *db_query(DBusConnection *conn, char *arg);
 
 char *dbus_introspect(struct json_request *jreq);
 
-void add_dbus_signal(DBusConnection *conn, struct lws *wsi);
+void add_ws_signal(DBusConnection *conn, struct lws *wsi);
+
+void add_raw_signal(int client_fd, int server_fd);
 
 void free_dlinks(void);
 

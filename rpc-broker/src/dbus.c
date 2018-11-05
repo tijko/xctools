@@ -337,23 +337,6 @@ msg_error:
     return signature;
 }
 
-void add_ws_signal(DBusConnection *conn, struct lws *wsi)
-{
-    struct dbus_link *curr = add_dbus_signal();
-    curr->wsi = wsi;
-    curr->dconn = conn;
-}
-
-void add_raw_signal(int client_fd, int server_fd)
-{
-    struct dbus_link *curr = add_dbus_signal();
-    curr->client_fd = client_fd;
-    curr->server_fd = server_fd;
-
-    curr->wsi = NULL;
-    curr->dconn = NULL;
-}
-
 static void add_dbus_signal(void)
 {
     struct dbus_link *curr;
@@ -370,6 +353,23 @@ static void add_dbus_signal(void)
     }
 
     curr->next = NULL;
+}
+
+void add_ws_signal(DBusConnection *conn, struct lws *wsi)
+{
+    struct dbus_link *curr = add_dbus_signal();
+    curr->wsi = wsi;
+    curr->dconn = conn;
+}
+
+void add_raw_signal(int client_fd, int server_fd)
+{
+    struct dbus_link *curr = add_dbus_signal();
+    curr->client_fd = client_fd;
+    curr->server_fd = server_fd;
+
+    curr->wsi = NULL;
+    curr->dconn = NULL;
 }
 
 void free_dlinks(void)
