@@ -171,8 +171,25 @@ next_link:
 static void service_raw_signals(void)
 {
     struct dbus_link *curr = dlinks;
+    fd_set signal_set;
 
     while (curr) {
+
+        struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_CLIENT_TIMEOUT };
+        FD_ZERO(&signal_set);
+        FD_SET(curr->client_fd, &signal_set);
+
+        int ret = select(curr->client_fd + 1, &signal_set, NULL, NULL, &tv);
+
+        if (ret > 0) {
+            char buf[1024]
+            int rbytes = read(curr->client_fd, buf, 1024);
+            if (rbytes > 0) {
+                buf[rbytes] = '\0';
+                DBUS_BROKER_EVENT("Sig: %s", buf);
+            } else
+                DBUS_BROKER_EVENT("Sig Fail %s", ""); 
+        }
 
         curr = curr->next;
     }
