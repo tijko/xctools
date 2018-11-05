@@ -149,10 +149,12 @@ static void service_ws_signals(void)
         jrsp->member = dbus_message_get_member(msg);
         jrsp->path = dbus_message_get_path(msg);
         char *reply = prepare_json_reply(jrsp);
-
         if (!reply) 
             goto free_msg;
 
+        //
+        DBUS_BROKER_EVENT("Sig: %s", reply);
+        //
         lws_callback_on_writable(curr->wsi);
         lws_ring_insert(ring, reply, 1);
         free(reply);
