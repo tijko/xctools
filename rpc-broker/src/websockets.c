@@ -132,8 +132,11 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     lws_ring_insert(ring, reply, 1);
     free(reply);
 
-    if (strcmp("AddMatch", jreq->dmsg.member) == 0) 
+    if (strcmp("AddMatch", jreq->dmsg.member) == 0) { 
         add_ws_signal(jreq->conn, wsi);
+        //
+        DBUS_BROKER_EVENT("SetSig: %s", jreq->dmsg.interface);
+    }
 
 free_req:
     free_json_request(jreq);

@@ -376,6 +376,9 @@ void add_raw_signal(int client_fd, int server_fd)
 
 void free_dlinks(void)
 {
+    //
+    DBUS_BROKER_EVENT("FreeeLinks %s", "");
+    //
     struct dbus_link *curr = dlinks;
     while (curr) {
         struct dbus_link *tmp = curr->next;
