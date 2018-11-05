@@ -197,6 +197,7 @@ static void service_raw_signals(void)
 
 static void run_websockets(struct dbus_broker_args *args)
 {
+    sleep(5);
     struct lws_context *ws_context = NULL;
     ws_context = create_ws_context(args->port);
 
