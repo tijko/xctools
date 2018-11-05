@@ -353,6 +353,8 @@ static struct dbus_link *add_dbus_signal(void)
     }
 
     curr->next = NULL;
+
+    return curr;
 }
 
 void add_ws_signal(DBusConnection *conn, struct lws *wsi)
