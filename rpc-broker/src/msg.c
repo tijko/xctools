@@ -115,10 +115,8 @@ int exchange(int rsock, int ssock,
                 if (convert_raw_dbus(&dmsg, buf, len) < 1)
                     return -1;
 
-                if (!strcmp(dmsg.member, "AddMatch")) {
+                if (!strcmp(dmsg.member, "AddMatch")) 
                     add_raw_signal(rsock, ssock);
-                    DBUS_BROKER_EVENT("%s %s %s", dmsg.destination, dmsg.interface, dmsg.member); 
-                }
 
                 if (broker(&dmsg, domid) < 1)
                     return -1;

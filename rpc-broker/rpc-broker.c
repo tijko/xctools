@@ -152,9 +152,6 @@ static void service_ws_signals(void)
         if (!reply) 
             goto free_msg;
 
-        //
-        DBUS_BROKER_EVENT("Sig: %s", reply);
-        //
         lws_callback_on_writable(curr->wsi);
         lws_ring_insert(ring, reply, 1);
         free(reply);
@@ -184,8 +181,9 @@ static void service_raw_signals(void)
         int ret = select(curr->client_fd + 1, &signal_set, NULL, NULL, &tv);
 
         if (ret > 0) {
-            char buf[1024];
-            int rbytes = read(curr->client_fd, buf, 1024);
+            char buf[DBUS_MSG_LEN];
+            int rbytes = read(curr->client_fd, buf, DBUS_MSG_LEN);
+            DBUS_BROKER_EVENT("5555 signal %s", "");
         }
 
         curr = curr->next;
