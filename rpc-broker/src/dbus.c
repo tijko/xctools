@@ -206,9 +206,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
             }
 
             case ('v'): {
-                //
-                //append_variant(&iter, dmsg->json_sig[i], dmsg->args[i]);
-                append_variant(&iter, dmsg->arg_sig[i], dmsg->args[i]);
+                append_variant(&iter, dmsg->json_sig[i], dmsg->args[i]);
                 break;
             }
 

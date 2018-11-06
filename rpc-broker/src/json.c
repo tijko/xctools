@@ -63,6 +63,8 @@ struct json_response *make_json_request(struct json_request *jreq)
                      jreq->dmsg.destination, jreq->dmsg.path,
                      jreq->dmsg.interface, jreq->dmsg.member);
         DBUS_BROKER_WARNING("response to <%d> request failed %s", id, err); 
+        if (msg)
+            DBUS_BROKER_EVENT("emsg: %s", dbus_message_get_error_name(msg));
 
         free(err);
         free(jrsp);
@@ -111,7 +113,6 @@ static void append_dbus_message_arg(int type, int idx, void **args,
         }
 
         case ('v'): {
-            // check range of jtype
             int jtype = json_object_get_type(jarg);
             type = json_dbus_types[jtype];
             append_dbus_message_arg(type, idx, args, jarg);
@@ -191,7 +192,7 @@ static signed int parse_json_args(struct json_object *jarray,
             ((char *) jreq->dmsg.args[i])[0] = '\0';
             continue;
         }
-// check range of jtype
+
         jreq->dmsg.json_sig[i] = json_dbus_types[jtype];
         append_dbus_message_arg(*sigptr, i, jreq->dmsg.args, jarg);
         sigptr++;
