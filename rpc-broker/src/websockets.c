@@ -113,6 +113,8 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
         return -1;
     }
 
+    printf("Web: %s\n", raw_req);
+
     struct json_request *jreq = convert_json_request(raw_req);
 
     if (!jreq)// || broker(&(jreq->dmsg), addr.domain) < 0)
@@ -129,11 +131,15 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     if (!reply) 
         goto free_resp;
 
+    printf("Rep: %s\n\n", reply);
+
     lws_ring_insert(ring, reply, 1);
     free(reply);
 
-    if (strcmp("AddMatch", jreq->dmsg.member) == 0) 
+    if (strcmp("AddMatch", jreq->dmsg.member) == 0) { 
         add_ws_signal(jreq->conn, wsi);
+        DBUS_BROKER_EVENT("Signal: %s %s", jreq->dmsg.destination, jreq->dmsg.interface);
+    }
 
 free_req:
     free_json_request(jreq);
