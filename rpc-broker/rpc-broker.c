@@ -226,7 +226,6 @@ void run_rawdbus(struct dbus_broker_args *args)
 
     fd_set server_set;
 
-    // XXX signal-subscription handling 
     while (dbus_broker_running) {
 
         FD_ZERO(&server_set);

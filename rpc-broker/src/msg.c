@@ -118,8 +118,8 @@ int exchange(int rsock, int ssock,
                 if (!strcmp(dmsg.member, "AddMatch")) 
                     add_raw_signal(rsock, ssock);
 
-                if (broker(&dmsg, domid) < 1)
-                    return -1;
+            //    if (broker(&dmsg, domid) < 1)
+            //        return -1;
             }
         }
 
