@@ -91,7 +91,7 @@ int exchange(int rsock, int ssock,
     char buf[DBUS_MSG_LEN] = { 0 };
     fd_set recv_fd;
 
-    while (1) {
+    while ( 1 ) {
 
         struct timeval tv = { .tv_sec=0, .tv_usec= DBUS_BROKER_MSG_TIMEOUT };
         FD_ZERO(&recv_fd);
@@ -121,6 +121,18 @@ int exchange(int rsock, int ssock,
             //    if (broker(&dmsg, domid) < 1)
             //        return -1;
             }
+
+            printf("msg (%d): ");
+            for (int i=0; i < rbytes; i++) {
+                if (buf[i] == '\0' ||
+                    buf[i] == '\r' ||
+                    buf[i] == '\n') {
+                    printf("_");
+                else
+                    printf("%c", buf[i]);
+            }
+
+            printf("\n");
         }
 
         total += rbytes; 
