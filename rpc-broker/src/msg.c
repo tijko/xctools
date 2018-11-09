@@ -122,7 +122,7 @@ int exchange(int rsock, int ssock,
             //        return -1;
             }
 
-            printf("msg (%d): ");
+            printf("msg (%d): ", rbytes);
             for (int i=0; i < rbytes; i++) {
                 if (buf[i] == '\0' ||
                     buf[i] == '\r' ||
