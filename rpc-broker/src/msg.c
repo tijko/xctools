@@ -124,12 +124,10 @@ int exchange(int rsock, int ssock,
 
             printf("msg (%d): ", rbytes);
             for (int i=0; i < rbytes; i++) {
-                if (buf[i] == '\0' ||
-                    buf[i] == '\r' ||
-                    buf[i] == '\n') 
-                    printf("_");
-                else
+                if (isalnum(buf[i])
                     printf("%c", buf[i]);
+                else
+                    printf("_");
             }
 
             printf("\n");
