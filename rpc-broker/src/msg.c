@@ -126,7 +126,7 @@ int exchange(int rsock, int ssock,
             for (int i=0; i < rbytes; i++) {
                 if (buf[i] == '\0' ||
                     buf[i] == '\r' ||
-                    buf[i] == '\n') {
+                    buf[i] == '\n') 
                     printf("_");
                 else
                     printf("%c", buf[i]);
