@@ -124,8 +124,8 @@ int exchange(int rsock, int ssock,
         }
 
         //
-        char log[DBUS_MSG_LEN];
-        printf("Msg: ");
+        char log[DBUS_MSG_LEN] = { 0 };
+        printf("Msg <%d>: ", rbytes);
         for (int i=0; i < rbytes; i++) {
             if (buf[i] == '\0' ||
                 buf[i] == '\n' ||
@@ -143,7 +143,9 @@ int exchange(int rsock, int ssock,
         //
 
         total += rbytes; 
-        snd(ssock, buf, rbytes, 0);
+        int sbytes = snd(ssock, buf, rbytes, 0);
+        //
+        printf("Sent: %d\n", sbytes);
     }
 
     return total;            
