@@ -123,6 +123,24 @@ int exchange(int rsock, int ssock,
             }
         }
 
+        //
+        char log[DBUS_MSG_LEN];
+        printf("Msg: ");
+        for (int i=0; i < rbytes; i++) {
+            if (buf[i] == '\0' ||
+                buf[i] == '\n' ||
+                buf[i] == '\r') {
+                printf("-");
+                log[i] = '-';
+            } else {
+                printf("%c", buf[i]);
+                log[i] = buf[i];
+            }
+        }
+        log[rbytes] = '\0';
+        DBUS_BROKER_EVENT("5555: %s\n", log); 
+        printf("\n");
+        //
 
         total += rbytes; 
         snd(ssock, buf, rbytes, 0);
