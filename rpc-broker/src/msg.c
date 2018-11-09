@@ -116,9 +116,11 @@ int exchange(int rsock, int ssock,
                 int type = convert_raw_dbus(&dmsg, buf, len);
                 if (type < 1)
                     return -1;
-                else if (type == DBUS_MESSAGE_TYPE_SIGNAL)
+                else if (!strcmp(dmsg.member, "BecomeMonitor")) {
             //    if (!strcmp(dmsg.member, "AddMatch")) 
                     add_raw_signal(rsock, ssock);
+                    printf("Setting up signal!\n");
+                }
                 printf("MESSAGE: %d %s\n", type, dmsg.member);
             //    if (broker(&dmsg, domid) < 1)
             //        return -1;

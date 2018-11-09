@@ -368,7 +368,7 @@ void add_raw_signal(int client_fd, int server_fd)
 {
     struct dbus_link *curr = add_dbus_signal();
     curr->client_fd = client_fd;
-    curr->server_fd = server_fd;
+    dup2(server_fd, curr->server_fd);
 
     curr->wsi = NULL;
     curr->dconn = NULL;
