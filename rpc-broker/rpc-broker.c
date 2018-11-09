@@ -51,7 +51,8 @@ int broker_message(int client, int domid)
 
     //close(srv);
 
-    return 0;
+    //return 0;
+    return srv;
 }
 
 signed int is_stubdom(uint16_t domid)
