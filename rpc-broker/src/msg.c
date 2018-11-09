@@ -112,44 +112,19 @@ int exchange(int rsock, int ssock,
 
             if (len == rbytes) {
 
-            //    if (convert_raw_dbus(&dmsg, buf, len) < 1)
-                int type = convert_raw_dbus(&dmsg, buf, len);
-                if (type < 1)
+                if (convert_raw_dbus(&dmsg, buf, len) < 1)
                     return -1;
-                else if (!strcmp(dmsg.member, "BecomeMonitor")) {
-            //    if (!strcmp(dmsg.member, "AddMatch")) 
+    
+                if (!strcmp(dmsg.member, "BecomeMonitor")) 
                     add_raw_signal(rsock, ssock);
-                    printf("Setting up signal!\n");
-                }
-                printf("MESSAGE: %d %s\n", type, dmsg.member);
+
             //    if (broker(&dmsg, domid) < 1)
             //        return -1;
             }
         }
 
-        //
-        char log[DBUS_MSG_LEN] = { 0 };
-        printf("Msg <%d>: ", rbytes);
-        for (int i=0; i < rbytes; i++) {
-            if (buf[i] == '\0' ||
-                buf[i] == '\n' ||
-                buf[i] == '\r') {
-                printf("-");
-                log[i] = '-';
-            } else {
-                printf("%c", buf[i]);
-                log[i] = buf[i];
-            }
-        }
-        log[rbytes] = '\0';
-        DBUS_BROKER_EVENT("5555: %s\n", log); 
-        printf("\n");
-        //
-
         total += rbytes; 
-        int sbytes = snd(ssock, buf, rbytes, 0);
-        //
-        printf("Sent: %d\n", sbytes);
+        snd(ssock, buf, rbytes, 0);
     }
 
     return total;            

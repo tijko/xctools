@@ -49,9 +49,6 @@ int broker_message(int client, int domid)
         sret = exchange(srv, client, recv, v4v_send, domid);
     }
 
-    //close(srv);
-
-    //return 0;
     return srv;
 }
 
