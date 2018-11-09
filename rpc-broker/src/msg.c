@@ -112,12 +112,14 @@ int exchange(int rsock, int ssock,
 
             if (len == rbytes) {
 
-                if (convert_raw_dbus(&dmsg, buf, len) < 1)
+            //    if (convert_raw_dbus(&dmsg, buf, len) < 1)
+                int type = convert_raw_dbus(&dmsg, buf, len);
+                if (type < 1)
                     return -1;
-
-                if (!strcmp(dmsg.member, "AddMatch")) 
+                else if (type == DBUS_MESSAGE_TYPE_SIGNAL)
+            //    if (!strcmp(dmsg.member, "AddMatch")) 
                     add_raw_signal(rsock, ssock);
-
+                printf("MESSAGE: %d %s\n", type, dmsg.member);
             //    if (broker(&dmsg, domid) < 1)
             //        return -1;
             }
