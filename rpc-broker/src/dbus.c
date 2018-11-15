@@ -330,7 +330,8 @@ char *dbus_introspect(struct json_request *jreq)
     }
 
     signature = calloc(1, XML_SIGNATURE_MAX);
-    if (retrieve_xml_signature((const xmlChar *) xml, signature,
+    char *xmlbuf = strdup(xml);
+    if (retrieve_xml_signature((const xmlChar *) xmlbuf, signature,
                                 jreq->dmsg.interface, jreq->dmsg.member) < 1)
         signature[0] = '\0';
 
