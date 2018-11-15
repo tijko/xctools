@@ -52,8 +52,6 @@ xmlNodePtr find_xml_property(const char *target, const xmlChar *property,
  * on the JSON object returning the correct argument type required for each
  * request.  The libjson-c doesn't handle signedness, thus dbus will fail if
  * adding a request argument based solely on `json_object_get_type`
- *
- * TODO cache the results?
  */
 int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
                            const char *interface, const char *member)

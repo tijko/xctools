@@ -296,33 +296,36 @@ char *dbus_introspect(struct json_request *jreq)
     dbus_connection_flush(jreq->conn);
 
     char *signature = NULL;
-    char *xml = malloc(DBUS_INTROSPECT_MAX);
 
-    DBusMessage *introspect = make_dbus_call(jreq->conn, &dmsg);
+    if (xml == NULL) {
+        xml = malloc(DBUS_INTROSPECT_MAX);
 
-    if (!introspect) {
-        DBUS_BROKER_WARNING("DBus Introspection message failed %s", "");
-        goto msg_error;
+        DBusMessage *introspect = make_dbus_call(jreq->conn, &dmsg);
+
+        if (!introspect) {
+            DBUS_BROKER_WARNING("DBus Introspection message failed %s", "");
+            goto msg_error;
+        }
+
+        if (dbus_message_get_type(introspect) == DBUS_MESSAGE_TYPE_ERROR) {
+            DBUS_BROKER_WARNING("DBus Introspection message failed %s", "");
+            goto msg_return_error;
+        }
+
+        char *reply;
+
+        DBusMessageIter iter;
+        dbus_message_iter_init(introspect, &iter);
+
+        if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRING) {
+            DBUS_BROKER_WARNING("DBus Introspect return invalid type %s", "");
+            goto msg_return_error;
+        }
+
+        dbus_message_iter_get_basic(&iter, &reply);
+        strcpy(xml, reply);
     }
 
-    if (dbus_message_get_type(introspect) == DBUS_MESSAGE_TYPE_ERROR) {
-        DBUS_BROKER_WARNING("DBus Introspection message failed %s", "");
-        goto msg_return_error;
-    }
-
-    char *reply;
-
-    DBusMessageIter iter;
-    dbus_message_iter_init(introspect, &iter);
-
-    if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRING) {
-        DBUS_BROKER_WARNING("DBus Introspect return invalid type %s", "");
-        goto msg_return_error;
-    }
-
-    dbus_message_iter_get_basic(&iter, &reply);
-
-    strcpy(xml, reply);
     signature = calloc(1, XML_SIGNATURE_MAX);
     if (retrieve_xml_signature((const xmlChar *) xml, signature,
                                 jreq->dmsg.interface, jreq->dmsg.member) < 1)
@@ -330,9 +333,6 @@ char *dbus_introspect(struct json_request *jreq)
 
 msg_return_error:
     dbus_message_unref(introspect);
-
-msg_error:
-    free(xml);
 
     return signature;
 }
