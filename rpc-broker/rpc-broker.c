@@ -30,6 +30,21 @@
 #include "rpc-broker.h"
 
 
+// XXX 
+#include <pthread.h>
+
+struct test_req {
+    int client;
+    int domid;
+};
+
+void *signal_req(void *req)
+{
+    struct test_req *r = (struct test_req *) req;
+    broker_message(req->client, req->domid); 
+}
+//
+
 /*
  * Whenever clients connect to port 5555, this function will then connect 
  * directly to the DBus system bus socket (/var/run/dbus/system_bus_socket).
@@ -241,8 +256,14 @@ void run_rawdbus(struct dbus_broker_args *args)
             
             if (v4v_getpeername(client, &client_addr) < 0) 
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
-            else 
-                broker_message(client, client_addr.domain); 
+            else {
+                pthread_t p;
+                struct test_req *r = malloc(sizeof *r);
+                r->client = client;
+                r->domid = client_addr.domain;
+                pthread_create(&p, NULL, (void *(*)(void *)) signal_req, r);
+            } 
+            //    broker_message(client, client_addr.domain); 
         }
 
         service_raw_signals();
