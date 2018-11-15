@@ -282,8 +282,6 @@ int main(int argc, char *argv[])
     verbose_logging = false;
     void (*mainloop)(struct dbus_broker_args *args);
 
-    xml = NULL;
-
     char *bus_file = NULL;
     char *raw_dbus = NULL;
     char *websockets = NULL;
@@ -373,9 +371,6 @@ int main(int argc, char *argv[])
     dbus_broker_policy = build_policy(policy_file);
 
     mainloop(&args);
-
-    if (xml != NULL)
-        free(xml);
 
     free_policy();
     free_dlinks();

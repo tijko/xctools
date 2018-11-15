@@ -123,7 +123,6 @@ struct policy {
 
 struct policy *dbus_broker_policy;
 bool reload_policy;
-char *xml;
 
 // DBus-Broker server
 #define BROKER_DEFAULT_PORT 5555

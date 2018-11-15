@@ -296,44 +296,44 @@ char *dbus_introspect(struct json_request *jreq)
     dbus_connection_flush(jreq->conn);
 
     char *signature = NULL;
+    char *xml = malloc(DBUS_INTROSPECT_MAX);
 
-    if (xml == NULL) {
-        xml = malloc(DBUS_INTROSPECT_MAX);
+    DBusMessage *introspect = make_dbus_call(jreq->conn, &dmsg);
 
-        DBusMessage *introspect = make_dbus_call(jreq->conn, &dmsg);
-
-        if (!introspect) {
-            DBUS_BROKER_WARNING("DBus Introspection message failed %s", "");
-            return signature;
-        }
-
-        if (dbus_message_get_type(introspect) == DBUS_MESSAGE_TYPE_ERROR) {
-            DBUS_BROKER_WARNING("DBus Introspection message failed %s", "");
-            dbus_message_unref(introspect);
-            return signature;
-        }
-
-        char *reply;
-
-        DBusMessageIter iter;
-        dbus_message_iter_init(introspect, &iter);
-
-        if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRING) {
-            DBUS_BROKER_WARNING("DBus Introspect return invalid type %s", "");
-            dbus_message_unref(introspect);
-            return signature;
-        }
-
-        dbus_message_iter_get_basic(&iter, &reply);
-        strcpy(xml, reply);
-        dbus_message_unref(introspect);
+    if (!introspect) {
+        DBUS_BROKER_WARNING("DBus Introspection message failed %s", "");
+        goto xml_error;
     }
+
+    if (dbus_message_get_type(introspect) == DBUS_MESSAGE_TYPE_ERROR) {
+        DBUS_BROKER_WARNING("DBus Introspection message failed %s", "");
+        goto msg_error;
+    }
+
+    char *reply;
+
+    DBusMessageIter iter;
+    dbus_message_iter_init(introspect, &iter);
+
+    if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRING) {
+        DBUS_BROKER_WARNING("DBus Introspect return invalid type %s", "");
+        goto msg_error;
+    }
+
+    dbus_message_iter_get_basic(&iter, &reply);
+    strcpy(xml, reply);
 
     signature = calloc(1, XML_SIGNATURE_MAX);
     char *xmlbuf = strdup(xml);
     if (retrieve_xml_signature((const xmlChar *) xmlbuf, signature,
                                 jreq->dmsg.interface, jreq->dmsg.member) < 1)
         signature[0] = '\0';
+
+msg_error:
+    dbus_message_unref(introspect);
+
+xml_error:
+    free(xml);
 
     return signature;
 }
