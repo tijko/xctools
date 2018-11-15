@@ -304,12 +304,13 @@ char *dbus_introspect(struct json_request *jreq)
 
         if (!introspect) {
             DBUS_BROKER_WARNING("DBus Introspection message failed %s", "");
-            goto msg_error;
+            return signature;
         }
 
         if (dbus_message_get_type(introspect) == DBUS_MESSAGE_TYPE_ERROR) {
             DBUS_BROKER_WARNING("DBus Introspection message failed %s", "");
-            goto msg_return_error;
+            dbus_message_unref(introspect);
+            return signature;
         }
 
         char *reply;
@@ -319,20 +320,19 @@ char *dbus_introspect(struct json_request *jreq)
 
         if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRING) {
             DBUS_BROKER_WARNING("DBus Introspect return invalid type %s", "");
-            goto msg_return_error;
+            dbus_message_unref(introspect);
+            return signature; 
         }
 
         dbus_message_iter_get_basic(&iter, &reply);
         strcpy(xml, reply);
+        dbus_message_unref(introspect);
     }
 
     signature = calloc(1, XML_SIGNATURE_MAX);
     if (retrieve_xml_signature((const xmlChar *) xml, signature,
                                 jreq->dmsg.interface, jreq->dmsg.member) < 1)
         signature[0] = '\0';
-
-msg_return_error:
-    dbus_message_unref(introspect);
 
     return signature;
 }
