@@ -297,7 +297,9 @@ char *dbus_introspect(struct json_request *jreq)
 
     char *signature = NULL;
     char *xml = malloc(DBUS_INTROSPECT_MAX);
-
+    //
+    DBUS_BROKER_EVENT("Introspect path <%s>", dmsg.path);
+    //
     DBusMessage *introspect = make_dbus_call(jreq->conn, &dmsg);
 
     if (!introspect) {
