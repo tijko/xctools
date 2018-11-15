@@ -46,7 +46,7 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
             memcpy(user, in, len);
             if (ws_request_handler(wsi, user) == 0)
                 lws_callback_on_writable(wsi);
-        
+
             break;
         }
 
@@ -58,7 +58,7 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
                 lws_write(wsi, user + LWS_SEND_BUFFER_PRE_PADDING,
                           strlen(rsp), LWS_WRITE_TEXT);
                 lws_callback_on_writable(wsi);
-            } 
+            }
 
             break;
         }
@@ -122,17 +122,17 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
 
     struct json_response *jrsp = make_json_request(jreq);
 
-    if (!jrsp) 
+    if (!jrsp)
         goto free_req;
 
     char *reply = prepare_json_reply(jrsp);
-    if (!reply) 
+    if (!reply)
         goto free_resp;
 
     lws_ring_insert(ring, reply, 1);
     free(reply);
 
-    if (strcmp("AddMatch", jreq->dmsg.member) == 0) { 
+    if (strcmp("AddMatch", jreq->dmsg.member) == 0) {
         add_ws_signal(jreq->conn, wsi);
         // add an interface field (jreq->dmsg.args[0])
     }

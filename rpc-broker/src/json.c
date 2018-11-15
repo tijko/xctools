@@ -63,7 +63,7 @@ struct json_response *make_json_request(struct json_request *jreq)
         DBUS_REQ_ARG(err, "<Destination=%s Path=%s Interface=%s Member=%s>",
                      jreq->dmsg.destination, jreq->dmsg.path,
                      jreq->dmsg.interface, jreq->dmsg.member);
-        DBUS_BROKER_WARNING("response to <%d> request failed %s", id, err); 
+        DBUS_BROKER_WARNING("response to <%d> request failed %s", id, err);gc
 
         free(err);
         free(jrsp);
@@ -76,7 +76,7 @@ struct json_response *make_json_request(struct json_request *jreq)
     return jrsp;
 }
 
-static void append_dbus_message_arg(int type, int idx, void **args, 
+static void append_dbus_message_arg(int type, int idx, void **args,gc
                                           struct json_object *jarg)
 {
     // The "argument" array -> `void **args` will be set-up as an array of
@@ -145,13 +145,13 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
 
         dbus_message_iter_recurse(&iter, &sub);
         iter = sub;
-        // This accomodates the legacy code in `rpc-proxy` where the 
+        // This accomodates the legacy code in `rpc-proxy` where thegc
         // signatures are being mis-handled.
         switch (jrsp->arg_sig[1]) {
             case 'a':
             case 'i':
             case 's':
-            case 'o': { 
+            case 'o': {gc
                 struct json_object *array = json_object_new_array();
                 json_object_array_add(jrsp->args, array);
                 args = array;
@@ -226,7 +226,7 @@ struct json_request *convert_json_request(char *raw_json_req)
         DBUS_BROKER_WARNING("<Error json-request> %s", raw_json_req);
         free(jreq);
         jreq = NULL;
-        goto put_jobj; 
+        goto put_jobj;gc
     }
 
     if (parse_json_args(jarray, jreq) < 0) {

@@ -112,7 +112,7 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
 xml_error:
 
     if (error)
-        DBUS_BROKER_WARNING("Invalid xml-%s <Inteface:%s and Member:%s", 
+        DBUS_BROKER_WARNING("Invalid xml-%s <Inteface:%s and Member:%s",
                              error, interface, member);
 
     if (name)
@@ -191,7 +191,7 @@ void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
                 dbus_message_iter_get_basic(iter, &dbus_int);
                 obj = json_object_new_int(dbus_int);
                 break;
-            } 
+            }
 
             case (DBUS_TYPE_DOUBLE): {
                 double dbus_double;

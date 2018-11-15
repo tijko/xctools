@@ -78,7 +78,7 @@ int connect_to_system_bus(void)
     return srv;
 }
 
-/* 
+/*
  * Used by client communications over port-5555 where, the raw-bytes are being
  * read directly from the client file-descriptor.  The `char` buffer is
  * de-marshalled into a dbus-protocol object `DBusMessage`
@@ -92,7 +92,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
     DBusMessage *dbus_msg = NULL;
     dbus_msg = dbus_message_demarshal(msg, len, &error);
 
-    if (dbus_error_is_set(&error)) { 
+    if (dbus_error_is_set(&error)) {
         DBUS_BROKER_WARNING("<De-Marshal failed> [Length: %d] error: %s",
                               len, error.message);
         return -1;
@@ -242,7 +242,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 char *db_query(DBusConnection *conn, char *arg)
 {
     char *buf;
-    char *reply = NULL; 
+    char *reply = NULL;
 
     struct dbus_message dmsg;
     dbus_default(&dmsg);
@@ -251,21 +251,21 @@ char *db_query(DBusConnection *conn, char *arg)
 
     DBusMessage *msg = make_dbus_call(conn, &dmsg);
 
-    if (!msg) 
+    if (!msg)
         return NULL;
 
     DBusMessageIter iter;
-    if (!dbus_message_iter_init(msg, &iter)) 
+    if (!dbus_message_iter_init(msg, &iter))
         goto free_msg;
 
-    if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRING) 
+    if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRING)
         goto free_msg;
 
     dbus_message_iter_get_basic(&iter, &buf);
 
-    if (buf[0] == '\0') 
+    if (buf[0] == '\0')
         goto free_msg;
-    
+
     reply = calloc(1, RULE_MAX_LENGTH);
     strcpy(reply, buf);
 
@@ -277,9 +277,9 @@ free_msg:
 
 /*
  * For any given dbus request, this function will retrieve its corresponding
- * introspection information.  
+ * introspection information.
  *
- * By matching up the method call being made with the ones listed in the 
+ * By matching up the method call being made with the ones listed in the
  * services' introspection data, we can examine what argument type the
  * service is expecting. Where as before relying on JSON to infer the type,
  * for instance JSON doesn't have uint32_t and would return int and the
@@ -321,7 +321,7 @@ char *dbus_introspect(struct json_request *jreq)
         if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRING) {
             DBUS_BROKER_WARNING("DBus Introspect return invalid type %s", "");
             dbus_message_unref(introspect);
-            return signature; 
+            return signature;
         }
 
         dbus_message_iter_get_basic(&iter, &reply);

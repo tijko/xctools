@@ -190,7 +190,7 @@ DBusMessage *db_list(void)
     else if (dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) {
         if (verbose_logging)
             DBUS_BROKER_WARNING("DBus message return error <db-list> %s", "");
-        dbus_message_unref(vms); 
+        dbus_message_unref(vms);
         vms = NULL;
     }
 
@@ -282,9 +282,9 @@ void free_policy(void)
             free_rule(domain.rules[j]);
     }
 
-    struct etc_policy etc = dbus_broker_policy->etc; 
+    struct etc_policy etc = dbus_broker_policy->etc;
 
-    for (i=0; i < etc.count; i++) 
+    for (i=0; i < etc.count; i++)
         free_rule(etc.rules[i]);
 
     free(dbus_broker_policy);

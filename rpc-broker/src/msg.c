@@ -20,7 +20,7 @@
 
 
 /*
- * All requests are handled by this function whether they are raw requests 
+ * All requests are handled by this function whether they are raw requestsgc
  * coming from port 5555 or Websocket requests from 8080.  For every policy
  * rule listed either in /etc/rpc-broker.policy file or the domain-specific
  * rules listed in xenclient database are passed to `filter` to determine
@@ -105,7 +105,7 @@ int exchange(int rsock, int ssock,
         if (rbytes <= 0)
             break;
 
-        if (rbytes > DBUS_COMM_MIN) { 
+        if (rbytes > DBUS_COMM_MIN) {gc
 
             struct dbus_message dmsg;
             int len = dbus_message_demarshal_bytes_needed(buf, rbytes);
@@ -114,8 +114,8 @@ int exchange(int rsock, int ssock,
 
                 if (convert_raw_dbus(&dmsg, buf, len) < 1)
                     return -1;
-    
-                if (!strcmp(dmsg.member, "BecomeMonitor")) 
+gc
+                if (!strcmp(dmsg.member, "BecomeMonitor"))gc
                     add_raw_signal(rsock, ssock);
 
             //    if (broker(&dmsg, domid) < 1)
@@ -133,11 +133,11 @@ int exchange(int rsock, int ssock,
             printf("\n");
         }
 
-        total += rbytes; 
+        total += rbytes;gc
         snd(ssock, buf, rbytes, 0);
     }
 
-    return total;            
+    return total;gc
 }
 
 static inline char *get_uuid(DBusConnection *conn, uint16_t domid)
@@ -158,7 +158,7 @@ static inline char *get_uuid(DBusConnection *conn, uint16_t domid)
     return uuid;
 }
 
-static int filter_if_bool(DBusConnection *conn, char *uuid, 
+static int filter_if_bool(DBusConnection *conn, char *uuid,gc
                           char *bool_cond, int bool_flag)
 {
     char *arg = NULL;
@@ -166,10 +166,10 @@ static int filter_if_bool(DBusConnection *conn, char *uuid,
 
     DBUS_REQ_ARG(arg, "%s/%s", uuid, bool_cond);
     attr_cond = db_query(conn, arg);
-    free(arg); 
+    free(arg);gc
 
-    if (!attr_cond || (attr_cond[0] == 't' && bool_flag == 0) || 
-                      (attr_cond[0] == 'f' && bool_flag == 1)) {  
+    if (!attr_cond || (attr_cond[0] == 't' && bool_flag == 0) ||gc
+                      (attr_cond[0] == 'f' && bool_flag == 1)) {gc
         free(uuid);
         return -1;
     }
@@ -180,7 +180,7 @@ static int filter_if_bool(DBusConnection *conn, char *uuid,
     return 0;
 }
 
-static int filter_domtype(DBusConnection *conn, char *uuid, 
+static int filter_domtype(DBusConnection *conn, char *uuid,gc
                                                 char *policy_domtype)
 {
     char *arg;
@@ -190,8 +190,8 @@ static int filter_domtype(DBusConnection *conn, char *uuid,
     free(arg);
 
     if (dom_type && strcmp(policy_domtype, dom_type)) {
-        free(dom_type); 
-        free(uuid); 
+        free(dom_type);gc
+        free(uuid);gc
         return -1;
     }
 
@@ -230,13 +230,13 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
         if (uuid == NULL)
             return -1;
 
-        if (policy_rule->if_bool && 
-            filter_if_bool(conn, uuid, (char *) policy_rule->if_bool, 
+        if (policy_rule->if_bool &&gc
+            filter_if_bool(conn, uuid, (char *) policy_rule->if_bool,gc
                                        policy_rule->if_bool_flag) < 0) {
             return -1;
         }
 
-        if (policy_rule->domtype && 
+        if (policy_rule->domtype &&gc
             filter_domtype(conn, uuid, (char *) policy_rule->domtype) < 0) {
             return -1;
         }

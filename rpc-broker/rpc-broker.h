@@ -179,7 +179,7 @@ struct dbus_message {
 #define XENSTORE_TARGET_LEN 8
 #define XENSTORE_TARGET "/target"
 
-#define WS_RING_BUFFER_MEMBER_SIZE 8192 
+#define WS_RING_BUFFER_MEMBER_SIZE 8192
 #define WS_RING_BUFFER_MEMBER_NUM    64
 
 #define WS_USER_MEM_SIZE 8192  // the amount memory that is allocated for user
@@ -273,7 +273,7 @@ void add_raw_signal(int client_fd, int server_fd);
 void free_dlinks(void);
 
 #define DBUS_DB_DEST     "com.citrix.xenclient.db"
-#define DBUS_DB_IFACE    DBUS_DB_DEST 
+#define DBUS_DB_IFACE    DBUS_DB_DEST
 
 #define DBUS_VM_PATH     "/vm"
 #define DBUS_BASE_PATH   "/"

@@ -31,10 +31,10 @@
 
 
 /*
- * Whenever clients connect to port 5555, this function will then connect 
+ * Whenever clients connect to port 5555, this function will then connect
  * directly to the DBus system bus socket (/var/run/dbus/system_bus_socket).
  *
- * Polling on the client & server file-descriptors until the connection 
+ * Polling on the client & server file-descriptors until the connection
  * communication is finished.
  */
 int broker_message(int client, int domid)
@@ -122,7 +122,7 @@ static void service_ws_signals(void)
 {
     struct dbus_link *curr = dlinks;
 
-    while (curr) { 
+    while (curr) {
 
         DBusMessage *msg = NULL;
 
@@ -133,8 +133,8 @@ static void service_ws_signals(void)
 
         if (!msg)
             goto next_link;
- 
-        if (dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL) 
+
+        if (dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
             goto unref_msg;
 
         struct json_response *jrsp = init_jrsp();
@@ -147,7 +147,7 @@ static void service_ws_signals(void)
         jrsp->member = dbus_message_get_member(msg);
         jrsp->path = dbus_message_get_path(msg);
         char *reply = prepare_json_reply(jrsp);
-        if (!reply) 
+        if (!reply)
             goto free_msg;
 
         lws_callback_on_writable(curr->wsi);
@@ -203,7 +203,7 @@ static void run_websockets(struct dbus_broker_args *args)
     while (dbus_broker_running) {
 
         lws_service(ws_context, WS_LOOP_TIMEOUT);
-        service_ws_signals(); 
+        service_ws_signals();
 
         if (reload_policy) {
             free_policy();
@@ -238,11 +238,11 @@ void run_rawdbus(struct dbus_broker_args *args)
             DBUS_BROKER_EVENT("<Client has made a connection> [Dom: %d Client: %d]",
                                 server->peer.domain, client);
             v4v_addr_t client_addr = { .domain=0, .port=0 };
-            
-            if (v4v_getpeername(client, &client_addr) < 0) 
+
+            if (v4v_getpeername(client, &client_addr) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
-            else 
-                broker_message(client, client_addr.domain); 
+            else
+                broker_message(client, client_addr.domain);
         }
 
         service_raw_signals();
@@ -269,7 +269,7 @@ int main(int argc, char *argv[])
         { "policy-file", required_argument,   0, 'p' },
         { "raw-dbus",    required_argument,   0, 'r' },
         { "verbose",     no_argument,         0, 'v' },
-        { "websockets",  required_argument,   0, 'w' }, 
+        { "websockets",  required_argument,   0, 'w' },
         {  0,            0,        0,         0      }
     };
 
@@ -313,7 +313,7 @@ int main(int argc, char *argv[])
 
             case ('r'):
                 if (proto)
-                    goto conn_type_error; 
+                    goto conn_type_error;
                 raw_dbus = optarg;
                 proto = true;
                 break;
@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
 
             case ('w'):
                 if (proto)
-                    goto conn_type_error; 
+                    goto conn_type_error;
                 websockets = optarg;
                 proto = true;
                 break;
