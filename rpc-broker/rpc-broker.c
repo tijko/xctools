@@ -180,8 +180,9 @@ static void service_raw_signals(void)
 
         if (ret > 0) {
             char buf[DBUS_MSG_LEN];
-            int rbytes = read(curr->client_fd, buf, DBUS_MSG_LEN);
-            DBUS_BROKER_EVENT("5555 signal %s", "");
+            int rbytes = recv(curr->client_fd, buf, DBUS_MSG_LEN, MSG_DONTWAIT);
+            if (rbytes > 0)
+                send(curr->server_fd, buf, rbytes, MSG_DONTWAIT);
         }
 
         curr = curr->next;
