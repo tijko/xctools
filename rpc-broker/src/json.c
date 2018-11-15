@@ -63,7 +63,8 @@ struct json_response *make_json_request(struct json_request *jreq)
                      jreq->dmsg.destination, jreq->dmsg.path,
                      jreq->dmsg.interface, jreq->dmsg.member);
         DBUS_BROKER_WARNING("response to <%d> request failed %s", id, err);
-
+        if (msg)
+            DBUS_BROKER_WARNING("DBUS: %s", dbus_message_get_error_name(msg));
         free(err);
         free(jrsp);
         return NULL;
