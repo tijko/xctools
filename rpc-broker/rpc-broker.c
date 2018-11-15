@@ -41,7 +41,7 @@ struct test_req {
 void *signal_req(void *req)
 {
     struct test_req *r = (struct test_req *) req;
-    broker_message(req->client, req->domid); 
+    broker_message(r->client, r->domid); 
 }
 //
 

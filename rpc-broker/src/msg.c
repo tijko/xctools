@@ -226,17 +226,18 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
 
     if (policy_rule->if_bool || policy_rule->domtype) {
         conn = create_dbus_connection();
-        if (!(uuid = get_uuid(conn, domid)));
+        uuid = get_uuid(conn, domid);
+        if (uuid == NULL)
             return -1;
 
         if (policy_rule->if_bool && 
-            filter_if_bool(conn, uuid, policy_rule->if_bool, 
+            filter_if_bool(conn, uuid, (char *) policy_rule->if_bool, 
                                        policy_rule->if_bool_flag) < 0) {
             return -1;
         }
 
         if (policy_rule->domtype && 
-            filter_domtype(conn, uuid, policy_rule->domtype) < 0) {
+            filter_domtype(conn, uuid, (char *) policy_rule->domtype) < 0) {
             return -1;
         }
     }

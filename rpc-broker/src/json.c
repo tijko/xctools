@@ -259,13 +259,13 @@ void free_json_request(struct json_request *jreq)
     }
 
     if (jreq->dmsg.destination)
-        free(jreq->dmsg.destination);
+        free((char *) (jreq->dmsg.destination));
     if (jreq->dmsg.interface)
-        free(jreq->dmsg.interface);
+        free((char *) (jreq->dmsg.interface));
     if (jreq->dmsg.path)
-        free(jreq->dmsg.path);
+        free((char *) (jreq->dmsg.path));
     if (jreq->dmsg.member)
-        free(jreq->dmsg.member);
+        free((char *) (jreq->dmsg.member));
 
     free(jreq);
 }

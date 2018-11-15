@@ -249,25 +249,25 @@ struct policy *build_policy(const char *rule_filename)
 void free_rule(struct rule r)
 {
     if (r.destination)
-        free(r.destination);
+        free((char *) (r.destination));
 
     if (r.path)
-        free(r.path);
+        free((char *) (r.path));
 
     if (r.interface)
-        free(r.interface);
+        free((char *) (r.interface));
 
     if (r.member)
-        free(r.member);
+        free((char *) (r.member));
 
     if (r.if_bool)
-        free(r.if_bool);
+        free((char *) (r.if_bool));
 
     if (r.domtype)
-        free(r.domtype);
+        free((char *) (r.domtype));
 
     if (r.rule_string)
-        free(r.rule_string);
+        free((char *) (r.rule_string));
 }
 
 void free_policy(void)

@@ -34,12 +34,12 @@ xmlNodePtr find_xml_property(const char *target, const xmlChar *property,
     name = xmlGetProp(node, property);
 
     if (name && !strcmp((const char *) name, target)) {
-        xmlFree(name);
+        xmlFree((xmlChar *) name);
         return xmlFirstElementChild(node);
     }
 
     if (name)
-        xmlFree(name);
+        xmlFree((xmlChar *) name);
 
     node = find_xml_property(target, property, xmlNextElementSibling(node));
 
@@ -97,13 +97,13 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
 
     /* Loop over method properties looking for "in" (holds the signature) */
     while (name && !strcmp((const char *) name, XML_IN_FIELD)) {
-        xmlFree(name);
+        xmlFree((xmlChar *) name);
         name = NULL;
         type = xmlGetProp(member_node, (const xmlChar *) XML_TYPE_FIELD);
 
         if (type) {
             args[idx++] = type[0];
-            xmlFree(type);
+            xmlFree((xmlChar *) type);
             type = NULL;
         }
 
@@ -118,10 +118,10 @@ xml_error:
                              error, interface, member);
 
     if (name)
-        xmlFree(name);
+        xmlFree((xmlChar *) name);
 
     if (type)
-        xmlFree(type);
+        xmlFree((xmlChar *) type);
 
     args[idx] = '\0';
     xmlFreeDoc(doc);
