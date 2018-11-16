@@ -111,6 +111,49 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
     dmsg->member = member ? member : "NULL";
 
     int ret = dbus_message_get_type(dbus_msg);
+    // XXX
+    DBUS_BROKER_EVENT("5555 %s %s %s %s", dmsg->destination, dmsg->path, dmsg->interface, dmsg->member);
+    DBusMessageIter iter;
+    dbus_message_iter_init(dbus_msg, &iter);
+    int type;
+
+    while ((type = dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_INVALID)) {
+
+        void *arg;
+
+        switch (type) {
+
+            case DBUS_TYPE_INT32:
+            case DBUS_TYPE_UINT32: {
+                dbus_message_iter_get_basic(&iter, arg);
+                DBUS_BROKER_EVENT("5555 %d", *(int *) arg); 
+                break;
+            }
+
+            case DBUS_TYPE_BOOLEAN: {
+                dbus_message_iter_get_basic(&iter, arg);
+                DBUS_BROKER_EVENT("5555 bool %d", *(boolean *) arg); 
+                break;
+            }
+
+            case DBUS_TYPE_STRING: {
+                dbus_message_iter_get_basic(&iter, &arg);
+                DBUS_BROKER_EVENT("5555 %s", (char *) arg);
+                break;
+            }
+
+            case DBUS_TYPE_VARIANT: {
+                DBUS_BROKER_EVENT("5555 variant %s", "");
+                break;
+
+            default:
+                DBUS_BROKER_EVENT("5555 other %d",  type);
+                break;
+        }
+
+        dbus_message_iter_next(&iter);
+    }
+
     dbus_message_unref(dbus_msg);
 
     return ret;
