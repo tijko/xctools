@@ -49,8 +49,7 @@ int broker_message(int client, int domid)
         sret = exchange(srv, client, recv, v4v_send, domid);
     }
 
-    close(srv);
-    return 0;
+    return srv;
 }
 
 signed int is_stubdom(uint16_t domid)
@@ -246,7 +245,7 @@ void run_rawdbus(struct dbus_broker_args *args)
                 broker_message(client, client_addr.domain);
         }
 
-        //service_raw_signals();
+        service_raw_signals();
 
         if (reload_policy) {
             free_policy();
