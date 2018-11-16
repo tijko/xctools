@@ -111,6 +111,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
     dmsg->member = member ? member : "NULL";
 
     int ret = dbus_message_get_type(dbus_msg);
+/*
     // XXX
     DBUS_BROKER_EVENT("5555 %s %s %s %s", dmsg->destination, dmsg->path, dmsg->interface, dmsg->member);
     DBusMessageIter iter;
@@ -154,7 +155,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
 
         dbus_message_iter_next(&iter);
     }
-
+*/
     dbus_message_unref(dbus_msg);
 
     return ret;
