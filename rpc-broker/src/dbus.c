@@ -117,7 +117,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
     dbus_message_iter_init(dbus_msg, &iter);
     int type;
 
-    while ((type = dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_INVALID)) {
+    while ((type = dbus_message_iter_get_arg_type(&iter)) != DBUS_TYPE_INVALID) {
 
         void *arg;
 
