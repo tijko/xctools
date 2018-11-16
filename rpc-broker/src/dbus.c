@@ -132,7 +132,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
 
             case DBUS_TYPE_BOOLEAN: {
                 dbus_message_iter_get_basic(&iter, arg);
-                DBUS_BROKER_EVENT("5555 bool %d", *(boolean *) arg); 
+                DBUS_BROKER_EVENT("5555 bool %d", *(bool *) arg); 
                 break;
             }
 
