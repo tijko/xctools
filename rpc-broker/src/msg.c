@@ -122,15 +122,15 @@ int exchange(int rsock, int ssock,
             //        return -1;
             }
 
-            printf("msg (%d): ", rbytes);
+            char tmp[DBUS_MSG_LEN] = { '\0' };
             for (int i=0; i < rbytes; i++) {
                 if (isalnum(buf[i]))
-                    printf("%c", buf[i]);
+                    tmp[i] = buf[i];
                 else
-                    printf("_");
+                    tmp[i] = '-';
             }
 
-            printf("\n");
+            DBUS_BROKER_EVENT("5555: %s", tmp);      
         }
 
         total += rbytes;
