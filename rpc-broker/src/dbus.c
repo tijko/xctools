@@ -145,6 +145,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
             case DBUS_TYPE_VARIANT: {
                 DBUS_BROKER_EVENT("5555 variant %s", "");
                 break;
+            }
 
             default:
                 DBUS_BROKER_EVENT("5555 other %d",  type);
