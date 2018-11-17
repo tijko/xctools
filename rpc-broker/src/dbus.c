@@ -262,6 +262,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
         }
     }
 
+/*
     DBusPendingCall *pc = NULL;
 
     if (!dbus_connection_send_with_reply(conn, msg,
@@ -277,8 +278,17 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
         return NULL;
 
     dbus_pending_call_unref(pc);
+*/
+    DBusMessage *reply = dbus_connection_send_with_reply_block(conn, msg, 
+                                               DBUS_REQ_TIMEOUT, &error); 
+    dbus_message_unref(msg);
 
-    return msg;
+    if (reply == NULL) {
+        DBUS_BROKER_WARNING("Failed Request <%s>", error.message);
+        return NULL;
+    }
+
+    return reply;
 }
 
 /*
