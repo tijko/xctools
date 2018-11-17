@@ -114,7 +114,6 @@ int exchange(int rsock, int ssock,
 
                 if (convert_raw_dbus(&dmsg, buf, len) < 1)
                     return -1;
-                DBUS_BROKER_EVENT("5555: %s", "");
 
                 if (!strcmp(dmsg.member, "BecomeMonitor"))
                     add_raw_signal(rsock, ssock);

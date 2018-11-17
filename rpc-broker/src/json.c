@@ -70,6 +70,13 @@ struct json_response *make_json_request(struct json_request *jreq)
         return NULL;
     }
 
+//
+    DBUS_BROKER_EVENT("WS: dest=%s path=%s iface=%s meth=%s",
+                       jreq->dmsg.destination,
+                       jreq->dmsg.path,
+                       jreq->dmsg.interface,
+                       jreq->dmsg.member);
+//
     load_json_response(msg, jrsp);
     dbus_message_unref(msg);
 
