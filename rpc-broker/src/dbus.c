@@ -127,13 +127,13 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
             case DBUS_TYPE_INT32:
             case DBUS_TYPE_UINT32: {
                 dbus_message_iter_get_basic(&iter, arg);
-                DBUS_BROKER_EVENT("5555 %d", *(int *) arg); 
+                DBUS_BROKER_EVENT("5555 %d", *(int *) arg);
                 break;
             }
 
             case DBUS_TYPE_BOOLEAN: {
                 dbus_message_iter_get_basic(&iter, arg);
-                DBUS_BROKER_EVENT("5555 bool %d", *(bool *) arg); 
+                DBUS_BROKER_EVENT("5555 bool %d", *(bool *) arg);
                 break;
             }
 
@@ -279,8 +279,8 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 
     dbus_pending_call_unref(pc);
 */
-    DBusMessage *reply = dbus_connection_send_with_reply_block(conn, msg, 
-                                               DBUS_REQ_TIMEOUT, &error); 
+    DBusMessage *reply = dbus_connection_send_with_reply_and_block(conn, msg,
+                                                   DBUS_REQ_TIMEOUT, &error);
     dbus_message_unref(msg);
 
     if (reply == NULL) {
