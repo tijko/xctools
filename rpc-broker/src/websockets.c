@@ -134,6 +134,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
 
     if (strcmp("AddMatch", jreq->dmsg.member) == 0) {
         add_ws_signal(jreq->conn, wsi);
+        DBUS_BROKER_EVENT("WS signal subscription %s", "");
         // add an interface field (jreq->dmsg.args[0])
     }
 
