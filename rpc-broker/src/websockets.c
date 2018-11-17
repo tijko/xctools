@@ -121,7 +121,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     jreq->wsi = wsi;
     //
     DBUS_BROKER_EVENT("WS: dest=%s path=%s iface=%s method=%s", jreq->dmsg.destination,
-                       jreq->dmsg.path, jreq->dmsg.interface, jreq->dmsg.memeber);
+                       jreq->dmsg.path, jreq->dmsg.interface, jreq->dmsg.member);
     //
     struct json_response *jrsp = make_json_request(jreq);
 
