@@ -262,23 +262,6 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
         }
     }
 
-/*
-    DBusPendingCall *pc = NULL;
-
-    if (!dbus_connection_send_with_reply(conn, msg,
-                                        &pc, DBUS_REQ_TIMEOUT) || !pc)
-        return NULL;
-
-    dbus_connection_flush(conn);
-    dbus_pending_call_block(pc);
-    dbus_connection_flush(conn);
-    dbus_message_unref(msg);
-
-    if ((msg = dbus_pending_call_steal_reply(pc)) == NULL)
-        return NULL;
-
-    dbus_pending_call_unref(pc);
-*/
     DBusMessage *reply = dbus_connection_send_with_reply_and_block(conn, msg,
                                                    DBUS_REQ_TIMEOUT, &error);
     dbus_message_unref(msg);

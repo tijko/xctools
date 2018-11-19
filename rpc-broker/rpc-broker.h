@@ -140,7 +140,7 @@ struct dbus_broker_server {
 #define DBUS_BROKER_MSG_TIMEOUT     100
 
 // DBus-Broker messages
-#define DBUS_REQ_TIMEOUT    1000
+#define DBUS_REQ_TIMEOUT   10000
 #define DBUS_MSG_LEN        8192
 #define DBUS_ARG_LEN        1024
 
