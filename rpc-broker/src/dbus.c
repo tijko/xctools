@@ -377,13 +377,12 @@ xml_error:
 
 static struct dbus_link *add_dbus_signal(void)
 {
-    struct dbus_link *curr;
+    struct dbus_link *curr = dlinks;
 
     if (!dlinks) {
         dlinks = malloc(sizeof *dlinks);
         curr = dlinks;
     } else {
-        curr = dlinks;
         while (curr->next)
             curr = curr->next;
         curr->next = malloc(sizeof *dlinks);
@@ -405,7 +404,7 @@ void add_ws_signal(DBusConnection *conn, struct lws *wsi)
 void add_raw_signal(int client_fd, int server_fd)
 {
     struct dbus_link *curr = add_dbus_signal();
-    curr->client_fd = client_fd;
+    dup2(client_fd, curr->client_fd);
     dup2(server_fd, curr->server_fd);
 
     curr->wsi = NULL;

@@ -180,7 +180,7 @@ static void service_raw_signals(void)
 
         if (ret > 0) {
             char buf[DBUS_MSG_LEN];
-            int rbytes = recv(curr->client_fd, buf, DBUS_MSG_LEN, MSG_DONTWAIT);
+            int rbytes = recv(curr->client_fd, buf, DBUS_MSG_LEN, MSG_WAITALL);
             if (rbytes > 0)
                 send(curr->server_fd, buf, rbytes, MSG_DONTWAIT);
         }
@@ -232,6 +232,7 @@ void run_rawdbus(struct dbus_broker_args *args)
 
         struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_CLIENT_TIMEOUT };
         int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
+
         if (ret > 0) {
 
             int client = v4v_accept(default_socket, &server->peer);

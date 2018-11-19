@@ -93,7 +93,7 @@ int exchange(int rsock, int ssock,
 
     while ( 1 ) {
 
-        struct timeval tv = { .tv_sec=0, .tv_usec= DBUS_BROKER_MSG_TIMEOUT };
+        struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_MSG_TIMEOUT };
         FD_ZERO(&recv_fd);
         FD_SET(rsock, &recv_fd);
 
