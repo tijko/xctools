@@ -146,11 +146,6 @@ static void service_ws_signals(void)
         jrsp->interface = dbus_message_get_interface(msg);
         jrsp->member = dbus_message_get_member(msg);
         jrsp->path = dbus_message_get_path(msg);
-        //
-        DBUS_BROKER_EVENT("WS Signal iface=%s path=%s method=%s", jrsp->interface, 
-                                                                  jrsp->member, 
-                                                                  jrsp->path);
-        //
         char *reply = prepare_json_reply(jrsp);
         if (!reply)
             goto free_msg;
