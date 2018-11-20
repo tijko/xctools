@@ -242,7 +242,7 @@ void run_rawdbus(struct dbus_broker_args *args)
 
             if (v4v_getpeername(client, &client_addr) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
-            else
+            else 
                 broker_message(client, client_addr.domain);
         }
 
