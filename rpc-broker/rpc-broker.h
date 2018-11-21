@@ -309,7 +309,6 @@ void free_json_request(struct json_request *jreq);
 
 #define JSON_RESP "response"
 #define JSON_SIG  "signal"
-#define JSON_ID   "1"
 
 
 // src/msg.c

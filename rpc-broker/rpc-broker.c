@@ -232,7 +232,15 @@ void test_conns(int count, struct test **array)
         FD_SET(array[i]->client, &client_set);
 
         if (select(array[i]->client + 1, &client_set, NULL, NULL, &tv) > 0) {
-            DBUS_BROKER_EVENT("MESSAGE AGAIN: %d", array[i]->client); 
+            broker_message(array[i]);
+        }
+
+        tv.tv_sec=0;
+        tv.tv_usec=100;
+        FD_ZERO(&client_set);
+        FD_SET(array[i]->server, &client_set);
+
+        if (select(array[i]->server+ 1, &client_set, NULL, NULL, &tv) > 0) {
             broker_message(array[i]);
         }
     }
