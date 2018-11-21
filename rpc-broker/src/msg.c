@@ -82,7 +82,7 @@ int broker(struct dbus_message *dmsg, int domid)
  * who the client is and who the server is.  There are just sender and receiver
  * syscalls being made over port 5555.
  */
-int exchange(int rsock, int ssock,
+int exchange(struct test *t, int rsock, int ssock,
              ssize_t (*rcv)(int, void *, size_t, int),
              ssize_t (*snd)(int, const void *, size_t, int),
              int domid)
@@ -115,13 +115,16 @@ int exchange(int rsock, int ssock,
                 if (convert_raw_dbus(&dmsg, buf, len) < 1)
                     return -1;
 
-                if (!strcmp(dmsg.member, "BecomeMonitor"))
+                if (!strcmp(dmsg.member, "BecomeMonitor")) {
                     add_raw_signal(rsock, ssock);
+                    if (t)
+                        t->is_sig = true;
+                }
 
             //    if (broker(&dmsg, domid) < 1)
             //        return -1;
             }
-/*
+
             char tmp[DBUS_MSG_LEN] = { '\0' };
             for (int i=0; i < rbytes; i++) {
                 if (isalnum(buf[i]))
@@ -131,7 +134,7 @@ int exchange(int rsock, int ssock,
             }
 
             DBUS_BROKER_EVENT("5555: %s", tmp);
-*/
+
         }
 
         total += rbytes;

@@ -235,8 +235,17 @@ struct dbus_broker_args {
     const char *rule_file;
 };
 
+//
+struct test {
+    bool is_sig;
+    int server;
+    int client;
+    int domid;
+};
+// 
 // rpc-broker.c
-int broker_message(int client, int domid);
+//int broker_message(int client, int domid);
+struct test *broker_message(int client, int domid, struct test *t);
 
 signed int is_stubdom(uint16_t domid);
 
@@ -305,7 +314,7 @@ void free_json_request(struct json_request *jreq);
 // src/msg.c
 int broker(struct dbus_message *dmsg, int domid);
 
-int exchange(int rsock, int ssock,
+int exchange(struct test *t, int rsock, int ssock,
              ssize_t (*rcv)(int, void *, size_t, int),
              ssize_t (*snd)(int, const void *, size_t, int),
              int domid);

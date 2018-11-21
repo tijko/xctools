@@ -29,7 +29,6 @@
 
 #include "rpc-broker.h"
 
-
 /*
  * Whenever clients connect to port 5555, this function will then connect
  * directly to the DBus system bus socket (/var/run/dbus/system_bus_socket).
@@ -37,19 +36,31 @@
  * Polling on the client & server file-descriptors until the connection
  * communication is finished.
  */
-int broker_message(int client, int domid)
+//int broker_message(int client, int domid)
+struct test *broker_message(int client, int domid, struct test *t)
 {
-    int srv = connect_to_system_bus();
+    int srv;// = connect_to_system_bus();
     int sret = 1, cret = 1;
 
+    if (t == NULL) {
+        srv = connect_to_system_bus();
+        t = malloc(sizeof *t);
+        t->is_sig = false;
+        t->server = srv;
+        t->client = client;
+        t->domid = domid;
+    } else
+        srv = t->server;
+
     while (sret > 0 || cret > 0) {
-        cret = exchange(client, srv, v4v_recv, send, domid);
+        cret = exchange(t, client, srv, v4v_recv, send, domid);
         if (cret < 0)
             break;
-        sret = exchange(srv, client, recv, v4v_send, domid);
+        sret = exchange(t, srv, client, recv, v4v_send, domid);
     }
 
-    return srv;
+    return t;
+    //return srv;
 }
 
 signed int is_stubdom(uint16_t domid)
@@ -216,6 +227,23 @@ static void run_websockets(struct dbus_broker_args *args)
     lws_context_destroy(ws_context);
 }
 
+void test_conns(int count, struct test **array)
+{
+    fd_set client_set;
+
+    for (int i=0; i < count; i++) {
+        
+        struct timeval tv = { .tv_sec=0, .tv_usec=100 };
+        FD_ZERO(&client_set);
+        FD_SET(array[i]->client, &client_set);
+
+        if (select(array[i]->client + 1, &client_set, NULL, NULL, &tv) > 0) {
+            DBUS_BROKER_EVENT("MESSAGE AGAIN: %d", array[i]->client); 
+            broker_message(array[i]->client, array[i]->domid, array[i]);
+        }
+    }
+}
+
 void run_rawdbus(struct dbus_broker_args *args)
 {
     struct dbus_broker_server *server = start_server(args->port);
@@ -224,6 +252,9 @@ void run_rawdbus(struct dbus_broker_args *args)
     int default_socket = server->dbus_socket;
 
     fd_set server_set;
+
+    struct test *tarray[256];
+    int t_count = 0;
 
     while (dbus_broker_running) {
 
@@ -242,8 +273,20 @@ void run_rawdbus(struct dbus_broker_args *args)
 
             if (v4v_getpeername(client, &client_addr) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
-            else 
-                broker_message(client, client_addr.domain);
+            else { 
+                // contain srv & client, even if not subscribing to signals
+                // poll on this array
+                // return a struct test { bool is_sig, int srv }
+                // if is-signal don't add to this list (just for testing don't poll twice);
+                // XXX are these connections 1-and-done or will-there be .... waited msg's?
+                struct test *t = broker_message(client, client_addr.domain, NULL);
+                if (!t->is_sig && t_count < 256)
+                    tarray[t_count++] = t;
+                else {
+                    close(t->server);
+                    free(t);
+                }
+            }
         }
 
         service_raw_signals();
@@ -253,6 +296,8 @@ void run_rawdbus(struct dbus_broker_args *args)
             dbus_broker_policy = build_policy(args->rule_file);
             reload_policy = false;
         }
+
+        test_conns(t_count, tarray);
     }
 
     free(server);
