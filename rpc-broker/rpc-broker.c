@@ -42,6 +42,7 @@ void broker_message(struct test *t)
 //    int srv = connect_to_system_bus();
     int srv = t->server;
     int domid = t->domid;
+    int client = t->client;
     int sret = 1, cret = 1;
 
     while (sret > 0 || cret > 0) {
@@ -51,7 +52,6 @@ void broker_message(struct test *t)
         sret = exchange(t, srv, client, recv, v4v_send, domid);
     }
 
-    return t;
     //return srv;
 }
 
@@ -175,11 +175,13 @@ static void service_raw_signals(void)
 
     while (curr) {
 
-        struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_CLIENT_TIMEOUT };
+        struct timeval tv = { .tv_sec=0, .tv_usec=100 };
         FD_ZERO(&signal_set);
-        FD_SET(curr->client_fd, &signal_set);
+        // changed from client-fd
+        FD_SET(curr->server_fd, &signal_set);
 
-        int ret = select(curr->client_fd + 1, &signal_set, NULL, NULL, &tv);
+        // changed from client-fd
+        int ret = select(curr->server_fd + 1, &signal_set, NULL, NULL, &tv);
 
         if (ret > 0) {
             char buf[DBUS_MSG_LEN];
@@ -231,7 +233,7 @@ void test_conns(int count, struct test **array)
 
         if (select(array[i]->client + 1, &client_set, NULL, NULL, &tv) > 0) {
             DBUS_BROKER_EVENT("MESSAGE AGAIN: %d", array[i]->client); 
-            broker_message(array[i]->client, array[i]->domid, array[i]);
+            broker_message(array[i]);
         }
     }
 }
@@ -274,14 +276,13 @@ void run_rawdbus(struct dbus_broker_args *args)
                     t->domid = client_addr.domain;
                     broker_message(t);
                     // combined and check in next loop (whether it has signal reception? does it matter to distinguish?)
-                    if (!t->is_sig)
-                        tarray[t_count++] = t;
+                    tarray[t_count++] = t;
                 }
             }
         }
 
+        //service_raw_signals();
         test_conns(t_count, tarray);
-        service_raw_signals();
 
         if (reload_policy) {
             free_policy();
