@@ -37,20 +37,12 @@
  * communication is finished.
  */
 //int broker_message(int client, int domid)
-struct test *broker_message(int client, int domid, struct test *t)
+void broker_message(struct test *t)
 {
-    int srv;// = connect_to_system_bus();
+//    int srv = connect_to_system_bus();
+    int srv = t->server;
+    int domid = t->domid;
     int sret = 1, cret = 1;
-
-    if (t == NULL) {
-        srv = connect_to_system_bus();
-        t = malloc(sizeof *t);
-        t->is_sig = false;
-        t->server = srv;
-        t->client = client;
-        t->domid = domid;
-    } else
-        srv = t->server;
 
     while (sret > 0 || cret > 0) {
         cret = exchange(t, client, srv, v4v_recv, send, domid);
@@ -274,21 +266,21 @@ void run_rawdbus(struct dbus_broker_args *args)
             if (v4v_getpeername(client, &client_addr) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
             else { 
-                // contain srv & client, even if not subscribing to signals
-                // poll on this array
-                // return a struct test { bool is_sig, int srv }
-                // if is-signal don't add to this list (just for testing don't poll twice);
-                // XXX are these connections 1-and-done or will-there be .... waited msg's?
-                struct test *t = broker_message(client, client_addr.domain, NULL);
-                if (!t->is_sig && t_count < 256)
-                    tarray[t_count++] = t;
-                else {
-                    close(t->server);
-                    free(t);
+                // throttle connections...why flooding?
+                if (t_count < 256) {
+                    struct test *t = malloc(sizeof *t);//broker_message(client, client_addr.domain, NULL);
+                    t->server = connect_to_system_bus(); 
+                    t->client = client;
+                    t->domid = client_addr.domain;
+                    broker_message(t);
+                    // combined and check in next loop (whether it has signal reception? does it matter to distinguish?)
+                    if (!t->is_sig)
+                        tarray[t_count++] = t;
                 }
             }
         }
 
+        test_conns(t_count, tarray);
         service_raw_signals();
 
         if (reload_policy) {

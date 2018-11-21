@@ -245,7 +245,8 @@ struct test {
 // 
 // rpc-broker.c
 //int broker_message(int client, int domid);
-struct test *broker_message(int client, int domid, struct test *t);
+//struct test *broker_message(int client, int domid, struct test *t);
+void broker_message(struct test *t);
 
 signed int is_stubdom(uint16_t domid);
 

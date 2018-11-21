@@ -117,8 +117,7 @@ int exchange(struct test *t, int rsock, int ssock,
 
                 if (!strcmp(dmsg.member, "BecomeMonitor")) {
                     add_raw_signal(rsock, ssock);
-                    if (t)
-                        t->is_sig = true;
+                    t->is_sig = true;
                 }
 
             //    if (broker(&dmsg, domid) < 1)
