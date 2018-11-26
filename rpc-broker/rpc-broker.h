@@ -239,8 +239,12 @@ struct raw_dbus_conn {
     int server;
     int client;
     int domid;
+    struct raw_dbus_conn *prev;
+    struct raw_dbus_conn *next;
 };
  
+struct raw_dbus_conn *rd_conns;
+
 // rpc-broker.c
 void broker_message(struct raw_dbus_conn *rdconn);
 
@@ -248,7 +252,7 @@ signed int is_stubdom(uint16_t domid);
 
 void print_usage(void);
 
-void service_rdconns(int rdconn_count, struct raw_dbus_conn **rdconns);
+void service_rdconns(void);
 
 void sigint_handler(int signal);
 
@@ -275,7 +279,7 @@ char *dbus_introspect(struct json_request *jreq);
 
 void add_ws_signal(DBusConnection *conn, struct lws *wsi);
 
-void add_raw_signal(int client_fd, int server_fd);
+void add_rconn(int client, int domid);
 
 void free_dlinks(void);
 

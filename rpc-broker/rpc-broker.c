@@ -193,33 +193,38 @@ static void run_websockets(struct dbus_broker_args *args)
     lws_context_destroy(ws_context);
 }
 
-void service_rdconns(int rdconn_count, struct raw_dbus_conn **rdconns)
+static int poll_connection(int connection)
 {
-    fd_set client_set;
-    int ret;
+    fd_set conn_set;
+    struct timeval tv = { .tv_sec=0, .tv_usec=100 };
+    FD_ZERO(&conn_set);
+    FD_SET(connection, &conn_set);
 
-    for (int i=0; i < rdconn_count; i++) {
-        
-        struct timeval tv = { .tv_sec=0, .tv_usec=100 };
-        FD_ZERO(&client_set);
-        FD_SET(rdconns[i]->client, &client_set);
+    int ret = select(connection + 1, &conn_set, NULL, NULL, &tv);
+    return ret; 
+}
 
-        ret = select(rdconns[i]->client + 1, &client_set, NULL, NULL, &tv);
-        if (ret > 0) 
-            broker_message(rdconns[i]);
-        else
-            DBUS_BROKER_EVENT("Select-Client (%d) on raw <%d>", rdconns[i]->client, errno);
+void service_rdconns(void)
+{
 
-        tv.tv_sec=0;
-        tv.tv_usec=100;
-        FD_ZERO(&client_set);
-        FD_SET(rdconns[i]->server, &client_set);
+    struct raw_dbus_conn *curr = rd_conns;
 
-        ret = select(rdconns[i]->server + 1, &client_set, NULL, NULL, &tv);
-        if (ret > 0)
-            broker_message(rdconns[i]);
-        else
-            DBUS_BROKER_EVENT("Select-Server (%d) on raw <%d>", rdconns[i]->client, errno);
+    while (curr) {
+       
+        int cret = poll_connection(curr->client); 
+        int sret = poll_connection(curr->server);
+
+        if (cret > 0 || sret > 0)
+            broker_message(curr);
+        else if (cret < 0 || sret < 0) {
+            struct raw_dbus_conn *next = curr->next;
+            remove_dconn(curr);
+            curr = next;
+            DBUS_BROKER_EVENT("Select-Server (%d) on raw <%d>", curr->client, errno);
+            continue;
+        }
+
+        curr = curr->next;
     }
 }
 
@@ -255,20 +260,11 @@ void run_rawdbus(struct dbus_broker_args *args)
 
             if (v4v_getpeername(client, &client_addr) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
-            else { 
-                if (rdconn_count < 256) {
-                    // XXX init func
-                    struct raw_dbus_conn *rdconn = malloc(sizeof *rdconn);
-                    rdconn->server = connect_to_system_bus(); 
-                    rdconn->client = client;
-                    rdconn->domid = client_addr.domain;
-                    broker_message(rdconn);
-                    rd_conns[rdconn_count++] = rdconn;
-                }
-            }
+            else  
+                add_rdconn(client, client_addr.domain);
         }
 
-        service_rdconns(rdconn_count, rd_conns);
+        service_rdconns();
 
         if (reload_policy) {
             free_policy();
@@ -388,6 +384,7 @@ int main(int argc, char *argv[])
 
     dbus_broker_running = 1;
     dlinks = NULL;
+    rd_conns = NULL;
     ring = NULL;
     reload_policy = false;
     // XXX rm and use dbus-message-get-serial

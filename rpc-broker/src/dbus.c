@@ -401,14 +401,41 @@ void add_ws_signal(DBusConnection *conn, struct lws *wsi)
     curr->dconn = conn;
 }
 
-void add_raw_signal(int client_fd, int server_fd)
+void add_rdconn(int client, int domid)
 {
-    struct dbus_link *curr = add_dbus_signal();
-    dup2(client_fd, curr->client_fd);
-    dup2(server_fd, curr->server_fd);
+    struct raw_dbus_conn *conn = malloc(sizeof *conn);
+    conn->server = connect_to_system_bus(); 
+    conn->client = client;
+    conn->domid = domid;
+    conn->prev = NULL;
+    conn->next = NULL;
+    broker_message(conn);
 
-    curr->wsi = NULL;
-    curr->dconn = NULL;
+    if (rd_conns == NULL)
+        rd_conns = conn;
+    else {
+        struct raw_dbus_conn *curr = rd_conns;
+        while (curr->next)
+            curr = curr->next;
+        curr->next = conn;
+        conn->prev = curr;
+    }
+}
+
+void remove_rdconn(struct raw_dbus_conn *conn)
+{
+    if (!conn)
+        return;
+
+    struct raw_dbus_conn *prev = conn->prev;
+    struct raw_dbus_conn *next = conn->next;
+
+    if (prev)
+        prev->next = next;
+    if (next)
+        next->prev = prev;
+
+    free(conn);
 }
 
 void free_dlinks(void)
