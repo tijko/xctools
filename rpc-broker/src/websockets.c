@@ -115,7 +115,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
 
     struct json_request *jreq = convert_json_request(raw_req);
 
-    if (!jreq || broker(&(jreq->dmsg), addr.domain) < 0)
+    if (!jreq)// || broker(&(jreq->dmsg), addr.domain) < 0)
         return -1;
 
     jreq->wsi = wsi;
