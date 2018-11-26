@@ -36,23 +36,19 @@
  * Polling on the client & server file-descriptors until the connection
  * communication is finished.
  */
-//int broker_message(int client, int domid)
-void broker_message(struct test *t)
+void broker_message(struct raw_dbus_conn *rdconn)
 {
-//    int srv = connect_to_system_bus();
-    int srv = t->server;
-    int domid = t->domid;
-    int client = t->client;
+    int srv = rdconn->server;
+    int domid = rdconn->domid;
+    int client = rdconn->client;
     int sret = 1, cret = 1;
 
     while (sret > 0 || cret > 0) {
-        cret = exchange(t, client, srv, v4v_recv, send, domid);
+        cret = exchange(client, srv, domid, v4v_recv, send);
         if (cret < 0)
             break;
-        sret = exchange(t, srv, client, recv, v4v_send, domid);
+        sret = exchange(srv, client, domid, recv, v4v_send);
     }
-
-    //return srv;
 }
 
 signed int is_stubdom(uint16_t domid)
@@ -149,7 +145,9 @@ static void service_ws_signals(void)
         jrsp->interface = dbus_message_get_interface(msg);
         jrsp->member = dbus_message_get_member(msg);
         jrsp->path = dbus_message_get_path(msg);
+
         char *reply = prepare_json_reply(jrsp);
+
         if (!reply)
             goto free_msg;
 
@@ -164,32 +162,6 @@ unref_msg:
         dbus_message_unref(msg);
 
 next_link:
-        curr = curr->next;
-    }
-}
-
-static void service_raw_signals(void)
-{
-    struct dbus_link *curr = dlinks;
-    fd_set signal_set;
-
-    while (curr) {
-
-        struct timeval tv = { .tv_sec=0, .tv_usec=100 };
-        FD_ZERO(&signal_set);
-        // changed from client-fd
-        FD_SET(curr->server_fd, &signal_set);
-
-        // changed from client-fd
-        int ret = select(curr->server_fd + 1, &signal_set, NULL, NULL, &tv);
-
-        if (ret > 0) {
-            char buf[DBUS_MSG_LEN];
-            int rbytes = recv(curr->client_fd, buf, DBUS_MSG_LEN, MSG_WAITALL);
-            if (rbytes > 0)
-                send(curr->server_fd, buf, rbytes, MSG_DONTWAIT);
-        }
-
         curr = curr->next;
     }
 }
@@ -221,27 +193,27 @@ static void run_websockets(struct dbus_broker_args *args)
     lws_context_destroy(ws_context);
 }
 
-void test_conns(int count, struct test **array)
+void service_rdconns(int rdconn_count, struct raw_dbus_conn **rdconns)
 {
     fd_set client_set;
 
-    for (int i=0; i < count; i++) {
+    for (int i=0; i < rdconn_count; i++) {
         
         struct timeval tv = { .tv_sec=0, .tv_usec=100 };
         FD_ZERO(&client_set);
-        FD_SET(array[i]->client, &client_set);
+        FD_SET(rdconns[i]->client, &client_set);
 
-        if (select(array[i]->client + 1, &client_set, NULL, NULL, &tv) > 0) {
-            broker_message(array[i]);
+        if (select(rdconns[i]->client + 1, &client_set, NULL, NULL, &tv) > 0) {
+            broker_message(rd_conns[i]);
         }
 
         tv.tv_sec=0;
         tv.tv_usec=100;
         FD_ZERO(&client_set);
-        FD_SET(array[i]->server, &client_set);
+        FD_SET(rdconns[i]->server, &client_set);
 
-        if (select(array[i]->server+ 1, &client_set, NULL, NULL, &tv) > 0) {
-            broker_message(array[i]);
+        if (select(rdconns[i]->server+ 1, &client_set, NULL, NULL, &tv) > 0) {
+            broker_message(rdconns[i]);
         }
     }
 }
@@ -255,8 +227,8 @@ void run_rawdbus(struct dbus_broker_args *args)
 
     fd_set server_set;
 
-    struct test *tarray[256];
-    int t_count = 0;
+    struct raw_dbus_conn *rd_conns[256];
+    int rdconn_count = 0;
 
     while (dbus_broker_running) {
 
@@ -276,20 +248,19 @@ void run_rawdbus(struct dbus_broker_args *args)
             if (v4v_getpeername(client, &client_addr) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
             else { 
-                if (t_count < 256) {
-                    struct test *t = malloc(sizeof *t);//broker_message(client, client_addr.domain, NULL);
-                    t->server = connect_to_system_bus(); 
-                    t->client = client;
-                    t->domid = client_addr.domain;
-                    broker_message(t);
-                    // combined and check in next loop (whether it has signal reception? does it matter to distinguish?)
-                    tarray[t_count++] = t;
+                if (rdconn_count < 256) {
+                    // XXX init func
+                    struct raw_dbus_conn *rdconn = malloc(sizeof *t);
+                    rdconn->server = connect_to_system_bus(); 
+                    rdconn>client = client;
+                    rdconn->domid = client_addr.domain;
+                    broker_message(rdconn);
+                    rd_conns[rdconn_count++] = rdconn;
                 }
             }
         }
 
-        //service_raw_signals();
-        test_conns(t_count, tarray);
+        test_conns(t_count, rd_conns);
 
         if (reload_policy) {
             free_policy();
@@ -297,7 +268,7 @@ void run_rawdbus(struct dbus_broker_args *args)
             reload_policy = false;
         }
 
-        test_conns(t_count, tarray);
+        test_conns(t_count, rd_conns);
     }
 
     free(server);

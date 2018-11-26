@@ -82,10 +82,9 @@ int broker(struct dbus_message *dmsg, int domid)
  * who the client is and who the server is.  There are just sender and receiver
  * syscalls being made over port 5555.
  */
-int exchange(struct test *t, int rsock, int ssock,
+int exchange(int rsock, int ssock, int domid,
              ssize_t (*rcv)(int, void *, size_t, int),
-             ssize_t (*snd)(int, const void *, size_t, int),
-             int domid)
+             ssize_t (*snd)(int, const void *, size_t, int))
 {
     int total = 0;
     char buf[DBUS_MSG_LEN] = { 0 };
