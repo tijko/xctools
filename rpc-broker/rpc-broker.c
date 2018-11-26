@@ -208,7 +208,7 @@ void service_rdconns(int rdconn_count, struct raw_dbus_conn **rdconns)
         if (ret > 0) 
             broker_message(rdconns[i]);
         else
-            DBUS_BROKER_EVENT("Select-Client on raw <%s>", strerror(errno));
+            DBUS_BROKER_EVENT("Select-Client (%d) on raw <%d>", rdconns[i]->client, errno);
 
         tv.tv_sec=0;
         tv.tv_usec=100;
@@ -219,7 +219,7 @@ void service_rdconns(int rdconn_count, struct raw_dbus_conn **rdconns)
         if (ret > 0)
             broker_message(rdconns[i]);
         else
-            DBUS_BROKER_EVENT("Select-Server on raw <%s>", strerror(errno));
+            DBUS_BROKER_EVENT("Select-Server (%d) on raw <%d>", rdconns[i]->client, errno);
     }
 }
 
