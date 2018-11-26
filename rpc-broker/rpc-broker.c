@@ -54,14 +54,12 @@ void broker_message(struct raw_dbus_conn *rdconn)
 signed int is_stubdom(uint16_t domid)
 {
     struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
-
     size_t len = 0;
 
     if (!xsh)
         return -1;
 
     char *path = xs_get_domain_path(xsh, domid);
-
     path = realloc(path, strlen(path) + XENSTORE_TARGET_LEN);
     strcat(path, XENSTORE_TARGET);
 
@@ -72,7 +70,6 @@ signed int is_stubdom(uint16_t domid)
 
     free(path);
     xs_close(xsh);
-
     return len;
 }
 
@@ -197,10 +194,12 @@ static int poll_connection(int connection)
 {
     fd_set conn_set;
     struct timeval tv = { .tv_sec=0, .tv_usec=100 };
+
     FD_ZERO(&conn_set);
     FD_SET(connection, &conn_set);
 
     int ret = select(connection + 1, &conn_set, NULL, NULL, &tv);
+
     return ret; 
 }
 
@@ -216,15 +215,7 @@ void service_rdconns(void)
 
         if (cret > 0 || sret > 0)
             broker_message(curr);
-/*
-        else if (cret < 0 || sret < 0) {
-            struct raw_dbus_conn *next = curr->next;
-            remove_rdconn(curr);
-            curr = next;
-            DBUS_BROKER_EVENT("Select-Server (%d) on raw <%d>", curr->client, errno);
-            continue;
-        }
-*/
+
         curr = curr->next;
     }
 }
