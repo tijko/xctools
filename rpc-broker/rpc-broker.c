@@ -175,7 +175,7 @@ static void run_websockets(struct dbus_broker_args *args)
         DBUS_BROKER_ERROR("WebSockets-Server");
 
     DBUS_BROKER_EVENT("<WebSockets-Server has started listening> [Port: %d]",
-                        BROKER_UI_PORT);
+                        args->port);
 
     while (dbus_broker_running) {
 
@@ -241,8 +241,11 @@ void run_rawdbus(struct dbus_broker_args *args)
         if (ret > 0) {
 
             int client = v4v_accept(default_socket, &server->peer);
-            DBUS_BROKER_EVENT("<Client has made a connection> [Dom: %d Client: %d]",
-                                server->peer.domain, client);
+            if (args->verbose) {
+                DBUS_BROKER_EVENT("<Client> [Port: %d Dom: %d Client: %d]",
+                                    args->port, server->peer.domain, client);
+            }
+
             v4v_addr_t client_addr = { .domain=0, .port=0 };
 
             if (v4v_getpeername(client, &client_addr) < 0)
