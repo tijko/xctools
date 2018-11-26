@@ -276,7 +276,6 @@ void run_rawdbus(struct dbus_broker_args *args)
             if (v4v_getpeername(client, &client_addr) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
             else { 
-                // throttle connections...why flooding?
                 if (t_count < 256) {
                     struct test *t = malloc(sizeof *t);//broker_message(client, client_addr.domain, NULL);
                     t->server = connect_to_system_bus(); 
@@ -414,6 +413,7 @@ int main(int argc, char *argv[])
     dlinks = NULL;
     ring = NULL;
     reload_policy = false;
+    // XXX rm and use dbus-message-get-serial
     srand48(time(NULL));
     dbus_broker_policy = build_policy(policy_file);
 
