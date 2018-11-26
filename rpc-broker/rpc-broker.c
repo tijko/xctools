@@ -260,15 +260,13 @@ void run_rawdbus(struct dbus_broker_args *args)
             }
         }
 
-        test_conns(t_count, rd_conns);
+        service_rdconns(rdconn_count, rd_conns);
 
         if (reload_policy) {
             free_policy();
             dbus_broker_policy = build_policy(args->rule_file);
             reload_policy = false;
         }
-
-        test_conns(t_count, rd_conns);
     }
 
     free(server);
