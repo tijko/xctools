@@ -204,7 +204,7 @@ void service_rdconns(int rdconn_count, struct raw_dbus_conn **rdconns)
         FD_SET(rdconns[i]->client, &client_set);
 
         if (select(rdconns[i]->client + 1, &client_set, NULL, NULL, &tv) > 0) {
-            broker_message(rd_conns[i]);
+            broker_message(rdconns[i]);
         }
 
         tv.tv_sec=0;
@@ -250,9 +250,9 @@ void run_rawdbus(struct dbus_broker_args *args)
             else { 
                 if (rdconn_count < 256) {
                     // XXX init func
-                    struct raw_dbus_conn *rdconn = malloc(sizeof *t);
+                    struct raw_dbus_conn *rdconn = malloc(sizeof *rdconn);
                     rdconn->server = connect_to_system_bus(); 
-                    rdconn>client = client;
+                    rdconn->client = client;
                     rdconn->domid = client_addr.domain;
                     broker_message(rdconn);
                     rd_conns[rdconn_count++] = rdconn;
