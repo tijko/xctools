@@ -114,13 +114,14 @@ int exchange(int rsock, int ssock, int domid,
                 if (convert_raw_dbus(&dmsg, buf, len) < 1)
                     return -1;
 
-                if (!strcmp(dmsg.member, "BecomeMonitor")) 
-                    add_raw_signal(rsock, ssock);
+            //    if (!strcmp(dmsg.member, "BecomeMonitor")) 
+            //        add_raw_signal(rsock, ssock);
 
             //    if (broker(&dmsg, domid) < 1)
             //        return -1;
             }
 
+/*
             char tmp[DBUS_MSG_LEN] = { '\0' };
             for (int i=0; i < rbytes; i++) {
                 if (isalnum(buf[i]))
@@ -130,7 +131,7 @@ int exchange(int rsock, int ssock, int domid,
             }
 
             DBUS_BROKER_EVENT("5555: %s", tmp);
-
+*/
         }
 
         total += rbytes;
