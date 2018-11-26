@@ -196,6 +196,7 @@ static void run_websockets(struct dbus_broker_args *args)
 void service_rdconns(int rdconn_count, struct raw_dbus_conn **rdconns)
 {
     fd_set client_set;
+    int ret;
 
     for (int i=0; i < rdconn_count; i++) {
         
@@ -203,18 +204,22 @@ void service_rdconns(int rdconn_count, struct raw_dbus_conn **rdconns)
         FD_ZERO(&client_set);
         FD_SET(rdconns[i]->client, &client_set);
 
-        if (select(rdconns[i]->client + 1, &client_set, NULL, NULL, &tv) > 0) {
+        ret = select(rdconns[i]->client + 1, &client_set, NULL, NULL, &tv);
+        if (ret > 0) 
             broker_message(rdconns[i]);
-        }
+        else
+            DBUS_BROKER_EVENT("Select-Client on raw <%s>", strerror(errno));
 
         tv.tv_sec=0;
         tv.tv_usec=100;
         FD_ZERO(&client_set);
         FD_SET(rdconns[i]->server, &client_set);
 
-        if (select(rdconns[i]->server+ 1, &client_set, NULL, NULL, &tv) > 0) {
+        ret = select(rdconns[i]->server + 1, &client_set, NULL, NULL, &tv);
+        if (ret > 0)
             broker_message(rdconns[i]);
-        }
+        else
+            DBUS_BROKER_EVENT("Select-Server on raw <%s>", strerror(errno));
     }
 }
 
