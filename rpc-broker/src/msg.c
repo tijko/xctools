@@ -60,18 +60,18 @@ int broker(struct dbus_message *dmsg, int domid)
         }
     }
 
-//    if (verbose_logging) {
-    char req_msg[1024];
+    if (verbose_logging) {
+        char req_msg[1024];
 
-    snprintf(req_msg, 1023, "Dom: %d [Dest: %s Path: %s Iface: %s Meth: %s]",
-                      domid, dmsg->destination, dmsg->path,
-                             dmsg->interface, dmsg->member);
+        snprintf(req_msg, 1023, "Dom: %d [Dest: %s Path: %s Iface: %s Meth: %s]",
+                          domid, dmsg->destination, dmsg->path,
+                                 dmsg->interface, dmsg->member);
 
-    if (policy == 0)
-        DBUS_BROKER_WARNING("%s <%s>", req_msg, "Dropped request");
-    else
-        DBUS_BROKER_EVENT("%s <%s>", req_msg, "Passed request");
-//    }
+        if (policy == 0)
+            DBUS_BROKER_WARNING("%s <%s>", req_msg, "Dropped request");
+        else
+            DBUS_BROKER_EVENT("%s <%s>", req_msg, "Passed request");
+    }
 
     return policy;
 }
@@ -114,8 +114,8 @@ int exchange(int rsock, int ssock, int domid,
                 if (convert_raw_dbus(&dmsg, buf, len) < 1)
                     return -1;
 
-                if (broker(&dmsg, domid) < 1)
-                    return -1;
+//                if (broker(&dmsg, domid) < 1)
+//                    return -1;
             }
 
 /*
