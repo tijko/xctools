@@ -216,6 +216,7 @@ void service_rdconns(void)
 
         if (cret > 0 || sret > 0)
             broker_message(curr);
+/*
         else if (cret < 0 || sret < 0) {
             struct raw_dbus_conn *next = curr->next;
             remove_rdconn(curr);
@@ -223,7 +224,7 @@ void service_rdconns(void)
             DBUS_BROKER_EVENT("Select-Server (%d) on raw <%d>", curr->client, errno);
             continue;
         }
-
+*/
         curr = curr->next;
     }
 }
