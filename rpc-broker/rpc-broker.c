@@ -218,7 +218,7 @@ void service_rdconns(void)
             broker_message(curr);
         else if (cret < 0 || sret < 0) {
             struct raw_dbus_conn *next = curr->next;
-            remove_dconn(curr);
+            remove_rdconn(curr);
             curr = next;
             DBUS_BROKER_EVENT("Select-Server (%d) on raw <%d>", curr->client, errno);
             continue;
@@ -236,9 +236,6 @@ void run_rawdbus(struct dbus_broker_args *args)
     int default_socket = server->dbus_socket;
 
     fd_set server_set;
-
-    struct raw_dbus_conn *rd_conns[256];
-    int rdconn_count = 0;
 
     while (dbus_broker_running) {
 

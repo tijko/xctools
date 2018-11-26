@@ -279,7 +279,9 @@ char *dbus_introspect(struct json_request *jreq);
 
 void add_ws_signal(DBusConnection *conn, struct lws *wsi);
 
-void add_rconn(int client, int domid);
+void add_rdconn(int client, int domid);
+
+void remove_rdconn(struct raw_dbus_conn *conn);
 
 void free_dlinks(void);
 
