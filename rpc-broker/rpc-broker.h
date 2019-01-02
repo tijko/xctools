@@ -31,6 +31,9 @@
 #include <syslog.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #ifdef HAVE_XENSTORE
 #include <xenstore.h>
