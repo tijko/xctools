@@ -2,7 +2,7 @@ language: c
 
 before_install:
 - sudo apt-get update
-- sudo apt-get install -y build-essential autoconf automake libdbus-1-dev libjson-c-dev libxml2-dev libssl-dev zlib1g-dev
+- sudo apt-get install -y build-essential autoconf automake libdbus-1-dev libjson-c-dev libxml2-dev libssl-dev zlib1g-dev screen gdb
 - wget https://github.com/warmcat/libwebsockets/archive/v3.0.0.tar.gz
 - tar xzf v3.0.0.tar.gz
 - cd libwebsockets-3.0.0
@@ -19,12 +19,17 @@ script:
 - autoreconf --verbose --install --force
 - ./configure
 - make
-- export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-- gdb -batch -ex "run" -ex "bt" --args ./rpc-broker -r 5555 &
+#- export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+#- ./rpc-broker -r 5555 &
+- echo 'export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH' > run.sh
+- echo 'gdb -batch -ex "run" -ex "bt" --args ./rpc-broker -r 5555 >/tmp/log 2>&1' >> run.sh
+- chmod +x run.sh
+- screen -d -m ./run.sh
 - RPCBPID=$!
 - dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames > /tmp/t1
 - DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames > /tmp/t2
 - diff -u /tmp/t1 /tmp/t2
 - RES=$?
 - kill -9 $RPCBPID
+- cat /tmp/log
 - test $RES -eq 0
