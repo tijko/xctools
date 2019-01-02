@@ -21,7 +21,6 @@
 #include <dbus/dbus.h>
 #include <json.h>
 #include <libwebsockets.h>
-#include <libv4v.h>
 #include <libxml/parser.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -32,6 +31,7 @@
 #include <syslog.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <netinet/in.h>
 #include <xenstore.h>
 
 
@@ -130,8 +130,8 @@ bool reload_policy;
 
 struct dbus_broker_server {
     int dbus_socket;
-    v4v_addr_t addr;
-    v4v_addr_t peer;
+    struct sockaddr_in addr;
+    struct sockaddr_in peer;
 };
 
 #define WS_LOOP_TIMEOUT             100  // length of time each service of the websocket

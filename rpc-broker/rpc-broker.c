@@ -44,10 +44,10 @@ void broker_message(struct raw_dbus_conn *rdconn)
     int sret = 1, cret = 1;
 
     while (sret > 0 || cret > 0) {
-        cret = exchange(client, srv, domid, v4v_recv, send);
+        cret = exchange(client, srv, domid, recv, send);
         if (cret < 0)
             break;
-        sret = exchange(srv, client, domid, recv, v4v_send);
+        sret = exchange(srv, client, domid, recv, send);
     }
 }
 
@@ -238,19 +238,31 @@ void run_rawdbus(struct dbus_broker_args *args)
         int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
 
         if (ret > 0) {
-
-            int client = v4v_accept(default_socket, &server->peer);
+	  int clilen = sizeof(server->peer);
+	  int client = accept(default_socket, (struct sockaddr *)&server->peer, &clilen);
             if (args->verbose) {
-                DBUS_BROKER_EVENT("<Client> [Port: %d Dom: %d Client: %d]",
-                                    args->port, server->peer.domain, client);
+                DBUS_BROKER_EVENT("<Client> [Port: %d Addr: %d Client: %d]",
+                                    args->port, server->peer.sin_addr.s_addr, client);
             }
 
-            v4v_addr_t client_addr = { .domain=0, .port=0 };
+	    uint32_t client_domain = 0;
+	    /*
+             * When using rpc-broker over V4V, we want to be able to
+             * firewall against domids. The V4V interposer stores the
+             * domid as follows:
+             * sin.sin_addr.s_addr = htonl ((uint32_t) peer->domain | 0x1000000);
+             * If we're not using V4V, just return 0 for the domid.
+             */
+#ifdef HAVE_V4V
+            struct sockaddr_in client_addr;
+            int client_addr_len = sizeof(client_addr);
 
-            if (v4v_getpeername(client, &client_addr) < 0)
+            if (getpeername(client, &client_addr) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
-            else  
-                add_rdconn(client, client_addr.domain);
+            else
+                client_domain = ntohl(client_addr.sin_addr.s_addr) & ~0x1000000;
+#endif
+            add_rdconn(client, client_domain);
         }
 
         service_rdconns();
