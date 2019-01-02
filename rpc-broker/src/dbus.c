@@ -40,7 +40,7 @@ struct dbus_broker_server *start_server(int port)
 
     server->addr.sin_family = AF_INET;
     server->addr.sin_addr.s_addr = INADDR_ANY;
-    server->addr.sin_port = port;
+    server->addr.sin_port = htons(port);
     server->peer.sin_family = AF_INET;
     server->peer.sin_addr.s_addr = INADDR_ANY;
     server->peer.sin_port = 0;

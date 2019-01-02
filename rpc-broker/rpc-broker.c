@@ -240,7 +240,7 @@ void run_rawdbus(struct dbus_broker_args *args)
         int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
 
         if (ret > 0) {
-	  int clilen = sizeof(server->peer);
+	  socklen_t clilen = sizeof(server->peer);
 	  int client = accept(default_socket, (struct sockaddr *)&server->peer, &clilen);
             if (args->verbose) {
                 DBUS_BROKER_EVENT("<Client> [Port: %d Addr: %d Client: %d]",
