@@ -1,0 +1,11 @@
+language: c
+
+before_install:
+- sudo apt-get update
+- sudo apt-get install -y build-essential autoconf automake libdbus-1-dev libwebsockets-dev
+
+script:
+- cd rpc-broker
+- autoreconf --verbose --install --force
+- ./configure
+- make
