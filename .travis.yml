@@ -18,5 +18,13 @@ script:
 - cd rpc-broker
 - autoreconf --verbose --install --force
 - ./configure
-- export CC=c99
 - make
+- export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+- ./rpc-broker -r 5555 &
+- RPCBPID=$!
+- dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames > /tmp/t1
+- DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames > /tmp/t2
+- diff -u /tmp/t1 /tmp/t2
+- RES=$?
+- kill $RPCBPID
+- [ $RES -eq 0 ]
