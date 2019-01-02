@@ -18,4 +18,5 @@ script:
 - cd rpc-broker
 - autoreconf --verbose --install --force
 - ./configure
+- export CC=c99
 - make
