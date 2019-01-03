@@ -35,9 +35,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <netinet/in.h>
-#ifdef HAVE_XENSTORE
 #include <xenstore.h>
-#endif
+
 
 #define DBUS_BROKER_ERROR(call)                                       \
     do {                                                              \
