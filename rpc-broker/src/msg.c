@@ -140,6 +140,7 @@ int exchange(int rsock, int ssock, int domid,
 
 static inline char *get_uuid(DBusConnection *conn, uint16_t domid)
 {
+#ifdef HAVE_XENSTORE
     size_t len;
     char path[256] = { 0 };
 
@@ -154,6 +155,8 @@ static inline char *get_uuid(DBusConnection *conn, uint16_t domid)
     xs_close(xsh);
 
     return uuid;
+#endif
+    return NULL;
 }
 
 static int filter_if_bool(DBusConnection *conn, char *uuid,

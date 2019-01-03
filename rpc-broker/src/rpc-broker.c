@@ -54,6 +54,7 @@ void broker_message(struct raw_dbus_conn *rdconn)
 signed int is_stubdom(uint16_t domid)
 {
     size_t len = 0;
+#ifdef HAVE_XENSTORE
     struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
 
     if (!xsh)
@@ -70,6 +71,7 @@ signed int is_stubdom(uint16_t domid)
 
     free(path);
     xs_close(xsh);
+#endif
     return len;
 }
 
