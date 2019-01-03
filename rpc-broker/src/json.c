@@ -16,7 +16,7 @@
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include "rpc-broker.h"
+#include "../rpc-broker.h"
 
 
 struct json_response *init_jrsp(void)
@@ -171,6 +171,7 @@ static signed int parse_json_args(struct json_object *jarray,
                                   struct json_request *jreq)
 {
     char *signature = dbus_introspect(jreq);
+    int i;
 
     if (!signature) {
         DBUS_BROKER_WARNING("dbus-introspect %s", "");
@@ -182,7 +183,7 @@ static signed int parse_json_args(struct json_object *jarray,
     jreq->dmsg.arg_number = array_length;
     char *sigptr = signature;
 
-    for (int i=0; i < array_length; i++) {
+    for (i = 0; i < array_length; i++) {
 
         struct json_object *jarg = json_object_array_get_idx(jarray, i);
         int jtype = json_object_get_type(jarg);
@@ -253,7 +254,9 @@ put_jobj:
 
 void free_json_request(struct json_request *jreq)
 {
-    for (int i=0; i < jreq->dmsg.arg_number; i++) {
+    int i;
+
+    for (i = 0; i < jreq->dmsg.arg_number; i++) {
         if (jreq->dmsg.args[i]) {
             free(jreq->dmsg.args[i]);
             jreq->dmsg.args[i] = NULL;
