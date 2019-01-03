@@ -4,16 +4,16 @@ AM_CFLAGS = -g -Wall -lpthread \
 
 sbin_PROGRAMS = rpc-broker
 rpc_broker_SOURCES = \
-    rpc-broker.c \
+    src/rpc-broker.c \
     src/websockets.c \
     src/policy.c \
     src/dbus.c \
     src/msg.c \
     src/json.c \
     src/signature.c \
-    rpc-broker.h
+    src/rpc-broker.h
 
-noinst_HEADERS = rpc-broker.h
+noinst_HEADERS = src/rpc-broker.h
 
 rpc_broker_LDADD = \
 	$(DBUS_LIBS) \
