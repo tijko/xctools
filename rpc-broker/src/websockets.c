@@ -105,17 +105,11 @@ struct lws_context *create_ws_context(int port)
 
 int ws_request_handler(struct lws *wsi, char *raw_req)
 {
-    v4v_addr_t addr;
     int client = lws_get_socket_fd(wsi);
-
-    if (v4v_getpeername(client, &addr) < 0) {
-        DBUS_BROKER_WARNING("getpeername call failed <%d>", client);
-        return -1;
-    }
 
     struct json_request *jreq = convert_json_request(raw_req);
 
-    if (!jreq)// || broker(&(jreq->dmsg), addr.domain) < 0)
+    if (!jreq)
         return -1;
 
     jreq->wsi = wsi;
