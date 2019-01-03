@@ -19,17 +19,19 @@ script:
 - autoreconf --verbose --install --force
 - ./configure
 - make
-#- export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-#- ./rpc-broker -r 5555 &
-- echo 'export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH' > run.sh
-- echo 'gdb -batch -ex "run" -ex "bt" --args ./rpc-broker -r 5555 >/tmp/log 2>&1' >> run.sh
-- chmod +x run.sh
-- screen -d -m ./run.sh
+- export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+- ulimit -c unlimited -S
+- ./rpc-broker -r 5555 &
 - RPCBPID=$!
 - dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames > /tmp/t1
 - DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames > /tmp/t2
 - diff -u /tmp/t1 /tmp/t2
 - RES=$?
 - kill -9 $RPCBPID
-- cat /tmp/log
 - test $RES -eq 0
+
+after_failure:
+# http://jsteemann.github.io/blog/2014/10/30/getting-core-dumps-of-failed-travisci-builds/
+- pwd
+- COREFILE=$(find . -maxdepth 1 -name "core*" | head -n 1)
+- if [[ -f "$COREFILE" ]]; then gdb -c "$COREFILE" rpc-broker -ex "thread apply all bt" -ex "set pagination 0" -batch; fi
