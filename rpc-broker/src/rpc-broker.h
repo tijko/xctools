@@ -305,10 +305,9 @@ void free_json_request(struct json_request *jreq);
 // src/msg.c
 int broker(struct dbus_message *dmsg, int domid);
 
-int exchange(int rsock, int ssock,
+int exchange(int rsock, int ssock, int domid,
              ssize_t (*rcv)(int, void *, size_t, int),
-             ssize_t (*snd)(int, const void *, size_t, int),
-             int domid);
+             ssize_t (*snd)(int, const void *, size_t, int));
 
 int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid);
 
