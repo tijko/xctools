@@ -21,7 +21,6 @@
 #include <dbus/dbus.h>
 #include <json.h>
 #include <libwebsockets.h>
-#include <libv4v.h>
 #include <libxml/parser.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -32,8 +31,13 @@
 #include <syslog.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <netinet/in.h>
+#ifdef HAVE_XENSTORE
 #include <xenstore.h>
-
+#endif
 
 #define DBUS_BROKER_ERROR(call)                                       \
     do {                                                              \
@@ -130,8 +134,8 @@ bool reload_policy;
 
 struct dbus_broker_server {
     int dbus_socket;
-    v4v_addr_t addr;
-    v4v_addr_t peer;
+    struct sockaddr_in addr;
+    struct sockaddr_in peer;
 };
 
 #define WS_LOOP_TIMEOUT             100  // length of time each service of the websocket
@@ -146,7 +150,9 @@ struct dbus_broker_server {
 
 #define DBUS_INTROSPECT_MAX 0xFFFF
 
-#define DBUS_BUS_ADDR_LEN   256
+// The actual length is 32, but sockaddr_un.sun_path is 108 chars maximum
+#define DBUS_BUS_ADDR_LEN   108
+
 #define DBUS_MAX_ARG_LEN    16
 
 struct dbus_message {
@@ -235,12 +241,24 @@ struct dbus_broker_args {
     const char *rule_file;
 };
 
+struct raw_dbus_conn {
+    int server;
+    int client;
+    int domid;
+    struct raw_dbus_conn *prev;
+    struct raw_dbus_conn *next;
+};
+ 
+struct raw_dbus_conn *rd_conns;
+
 // rpc-broker.c
-int broker_message(int client, int domid);
+void broker_message(struct raw_dbus_conn *rdconn);
 
 signed int is_stubdom(uint16_t domid);
 
 void print_usage(void);
+
+void service_rdconns(void);
 
 void sigint_handler(int signal);
 
@@ -267,7 +285,9 @@ char *dbus_introspect(struct json_request *jreq);
 
 void add_ws_signal(DBusConnection *conn, struct lws *wsi);
 
-void add_raw_signal(int client_fd, int server_fd);
+void add_rdconn(int client, int domid);
+
+void remove_rdconn(struct raw_dbus_conn *conn);
 
 void free_dlinks(void);
 
@@ -299,7 +319,6 @@ void free_json_request(struct json_request *jreq);
 
 #define JSON_RESP "response"
 #define JSON_SIG  "signal"
-#define JSON_ID   "1"
 
 
 // src/msg.c
