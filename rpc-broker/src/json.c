@@ -24,6 +24,7 @@ struct json_response *init_jrsp(void)
     struct json_response *jrsp = calloc(1, sizeof *jrsp);
 
     jrsp->args = json_object_new_array();
+    // XXX rm and use dbus-message-get-serial
     jrsp->id = rand() % 4096;
 
     snprintf(jrsp->type, JSON_REQ_ID_MAX, JSON_RESP);
@@ -47,7 +48,7 @@ struct json_response *make_json_request(struct json_request *jreq)
 
         jrsp->id = jreq->id;
 
-        snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, JSON_ID);
+        snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, "%d", jreq->id);
         snprintf(jrsp->arg_sig, DBUS_MAX_ARG_LEN - 1, "s");
         json_object_array_add(jrsp->args, json_object_new_string(busname));
         return jrsp;

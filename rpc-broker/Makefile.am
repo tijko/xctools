@@ -16,7 +16,7 @@ rpc_broker_SOURCES = \
 noinst_HEADERS = src/rpc-broker.h
 
 rpc_broker_LDADD = \
-	$(DBUS_LIBS) \
+    $(DBUS_LIBS) \
     $(LIBV4V_LIBS) \
     $(LIBWEBSOCKETS_LIBS) \
     $(JSON_C_LIBS) \

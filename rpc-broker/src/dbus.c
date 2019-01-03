@@ -111,13 +111,14 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
     dmsg->member = member ? member : "NULL";
 
     int ret = dbus_message_get_type(dbus_msg);
+/*
     // XXX
     DBUS_BROKER_EVENT("5555 %s %s %s %s", dmsg->destination, dmsg->path, dmsg->interface, dmsg->member);
     DBusMessageIter iter;
     dbus_message_iter_init(dbus_msg, &iter);
     int type;
 
-    while ((type = dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_INVALID)) {
+    while ((type = dbus_message_iter_get_arg_type(&iter)) != DBUS_TYPE_INVALID) {
 
         void *arg;
 
@@ -126,13 +127,13 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
             case DBUS_TYPE_INT32:
             case DBUS_TYPE_UINT32: {
                 dbus_message_iter_get_basic(&iter, arg);
-                DBUS_BROKER_EVENT("5555 %d", *(int *) arg); 
+                DBUS_BROKER_EVENT("5555 %d", *(int *) arg);
                 break;
             }
 
             case DBUS_TYPE_BOOLEAN: {
                 dbus_message_iter_get_basic(&iter, arg);
-                DBUS_BROKER_EVENT("5555 bool %d", *(boolean *) arg); 
+                DBUS_BROKER_EVENT("5555 bool %d", *(bool *) arg);
                 break;
             }
 
@@ -145,6 +146,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
             case DBUS_TYPE_VARIANT: {
                 DBUS_BROKER_EVENT("5555 variant %s", "");
                 break;
+            }
 
             default:
                 DBUS_BROKER_EVENT("5555 other %d",  type);
@@ -153,7 +155,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
 
         dbus_message_iter_next(&iter);
     }
-
+*/
     dbus_message_unref(dbus_msg);
 
     return ret;
@@ -260,23 +262,16 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
         }
     }
 
-    DBusPendingCall *pc = NULL;
-
-    if (!dbus_connection_send_with_reply(conn, msg,
-                                        &pc, DBUS_REQ_TIMEOUT) || !pc)
-        return NULL;
-
-    dbus_connection_flush(conn);
-    dbus_pending_call_block(pc);
-    dbus_connection_flush(conn);
+    DBusMessage *reply = dbus_connection_send_with_reply_and_block(conn, msg,
+                                                   DBUS_REQ_TIMEOUT, &error);
     dbus_message_unref(msg);
 
-    if ((msg = dbus_pending_call_steal_reply(pc)) == NULL)
+    if (reply == NULL) {
+        DBUS_BROKER_WARNING("Failed Request <%s>", error.message);
         return NULL;
+    }
 
-    dbus_pending_call_unref(pc);
-
-    return msg;
+    return reply;
 }
 
 /*
@@ -382,13 +377,12 @@ xml_error:
 
 static struct dbus_link *add_dbus_signal(void)
 {
-    struct dbus_link *curr;
+    struct dbus_link *curr = dlinks;
 
     if (!dlinks) {
         dlinks = malloc(sizeof *dlinks);
         curr = dlinks;
     } else {
-        curr = dlinks;
         while (curr->next)
             curr = curr->next;
         curr->next = malloc(sizeof *dlinks);
@@ -407,14 +401,41 @@ void add_ws_signal(DBusConnection *conn, struct lws *wsi)
     curr->dconn = conn;
 }
 
-void add_raw_signal(int client_fd, int server_fd)
+void add_rdconn(int client, int domid)
 {
-    struct dbus_link *curr = add_dbus_signal();
-    curr->client_fd = client_fd;
-    dup2(server_fd, curr->server_fd);
+    struct raw_dbus_conn *conn = malloc(sizeof *conn);
+    conn->server = connect_to_system_bus(); 
+    conn->client = client;
+    conn->domid = domid;
+    conn->prev = NULL;
+    conn->next = NULL;
+    broker_message(conn);
 
-    curr->wsi = NULL;
-    curr->dconn = NULL;
+    if (rd_conns == NULL)
+        rd_conns = conn;
+    else {
+        struct raw_dbus_conn *curr = rd_conns;
+        while (curr->next)
+            curr = curr->next;
+        curr->next = conn;
+        conn->prev = curr;
+    }
+}
+
+void remove_rdconn(struct raw_dbus_conn *conn)
+{
+    if (!conn)
+        return;
+
+    struct raw_dbus_conn *prev = conn->prev;
+    struct raw_dbus_conn *next = conn->next;
+
+    if (prev)
+        prev->next = next;
+    if (next)
+        next->prev = prev;
+
+    free(conn);
 }
 
 void free_dlinks(void)
