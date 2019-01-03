@@ -150,7 +150,9 @@ struct dbus_broker_server {
 
 #define DBUS_INTROSPECT_MAX 0xFFFF
 
-#define DBUS_BUS_ADDR_LEN   256
+// The actual length is 32, but sockaddr_un.sun_path is 108 chars maximum
+#define DBUS_BUS_ADDR_LEN   108
+
 #define DBUS_MAX_ARG_LEN    16
 
 struct dbus_message {
