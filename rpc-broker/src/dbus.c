@@ -409,7 +409,7 @@ void add_rdconn(int client, int domid)
     conn->domid = domid;
     conn->prev = NULL;
     conn->next = NULL;
-    broker_message(conn);
+    broker_message(conn, conn->domid);
 
     if (rd_conns == NULL)
         rd_conns = conn;
