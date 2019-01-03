@@ -16,7 +16,7 @@
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
-#include "rpc-broker.h"
+#include "../rpc-broker.h"
 
 
 DBusConnection *create_dbus_connection(void)
@@ -34,20 +34,22 @@ DBusConnection *create_dbus_connection(void)
 struct dbus_broker_server *start_server(int port)
 {
     struct dbus_broker_server *server = malloc(sizeof *server);
-    server->dbus_socket = v4v_socket(SOCK_STREAM);
+    server->dbus_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server->dbus_socket < 0)
-        DBUS_BROKER_ERROR("v4v_socket");
+        DBUS_BROKER_ERROR("socket");
 
-    server->addr.port = port;
-    server->addr.domain = V4V_DOMID_ANY;
-    server->peer.port = 0;
-    server->peer.domain = 0;
+    server->addr.sin_family = AF_INET;
+    server->addr.sin_addr.s_addr = INADDR_ANY;
+    server->addr.sin_port = htons(port);
+    server->peer.sin_family = AF_INET;
+    server->peer.sin_addr.s_addr = INADDR_ANY;
+    server->peer.sin_port = 0;
 
-    if (v4v_bind(server->dbus_socket, &server->addr, V4V_DOMID_ANY) < 0)
-        DBUS_BROKER_ERROR("v4v_bind");
+    if (bind(server->dbus_socket, &server->addr, sizeof(server->addr)) < 0)
+        DBUS_BROKER_ERROR("bind");
 
-    if (v4v_listen(server->dbus_socket, 1) < 0)
-        DBUS_BROKER_ERROR("v4v_listen");
+    if (listen(server->dbus_socket, 1) < 0)
+        DBUS_BROKER_ERROR("listen");
 
     return server;
 }
@@ -215,6 +217,7 @@ static inline void append_variant(DBusMessageIter *iter, int type, void *data)
 
 DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 {
+    int i;
     DBusMessage *msg = dbus_message_new_method_call(dmsg->destination,
                                                     dmsg->path,
                                                     dmsg->interface,
@@ -225,7 +228,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
     DBusMessageIter iter;
     dbus_message_iter_init_append(msg, &iter);
 
-    for (int i=0; i < dmsg->arg_number; i++) {
+    for (i = 0; i < dmsg->arg_number; i++) {
 
         switch (dmsg->arg_sig[i]) {
 
@@ -409,7 +412,7 @@ void add_rdconn(int client, int domid)
     conn->domid = domid;
     conn->prev = NULL;
     conn->next = NULL;
-    broker_message(conn, conn->domid);
+    broker_message(conn);
 
     if (rd_conns == NULL)
         rd_conns = conn;
