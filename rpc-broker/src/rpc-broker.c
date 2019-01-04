@@ -257,9 +257,9 @@ void run_rawdbus(struct dbus_broker_args *args)
              */
 #ifdef HAVE_V4V
             struct sockaddr_in client_addr;
-            int client_addr_len = sizeof(client_addr);
+            socklen_t client_addr_len = sizeof(client_addr);
 
-            if (getpeername(client, &client_addr) < 0)
+            if (getpeername(client, &client_addr, &client_addr_len) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
             else
                 client_domain = ntohl(client_addr.sin_addr.s_addr) & ~0x1000000;
