@@ -52,7 +52,8 @@
 #define DBUS_LOG(type, fmt, ...)                                      \
     ({                                                                \
         char *buf = NULL;                                             \
-        asprintf(&buf, fmt, __VA_ARGS__);                             \
+        if (asprintf(&buf, fmt, __VA_ARGS__) < 0)                     \
+            exit(0);                                                  \
         syslog(type, "%s", buf);                                      \
         free(buf);                                                    \
     })                                                                \

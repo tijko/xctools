@@ -106,6 +106,8 @@ struct lws_context *create_ws_context(int port)
 int ws_request_handler(struct lws *wsi, char *raw_req)
 {
     int client = lws_get_socket_fd(wsi);
+    if (client < 0)
+        return -1;
 
     struct json_request *jreq = convert_json_request(raw_req);
 
