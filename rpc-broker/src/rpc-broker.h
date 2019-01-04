@@ -72,7 +72,11 @@ struct dbus_link *dlinks;
 #define DBUS_BROKER_WARNING(fmt, ...) DBUS_LOG(LOG_WARNING, fmt, __VA_ARGS__)
 #define DBUS_BROKER_EVENT(fmt, ...)   DBUS_LOG(LOG_INFO, fmt, __VA_ARGS__)
 
-#define DBUS_REQ_ARG(buf, fmt, ...) ({ asprintf(&buf, fmt, __VA_ARGS__); })
+#define DBUS_REQ_ARG(buf, fmt, ...)               \
+    ({                                            \
+        if (asprintf(&buf, fmt, __VA_ARGS__) < 0) \
+            exit(0);                              \
+    })                                            \
 
 #define RULES_FILENAME "/etc/rpc-broker.rules"
 #define RULES_MAX_LENGTH 256
