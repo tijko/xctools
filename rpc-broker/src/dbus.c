@@ -95,7 +95,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
     dbus_msg = dbus_message_demarshal(msg, len, &error);
 
     if (dbus_error_is_set(&error)) {
-        DBUS_BROKER_WARNING("<De-Marshal failed> [Length: %u] error: %s",
+        DBUS_BROKER_WARNING("<De-Marshal failed> [Length: %zu] error: %s",
                               len, error.message);
         return -1;
     }

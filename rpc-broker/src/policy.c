@@ -126,7 +126,7 @@ static void get_etc_policy(struct etc_policy *etc, const char *rule_filepath)
     // There is no officially defined limit on policy file size.
     // Rpc-broker defines a buffer size and for now limit based on that size.
     if (policy_size > ETC_MAX_FILE) {
-        DBUS_BROKER_WARNING("/etc policy file %s exceeds buffer size <%u>",
+        DBUS_BROKER_WARNING("/etc policy file %s exceeds buffer size <%zu>",
                              rule_filepath, policy_size);
         return;
     }
