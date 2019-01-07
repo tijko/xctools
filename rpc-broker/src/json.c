@@ -127,7 +127,8 @@ static void append_dbus_message_arg(int type, int idx, void **args,
 static const char *get_json_str_obj(struct json_object *jobj, char *field)
 {
     struct json_object *jfield;
-    json_object_object_get_ex(jobj, field, &jfield);
+    if (!json_object_object_get_ex(jobj, field, &jfield))
+        return "";
     return strdup(json_object_get_string(jfield));
 }
 
