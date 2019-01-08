@@ -240,15 +240,17 @@ void run_rawdbus(struct dbus_broker_args *args)
         int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
 
         if (ret > 0) {
-	  socklen_t clilen = sizeof(server->peer);
-	  int client = accept(default_socket, (struct sockaddr *)&server->peer, &clilen);
+	        socklen_t clilen = sizeof(server->peer);
+	        int client = accept(default_socket, 
+                               (struct sockaddr *) &server->peer, &clilen);
             if (args->verbose) {
                 DBUS_BROKER_EVENT("<Client> [Port: %d Addr: %d Client: %d]",
-                                    args->port, server->peer.sin_addr.s_addr, client);
+                                    args->port, server->peer.sin_addr.s_addr, 
+                                                                     client);
             }
 
-	    uint32_t client_domain = 0;
-	    /*
+            uint32_t client_domain = 0;
+    	    /*
              * When using rpc-broker over V4V, we want to be able to
              * firewall against domids. The V4V interposer stores the
              * domid as follows:
