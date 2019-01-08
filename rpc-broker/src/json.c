@@ -173,8 +173,8 @@ static signed int parse_json_args(struct json_object *jarray,
 {
     char *signature;
 
-    if (!jreq.destination && jreq.type) {
-        signature= malloc(3)
+    if (!jreq->dmsg.destination && jreq->dmsg.type) {
+        signature= malloc(3);
         snprintf(signature, 3, "uu");
     } else
         signature = dbus_introspect(jreq);

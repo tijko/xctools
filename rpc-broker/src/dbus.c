@@ -219,7 +219,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 {
     int i;
     DBusMessage *msg;
-    if (dmsg.destination)
+    if (dmsg->destination)
         msg = dbus_message_new_method_call(dmsg->destination,
                                            dmsg->path,
                                            dmsg->interface,
