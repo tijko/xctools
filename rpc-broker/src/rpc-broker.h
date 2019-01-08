@@ -167,6 +167,7 @@ struct dbus_message {
     const char *interface;
     const char *path;
     const char *member;
+    const char *type;
     // struct argument {
     //   void *data;
     //   char dbus_type;

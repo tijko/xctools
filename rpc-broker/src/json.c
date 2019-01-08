@@ -128,7 +128,7 @@ static const char *get_json_str_obj(struct json_object *jobj, char *field)
 {
     struct json_object *jfield;
     if (!json_object_object_get_ex(jobj, field, &jfield))
-        return "";
+        return NULL;
     return strdup(json_object_get_string(jfield));
 }
 
@@ -171,7 +171,13 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
 static signed int parse_json_args(struct json_object *jarray,
                                   struct json_request *jreq)
 {
-    char *signature = dbus_introspect(jreq);
+    char *signature;
+
+    if (!jreq.destination && jreq.type) {
+        signature= malloc(3)
+        snprintf(signature, 3, "uu");
+    } else
+        signature = dbus_introspect(jreq);
     int i;
 
     if (!signature) {
@@ -216,6 +222,11 @@ struct json_request *convert_json_request(char *raw_json_req)
 
     struct json_request *jreq = malloc(sizeof *jreq);
     jreq->dmsg.destination = get_json_str_obj(jobj, "destination");
+    if (!jreq->dmsg.destination) {
+        jreq->dmsg.type = get_json_str_obj(jobj, "type");
+    } else
+        jreq->dmsg.type = NULL;
+
     jreq->dmsg.interface = get_json_str_obj(jobj, "interface");
     jreq->dmsg.path = get_json_str_obj(jobj, "path");
     jreq->dmsg.member = get_json_str_obj(jobj, "method");

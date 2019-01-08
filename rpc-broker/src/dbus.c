@@ -218,10 +218,15 @@ static inline void append_variant(DBusMessageIter *iter, int type, void *data)
 DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 {
     int i;
-    DBusMessage *msg = dbus_message_new_method_call(dmsg->destination,
-                                                    dmsg->path,
-                                                    dmsg->interface,
-                                                    dmsg->member);
+    DBusMessage *msg;
+    if (dmsg.destination)
+        msg = dbus_message_new_method_call(dmsg->destination,
+                                           dmsg->path,
+                                           dmsg->interface,
+                                           dmsg->member);
+    else
+        msg = dbus_message_new_signal(dmsg->path, dmsg->interface, dmsg->member);
+        
     DBusError error;
     dbus_error_init(&error);
 
