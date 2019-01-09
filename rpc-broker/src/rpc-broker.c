@@ -204,7 +204,7 @@ static int poll_connection(int connection)
 
     return ret; 
 }
-
+/*
 void service_rdconns(void)
 {
 
@@ -221,6 +221,18 @@ void service_rdconns(void)
         curr = curr->next;
     }
 }
+*/
+void service_rdconn_cb(uv_poll_t *handle, int status, int events)
+{
+    struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
+    if (events & UV_READABLE) {
+        broker_message(rdconn);       
+    } else if (events & UV_DISCONNECT) {
+        // free its data?
+        // handle->data ???
+        uv_close(handle);
+    }
+}
 
 void run_rawdbus(struct dbus_broker_args *args)
 {
@@ -230,6 +242,8 @@ void run_rawdbus(struct dbus_broker_args *args)
     int default_socket = server->dbus_socket;
 
     fd_set server_set;
+    uv_loop_t loop;
+    uv_loop_init(&loop);
 
     while (dbus_broker_running) {
 
@@ -240,6 +254,7 @@ void run_rawdbus(struct dbus_broker_args *args)
         int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
 
         if (ret > 0) {
+            // uv_run(&loop, UV_RUN_NOWAIT);
 	        socklen_t clilen = sizeof(server->peer);
 	        int client = accept(default_socket, 
                                (struct sockaddr *) &server->peer, &clilen);
@@ -249,6 +264,9 @@ void run_rawdbus(struct dbus_broker_args *args)
                                                                      client);
             }
 
+            struct raw_dbus_conn *rdconn = malloc(sizeof *rdconn);
+            rdconn->server = connect_to_system_bus();
+            rdconn->client = client;
             uint32_t client_domain = 0;
     	    /*
              * When using rpc-broker over V4V, we want to be able to
@@ -263,13 +281,18 @@ void run_rawdbus(struct dbus_broker_args *args)
 
             if (getpeername(client, &client_addr, &client_addr_len) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
-            else
-                client_domain = ntohl(client_addr.sin_addr.s_addr) & ~0x1000000;
+            else 
+                rdconn->domid = ntohl(client_addr.sin_addr.s_addr) & ~0x1000000;
 #endif
-            add_rdconn(client, client_domain);
+            uv_poll_start(&rdconn->handle, UV_READABLE | UV_DISCONNECT, service_rdconn_cb);
+            uv_poll_init(&loop, &rdconn->handle, rdconn->client); 
+            // XXX
+            //add_rdconn(client, client_domain);
+            //
         }
-
-        service_rdconns();
+        // XXX
+        //service_rdconns();
+        //
 
         if (reload_policy) {
             free_policy();
@@ -387,9 +410,6 @@ int main(int argc, char *argv[])
     if (sigaction(SIGINT, &sa, NULL) < 0)
         DBUS_BROKER_ERROR("sigaction");
 
-    // XXX
-    uv_loop_t *loop;
-    //
     dbus_broker_running = 1;
     dlinks = NULL;
     rd_conns = NULL;

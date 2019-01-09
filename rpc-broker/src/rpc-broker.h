@@ -253,6 +253,7 @@ struct raw_dbus_conn {
     int server;
     int client;
     int domid;
+    uv_poll_t handle;
     struct raw_dbus_conn *prev;
     struct raw_dbus_conn *next;
 };
