@@ -387,6 +387,9 @@ int main(int argc, char *argv[])
     if (sigaction(SIGINT, &sa, NULL) < 0)
         DBUS_BROKER_ERROR("sigaction");
 
+    // XXX
+    uv_loop_t *loop;
+    //
     dbus_broker_running = 1;
     dlinks = NULL;
     rd_conns = NULL;
