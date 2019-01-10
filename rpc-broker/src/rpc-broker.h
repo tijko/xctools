@@ -252,14 +252,10 @@ struct dbus_broker_args {
 struct raw_dbus_conn {
     int server;
     int client;
-    int domid;
+    uint32_t client_domain;
     uv_poll_t handle;
-    struct raw_dbus_conn *prev;
-    struct raw_dbus_conn *next;
 };
  
-struct raw_dbus_conn *rd_conns;
-
 // rpc-broker.c
 void broker_message(struct raw_dbus_conn *rdconn);
 
