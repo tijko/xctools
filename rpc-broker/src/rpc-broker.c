@@ -235,7 +235,7 @@ void service_rdconn_cb(uv_poll_t *handle, int status, int events)
     if (events & UV_READABLE) 
         broker_message(rdconn);       
     else if (events & UV_DISCONNECT) 
-        uv_close(handle);
+        uv_close(handle, close_connection);
 }
 
 void run_rawdbus(struct dbus_broker_args *args)
