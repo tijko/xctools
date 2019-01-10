@@ -222,7 +222,7 @@ void service_rdconns(void)
     }
 }
 */
-uv_close_cb close_connection(uv_handle_t *handle)
+static void close_connection(uv_handle_t *handle)
 {
     struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
     free(rdconn);
@@ -235,7 +235,7 @@ void service_rdconn_cb(uv_poll_t *handle, int status, int events)
     if (events & UV_READABLE) 
         broker_message(rdconn);       
     else if (events & UV_DISCONNECT) 
-        uv_close(handle, close_connection);
+        uv_close((uv_handle_t *) handle, close_connection);
 }
 
 void run_rawdbus(struct dbus_broker_args *args)
