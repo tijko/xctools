@@ -222,16 +222,20 @@ void service_rdconns(void)
     }
 }
 */
+uv_close_cb close_connection(uv_handle_t *handle)
+{
+    struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
+    free(rdconn);
+}
+
 void service_rdconn_cb(uv_poll_t *handle, int status, int events)
 {
     struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
 
-    if (events & UV_READABLE) {
+    if (events & UV_READABLE) 
         broker_message(rdconn);       
-    } else if (events & UV_DISCONNECT) {
+    else if (events & UV_DISCONNECT) 
         uv_close(handle);
-        free(rdconn);
-    }
 }
 
 void run_rawdbus(struct dbus_broker_args *args)
@@ -407,7 +411,6 @@ int main(int argc, char *argv[])
 
     dbus_broker_running = 1;
     dlinks = NULL;
-    rd_conns = NULL;
     ring = NULL;
     reload_policy = false;
     // XXX rm and use dbus-message-get-serial
