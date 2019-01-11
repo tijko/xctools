@@ -21,4 +21,5 @@ rpc_broker_LDADD = \
     $(LIBWEBSOCKETS_LIBS) \
     $(JSON_C_LIBS) \
     $(LIBXML_LIBS) \
-    $(XENSTORE_LIBS)
+    $(XENSTORE_LIBS) \
+    -luv
