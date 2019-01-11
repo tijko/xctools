@@ -191,37 +191,7 @@ static void run_websockets(struct dbus_broker_args *args)
     lws_ring_destroy(ring);
     lws_context_destroy(ws_context);
 }
-/*
-static int poll_connection(int connection)
-{
-    fd_set conn_set;
-    struct timeval tv = { .tv_sec=0, .tv_usec=100 };
 
-    FD_ZERO(&conn_set);
-    FD_SET(connection, &conn_set);
-
-    int ret = select(connection + 1, &conn_set, NULL, NULL, &tv);
-
-    return ret; 
-}
-
-void service_rdconns(void)
-{
-
-    struct raw_dbus_conn *curr = rd_conns;
-
-    while (curr) {
-       
-        int cret = poll_connection(curr->client); 
-        int sret = poll_connection(curr->server);
-
-        if (cret > 0 || sret > 0)
-            broker_message(curr);
-
-        curr = curr->next;
-    }
-}
-*/
 static void close_connection(uv_handle_t *handle)
 {
     struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
@@ -234,7 +204,6 @@ void service_rdconn_cb(uv_poll_t *handle, int status, int events)
 
     if (events & UV_READABLE) { 
         broker_message(rdconn);       
-        DBUS_BROKER_EVENT("Rdconn: %d", rdconn->client);
     } else if (events & UV_DISCONNECT) 
         uv_close((uv_handle_t *) handle, close_connection);
 }
