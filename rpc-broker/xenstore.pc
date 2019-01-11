@@ -1,9 +1,0 @@
-Name: xenstore
-Description: xenstore
-
-prefix=/usr
-libdir=${prefix}/lib
-includedir=${prefix}/include
-
-Cflags: -I${includedir}
-Libs: -L${libdir} -lxenstore
