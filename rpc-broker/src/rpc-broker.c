@@ -232,9 +232,10 @@ void service_rdconn_cb(uv_poll_t *handle, int status, int events)
 {
     struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
 
-    if (events & UV_READABLE) 
+    if (events & UV_READABLE) { 
         broker_message(rdconn);       
-    else if (events & UV_DISCONNECT) 
+        DBUS_BROKER_EVENT("Rdconn: %d", rdconn->client);
+    } else if (events & UV_DISCONNECT) 
         uv_close((uv_handle_t *) handle, close_connection);
 }
 
