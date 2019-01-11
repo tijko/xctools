@@ -287,6 +287,7 @@ void run_rawdbus(struct dbus_broker_args *args)
             else 
                 rdconn->client_domain = ntohl(client_addr.sin_addr.s_addr) & ~0x1000000;
 #endif
+            rdconn->handle.data = rdconn;
             uv_poll_init(&loop, &rdconn->handle, rdconn->client); 
             uv_poll_start(&rdconn->handle, UV_READABLE | UV_DISCONNECT, service_rdconn_cb);
         }
