@@ -194,6 +194,8 @@ DBusMessage *db_list(void)
         vms = NULL;
     }
 
+    dbus_connection_unref(conn);
+
     return vms;
 }
 
