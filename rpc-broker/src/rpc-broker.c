@@ -259,7 +259,9 @@ void run_rawdbus(struct dbus_broker_args *args)
 #endif
             rdconn->handle.data = rdconn;
             uv_poll_init(&loop, &rdconn->handle, rdconn->client); 
-            uv_poll_start(&rdconn->handle, UV_READABLE | UV_DISCONNECT, service_rdconn_cb);
+            uv_poll_init(&loop, &rdconn->handle, rdconn->server); 
+            uv_poll_start(&rdconn->handle, UV_READABLE | UV_DISCONNECT, 
+                           service_rdconn_cb);
         }
 
         uv_run(&loop, UV_RUN_NOWAIT);
