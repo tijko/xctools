@@ -238,9 +238,15 @@ void run_rawdbus(struct dbus_broker_args *args)
             }
 
             struct raw_dbus_conn *rdconn = malloc(sizeof *rdconn);
+            struct raw_dbus_conn *sdconn = malloc(sizeof *sdconn);
+
             rdconn->server = connect_to_system_bus();
             rdconn->client = client;
             rdconn->client_domain = 0;
+
+            sdconn->server = rdconn->server;
+            sdconn->client = rdconn->client;
+            sdconn->client_domain = rdconn->client_domain;
     	    /*
              * When using rpc-broker over V4V, we want to be able to
              * firewall against domids. The V4V interposer stores the
@@ -254,13 +260,20 @@ void run_rawdbus(struct dbus_broker_args *args)
 
             if (getpeername(client, &client_addr, &client_addr_len) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
-            else 
+            else {
                 rdconn->client_domain = ntohl(client_addr.sin_addr.s_addr) & ~0x1000000;
+                sdconn->client_domain = rdconn->client_domain;
+            }
 #endif
             rdconn->handle.data = rdconn;
+            sdconn->handle.data = sdconn;
+
             uv_poll_init(&loop, &rdconn->handle, rdconn->client); 
-            //uv_poll_init(&loop, &rdconn->handle, rdconn->server); 
+            uv_poll_init(&loop, &sdconn->handle, sdconn->server); 
+
             uv_poll_start(&rdconn->handle, UV_READABLE | UV_DISCONNECT, 
+                           service_rdconn_cb);
+            uv_poll_start(&sdconn->handle, UV_READABLE | UV_DISCONNECT, 
                            service_rdconn_cb);
         }
 
