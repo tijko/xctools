@@ -270,12 +270,13 @@ void run_rawdbus(struct dbus_broker_args *args)
   //          sdconn->handle.data = sdconn;
 
             uv_poll_init(&loop, &rdconn->handle, rdconn->client); 
-   //         uv_poll_init(&loop, &sdconn->handle, sdconn->server); 
+            memcpy(sdconn, rdconn, sizeof *rdconn);
+            uv_poll_init(&loop, &sdconn->handle, sdconn->server); 
 
             uv_poll_start(&rdconn->handle, UV_READABLE | UV_DISCONNECT, 
                            service_rdconn_cb);
-    //        uv_poll_start(&sdconn->handle, UV_READABLE | UV_DISCONNECT, 
-     //                      service_rdconn_cb);
+            uv_poll_start(&sdconn->handle, UV_READABLE | UV_DISCONNECT, 
+                           service_rdconn_cb);
         }
 
         uv_run(&loop, UV_RUN_NOWAIT);
