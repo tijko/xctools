@@ -243,11 +243,6 @@ void run_rawdbus(struct dbus_broker_args *args)
             rdconn->server = connect_to_system_bus();
             rdconn->client = client;
             rdconn->client_domain = 0;
-/*
-            sdconn->server = rdconn->server;
-            sdconn->client = rdconn->client;
-            sdconn->client_domain = rdconn->client_domain;
-*/
     	    /*
              * When using rpc-broker over V4V, we want to be able to
              * firewall against domids. The V4V interposer stores the
@@ -261,13 +256,10 @@ void run_rawdbus(struct dbus_broker_args *args)
 
             if (getpeername(client, &client_addr, &client_addr_len) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
-            else {
+            else 
                 rdconn->client_domain = ntohl(client_addr.sin_addr.s_addr) & ~0x1000000;
- //               sdconn->client_domain = rdconn->client_domain;
-            }
 #endif
             rdconn->handle.data = rdconn;
-  //          sdconn->handle.data = sdconn;
 
             uv_poll_init(&loop, &rdconn->handle, rdconn->client); 
             memcpy(sdconn, rdconn, sizeof *rdconn);
