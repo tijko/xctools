@@ -13,6 +13,7 @@ before_install:
 - make
 - sudo make install
 - cd ..
+- cd ..
 - cd libuv && ./autogen.sh && ./configure && make && sudo make install
 - cd ..
 
