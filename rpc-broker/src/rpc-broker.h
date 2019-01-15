@@ -240,7 +240,7 @@ struct lws_ring *ring;
 bool verbose_logging;
 int dbus_broker_running;
 struct policy *dbus_policy;
-
+const char *domain;
 
 
 struct dbus_broker_args {
@@ -263,6 +263,8 @@ struct raw_dbus_conn {
 void broker_message(struct raw_dbus_conn *rdconn);
 
 signed int is_stubdom(uint16_t domid);
+
+const char *get_domain(void);
 
 void print_usage(void);
 

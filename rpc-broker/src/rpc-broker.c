@@ -76,6 +76,23 @@ signed int is_stubdom(uint16_t domid)
     return len;
 }
 
+const char *get_domain(void)
+{
+    char *domain = NULL;
+
+#ifdef HAVE_XENSTORE
+    size_t len = 0;
+    struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
+
+    if (!xsh)
+        return -1;
+
+    domain = (const char *) xs_read(xsh, XBT_NULL, "domid", &len);
+
+    xs_close(xsh);
+#endif
+    return (const char *) domain;
+}
 void print_usage(void)
 {
     printf("rpc-broker <flag> <argument>\n");
@@ -171,6 +188,8 @@ static void run_websockets(struct dbus_broker_args *args)
     struct lws_context *ws_context = NULL;
     ws_context = create_ws_context(args->port);
     build_etc_policy(args->rule_file);
+    // check domain?
+    build_vm_policy();
 
     if (!ws_context)
         DBUS_BROKER_ERROR("WebSockets-Server");
@@ -186,6 +205,8 @@ static void run_websockets(struct dbus_broker_args *args)
         if (reload_policy) {
             free_policy();
             build_etc_policy(args->rule_file);
+            // check domain?
+            build_vm_policy();
             reload_policy = false;
         }
     }
@@ -216,6 +237,7 @@ void run_rawdbus(struct dbus_broker_args *args)
     DBUS_BROKER_EVENT("<Server has started listening> [Port: %d]", args->port);
 
     int default_socket = server->dbus_socket;
+    // check domain
     build_vm_policy();
     build_etc_policy(args->rule_file);
 
@@ -279,6 +301,7 @@ void run_rawdbus(struct dbus_broker_args *args)
 
         if (reload_policy) {
             free_policy();
+            // check domain
             build_vm_policy();
             build_etc_policy(args->rule_file);
             reload_policy = false;
@@ -400,6 +423,8 @@ int main(int argc, char *argv[])
     dlinks = NULL;
     ring = NULL;
     reload_policy = false;
+    domain = get_domain();
+    DBUS_BROKER_EVENT("DOMAIN: %s", domain ? domain : "NULL");
     // XXX rm and use dbus-message-get-serial
     srand48(time(NULL));
 
