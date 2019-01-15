@@ -53,7 +53,7 @@ int broker(struct dbus_message *dmsg, int domid)
             struct domain_policy domain = dbus_policy->domains[i];
 
             for (j=0; j < domain.count; j++)
-                policy = filter(&(domain.rules[j]), dmsg, domid);
+                policy = filter(&(domain.rules[j]), dmsg, domid, dom0);
 
             break;
         }
