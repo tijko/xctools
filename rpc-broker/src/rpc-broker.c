@@ -100,7 +100,7 @@ void sigint_handler(int signal)
     DBUS_BROKER_WARNING("<received signal interrupt> %s", "");
     free_dlinks();
     free_policy();
-
+    // handle cleanup of the uv handles
     if (ring)
         lws_ring_destroy(ring);
 
