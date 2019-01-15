@@ -428,6 +428,7 @@ int main(int argc, char *argv[])
         is_dom0 = false;
     else
         is_dom0 = true;
+    DBUS_BROKER_EVENT("Domain: %d", is_dom0 ? 0 : 1);
     // XXX rm and use dbus-message-get-serial
     srand48(time(NULL));
 
