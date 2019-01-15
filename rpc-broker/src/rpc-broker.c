@@ -402,7 +402,6 @@ int main(int argc, char *argv[])
     reload_policy = false;
     // XXX rm and use dbus-message-get-serial
     srand48(time(NULL));
-    dbus_broker_policy = build_policy(policy_file);
 
     mainloop(&args);
 
