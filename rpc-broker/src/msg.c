@@ -40,7 +40,9 @@ int broker(struct dbus_message *dmsg, int domid)
 
     struct etc_policy etc = dbus_policy->etc;
     int domains = dbus_policy->domain_number;
-    bool dom0 = domains > 0 ? true : false;
+
+    if (!is_dom0)
+        return 1;
 
     int i, j;
     for (i=0; i < etc.count; i++)
