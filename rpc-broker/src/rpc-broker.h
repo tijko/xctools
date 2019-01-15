@@ -19,9 +19,11 @@
 #define _GNU_SOURCE
 #include <ctype.h>
 #include <dbus/dbus.h>
+#include <fcntl.h>
 #include <json.h>
 #include <libwebsockets.h>
 #include <libxml/parser.h>
+#include <netinet/in.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -33,8 +35,7 @@
 #include <sys/un.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <netinet/in.h>
+#include <uv.h>
 
 #ifdef HAVE_XENSTORE
 #include <xenstore.h>
