@@ -35,23 +35,21 @@ int broker(struct dbus_message *dmsg, int domid)
 
     int policy = 0;
 
-    if (!dbus_broker_policy) {
-        DBUS_BROKER_WARNING("No policy in place %s", "");
+    if (!dbus_policy) 
         return 1;
-    }
 
-    struct etc_policy etc = dbus_broker_policy->etc;
+    struct etc_policy etc = dbus_policy->etc;
 
     int i, j;
     for (i=0; i < etc.count; i++)
         policy = filter(&(etc.rules[i]), dmsg, domid);
 
-    int domains = dbus_broker_policy->domain_number;
+    int domains = dbus_policy->domain_number;
 
     for (i=0; i < domains; i++) {
-        if (dbus_broker_policy->domains[i].domid == domid) {
+        if (dbus_policy->domains[i].domid == domid) {
 
-            struct domain_policy domain = dbus_broker_policy->domains[i];
+            struct domain_policy domain = dbus_policy->domains[i];
 
             for (j=0; j < domain.count; j++)
                 policy = filter(&(domain.rules[j]), dmsg, domid);
