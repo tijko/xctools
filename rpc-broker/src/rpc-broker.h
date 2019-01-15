@@ -239,6 +239,8 @@ static const char XML_TYPE_FIELD[]         = "type";
 struct lws_ring *ring;
 bool verbose_logging;
 int dbus_broker_running;
+struct policy *dbus_policy;
+
 
 
 struct dbus_broker_args {
@@ -340,7 +342,9 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid);
 // src/policy.c
 DBusMessage *db_list(void);
 
-struct policy *build_policy(const char *rule_filename);
+void build_vm_policy(void);
+
+void build_etc_policy(const char *rule_filepath);
 
 void free_rule(struct rule r);
 

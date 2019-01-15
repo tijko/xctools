@@ -170,6 +170,7 @@ static void run_websockets(struct dbus_broker_args *args)
 {
     struct lws_context *ws_context = NULL;
     ws_context = create_ws_context(args->port);
+    build_etc_policy(args->rule_file);
 
     if (!ws_context)
         DBUS_BROKER_ERROR("WebSockets-Server");
@@ -184,7 +185,7 @@ static void run_websockets(struct dbus_broker_args *args)
 
         if (reload_policy) {
             free_policy();
-            dbus_broker_policy = build_policy(args->rule_file);
+            build_etc_policy(args->rule_file);
             reload_policy = false;
         }
     }
@@ -215,6 +216,8 @@ void run_rawdbus(struct dbus_broker_args *args)
     DBUS_BROKER_EVENT("<Server has started listening> [Port: %d]", args->port);
 
     int default_socket = server->dbus_socket;
+    build_vm_policy();
+    build_etc_policy(args->rule_file);
 
     fd_set server_set;
     uv_loop_t loop;
@@ -276,7 +279,8 @@ void run_rawdbus(struct dbus_broker_args *args)
 
         if (reload_policy) {
             free_policy();
-            dbus_broker_policy = build_policy(args->rule_file);
+            build_vm_policy();
+            build_etc_policy(args->rule_file);
             reload_policy = false;
         }
     }
@@ -314,6 +318,8 @@ int main(int argc, char *argv[])
     char *websockets = NULL;
     char *logging_file = "";
     char *policy_file  = RULES_FILENAME;
+    dbus_policy = calloc(1, sizeof *dbus_policy);
+
 
     bool proto = false;
 

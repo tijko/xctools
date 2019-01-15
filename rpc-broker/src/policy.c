@@ -101,8 +101,9 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
 
 }
 
-static void get_etc_policy(struct etc_policy *etc, const char *rule_filepath)
+void build_etc_policy(const char *rule_filepath)
 {
+    struct etc_policy *etc = &dbus_policy->etc;
     struct stat policy_stat;
     etc->count = 0;
 
@@ -199,15 +200,13 @@ DBusMessage *db_list(void)
     return vms;
 }
 
-struct policy *build_policy(const char *rule_filename)
+void build_vm_policy(void)
 {
     DBusMessage *vms = db_list();
     DBusConnection *conn = create_dbus_connection();
 
-    struct policy *dbus_policy = calloc(1, sizeof *dbus_policy);
-
     if (!vms)
-        return dbus_policy;
+        return;
 
     DBusMessageIter iter, sub;
     dbus_message_iter_init(vms, &iter);
@@ -239,13 +238,7 @@ struct policy *build_policy(const char *rule_filename)
     }
 
     dbus_policy->domain_number = dom_idx;
-
-    struct etc_policy *etc = &(dbus_policy->etc);
-    get_etc_policy(etc, rule_filename);
-
-    dbus_message_unref(vms);
-
-    return dbus_policy;
+    return;
 }
 
 void free_rule(struct rule r)
