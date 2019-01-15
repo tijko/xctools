@@ -76,7 +76,7 @@ signed int is_stubdom(uint16_t domid)
     return len;
 }
 
-const char *get_domain(void)
+char *get_domain(void)
 {
     char *domain = NULL;
 
@@ -85,13 +85,13 @@ const char *get_domain(void)
     struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
 
     if (!xsh)
-        return -1;
+        return NULL;
 
-    domain = (const char *) xs_read(xsh, XBT_NULL, "domid", &len);
+    domain = xs_read(xsh, XBT_NULL, "domid", &len);
 
     xs_close(xsh);
 #endif
-    return (const char *) domain;
+    return domain;
 }
 void print_usage(void)
 {

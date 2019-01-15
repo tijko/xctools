@@ -264,7 +264,7 @@ void broker_message(struct raw_dbus_conn *rdconn);
 
 signed int is_stubdom(uint16_t domid);
 
-const char *get_domain(void);
+char *get_domain(void);
 
 void print_usage(void);
 
@@ -338,8 +338,7 @@ int exchange(int rsock, int ssock, int domid,
              ssize_t (*rcv)(int, void *, size_t, int),
              ssize_t (*snd)(int, const void *, size_t, int));
 
-int filter(struct rule *policy_rule, struct dbus_message *dmsg, 
-           uint16_t domid, bool dom0);
+int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid);
 
 
 // src/policy.c

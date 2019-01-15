@@ -46,7 +46,7 @@ int broker(struct dbus_message *dmsg, int domid)
 
     int i, j;
     for (i=0; i < etc.count; i++)
-        policy = filter(&(etc.rules[i]), dmsg, domid, dom0);
+        policy = filter(&(etc.rules[i]), dmsg, domid);
 
 
     for (i=0; i < domains; i++) {
@@ -55,7 +55,7 @@ int broker(struct dbus_message *dmsg, int domid)
             struct domain_policy domain = dbus_policy->domains[i];
 
             for (j=0; j < domain.count; j++)
-                policy = filter(&(domain.rules[j]), dmsg, domid, dom0);
+                policy = filter(&(domain.rules[j]), dmsg, domid);
 
             break;
         }
@@ -207,8 +207,7 @@ static int filter_domtype(DBusConnection *conn, char *uuid,
  * The main policy filtering function, compares the policy-rule against the dbus
  * request being made.
  */
-int filter(struct rule *policy_rule, struct dbus_message *dmsg, 
-           uint16_t domid, bool dom0)
+int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
 {
     if (!policy_rule || !dmsg) {
         DBUS_BROKER_WARNING("Invalid filter request %s", "");
@@ -227,7 +226,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg,
         (policy_rule->member && strcmp(policy_rule->member, dmsg->member)))
         return -1;
 
-    if (dom0 && (policy_rule->if_bool || policy_rule->domtype)) {
+    if (is_dom0 && (policy_rule->if_bool || policy_rule->domtype)) {
         conn = create_dbus_connection();
         uuid = get_uuid(conn, domid);
         if (uuid == NULL)
