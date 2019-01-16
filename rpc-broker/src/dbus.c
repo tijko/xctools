@@ -276,6 +276,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 
     if (reply == NULL) {
         DBUS_BROKER_WARNING("Failed Request <%s>", error.message);
+        DBUS_BROKER_EVENT("Message: %s %s %s %s", dmsg->destination, dmsg->path, dmsg->interface, dmsg->member);
         return NULL;
     }
 
