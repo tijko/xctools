@@ -225,9 +225,9 @@ void service_rdconn_cb(uv_poll_t *handle, int status, int events)
 {
     struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
 
-    if (events & UV_READABLE) 
-        broker_message(rdconn);       
-    else if (events & UV_DISCONNECT) 
+    if (events & UV_READABLE)
+        broker_message(rdconn);
+    else if (events & UV_DISCONNECT)
         uv_close((uv_handle_t *) handle, close_connection);
 }
 
@@ -255,11 +255,11 @@ void run_rawdbus(struct dbus_broker_args *args)
 
         if (ret > 0) {
 	        socklen_t clilen = sizeof(server->peer);
-	        int client = accept(default_socket, 
+	        int client = accept(default_socket,
                                (struct sockaddr *) &server->peer, &clilen);
             if (args->verbose) {
                 DBUS_BROKER_EVENT("<Client> [Port: %d Addr: %d Client: %d]",
-                                    args->port, server->peer.sin_addr.s_addr, 
+                                    args->port, server->peer.sin_addr.s_addr,
                                                                      client);
             }
 
@@ -282,18 +282,18 @@ void run_rawdbus(struct dbus_broker_args *args)
 
             if (getpeername(client, &client_addr, &client_addr_len) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
-            else 
+            else
                 rdconn->client_domain = ntohl(client_addr.sin_addr.s_addr) & ~0x1000000;
 #endif
             rdconn->handle.data = rdconn;
 
-            uv_poll_init(&loop, &rdconn->handle, rdconn->client); 
+            uv_poll_init(&loop, &rdconn->handle, rdconn->client);
             memcpy(sdconn, rdconn, sizeof *rdconn);
-            uv_poll_init(&loop, &sdconn->handle, sdconn->server); 
+            uv_poll_init(&loop, &sdconn->handle, sdconn->server);
 
-            uv_poll_start(&rdconn->handle, UV_READABLE | UV_DISCONNECT, 
+            uv_poll_start(&rdconn->handle, UV_READABLE | UV_DISCONNECT,
                            service_rdconn_cb);
-            uv_poll_start(&sdconn->handle, UV_READABLE | UV_DISCONNECT, 
+            uv_poll_start(&sdconn->handle, UV_READABLE | UV_DISCONNECT,
                            service_rdconn_cb);
         }
 

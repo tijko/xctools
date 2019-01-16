@@ -258,7 +258,7 @@ struct raw_dbus_conn {
     uint32_t client_domain;
     uv_poll_t handle;
 };
- 
+
 // rpc-broker.c
 void broker_message(struct raw_dbus_conn *rdconn);
 

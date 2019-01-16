@@ -226,7 +226,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
                                            dmsg->member);
     else
         msg = dbus_message_new_signal(dmsg->path, dmsg->interface, dmsg->member);
-        
+
     DBusError error;
     dbus_error_init(&error);
 
