@@ -41,8 +41,8 @@ int broker(struct dbus_message *dmsg, int domid)
     struct etc_policy etc = dbus_policy->etc;
     int domains = dbus_policy->domain_number;
 
-    if (!is_dom0)
-        return 1;
+    //if (!is_dom0)
+    //    return 1;
 
     int i, j;
     for (i=0; i < etc.count; i++)
@@ -226,7 +226,8 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
         (policy_rule->member && strcmp(policy_rule->member, dmsg->member)))
         return -1;
 
-    if (is_dom0 && (policy_rule->if_bool || policy_rule->domtype)) {
+    //if (is_dom0 && (policy_rule->if_bool || policy_rule->domtype)) {
+    if (policy_rule->if_bool || policy_rule->domtype) {
         conn = create_dbus_connection();
         uuid = get_uuid(conn, domid);
         if (uuid == NULL)
