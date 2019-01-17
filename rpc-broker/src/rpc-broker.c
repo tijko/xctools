@@ -80,7 +80,7 @@ static char *get_domain(void)
 {
     char *domain = NULL;
 
-    #ifdef HAVE_XENSTORE
+#ifdef HAVE_XENSTORE
 
     size_t len = 0;
     struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
@@ -91,7 +91,7 @@ static char *get_domain(void)
     domain = xs_read(xsh, XBT_NULL, "domid", &len);
     xs_close(xsh);
 
-    #endif
+#endif
 
     return domain;
 }
