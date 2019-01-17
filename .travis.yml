@@ -14,7 +14,7 @@ before_install:
 - cd ..
 - cd ..
 - wget https://github.com/libuv/libuv/archive/v1.x.zip
-- cd libuv && ./autogen.sh && ./configure && make && sudo make install
+- cd v1.x.zip && ./autogen.sh && ./configure && make && sudo make install
 - cd ..
 
 script:
