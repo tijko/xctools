@@ -240,7 +240,7 @@ struct lws_ring *ring;
 bool verbose_logging;
 int dbus_broker_running;
 struct policy *dbus_policy;
-bool is_dom0;
+
 
 
 struct dbus_broker_args {
@@ -258,13 +258,11 @@ struct raw_dbus_conn {
     uint32_t client_domain;
     uv_poll_t handle;
 };
-
+ 
 // rpc-broker.c
 void broker_message(struct raw_dbus_conn *rdconn);
 
 signed int is_stubdom(uint16_t domid);
-
-char *get_domain(void);
 
 void print_usage(void);
 

@@ -226,7 +226,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
                                            dmsg->member);
     else
         msg = dbus_message_new_signal(dmsg->path, dmsg->interface, dmsg->member);
-
+        
     DBusError error;
     dbus_error_init(&error);
 
@@ -276,7 +276,6 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 
     if (reply == NULL) {
         DBUS_BROKER_WARNING("Failed Request <%s>", error.message);
-        DBUS_BROKER_EVENT("Message: %s %s %s %s", dmsg->destination, dmsg->path, dmsg->interface, dmsg->member);
         return NULL;
     }
 

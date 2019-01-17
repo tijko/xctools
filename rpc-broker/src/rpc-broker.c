@@ -76,23 +76,6 @@ signed int is_stubdom(uint16_t domid)
     return len;
 }
 
-char *get_domain(void)
-{
-    char *domain = NULL;
-
-#ifdef HAVE_XENSTORE
-    size_t len = 0;
-    struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
-
-    if (!xsh)
-        return NULL;
-
-    domain = xs_read(xsh, XBT_NULL, "domid", &len);
-
-    xs_close(xsh);
-#endif
-    return domain;
-}
 void print_usage(void)
 {
     printf("rpc-broker <flag> <argument>\n");
@@ -188,8 +171,6 @@ static void run_websockets(struct dbus_broker_args *args)
     struct lws_context *ws_context = NULL;
     ws_context = create_ws_context(args->port);
     build_etc_policy(args->rule_file);
-    //if (is_dom0)
-    build_vm_policy();
 
     if (!ws_context)
         DBUS_BROKER_ERROR("WebSockets-Server");
@@ -205,8 +186,6 @@ static void run_websockets(struct dbus_broker_args *args)
         if (reload_policy) {
             free_policy();
             build_etc_policy(args->rule_file);
-        //    if (is_dom0)
-            build_vm_policy();
             reload_policy = false;
         }
     }
@@ -225,9 +204,9 @@ void service_rdconn_cb(uv_poll_t *handle, int status, int events)
 {
     struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
 
-    if (events & UV_READABLE)
-        broker_message(rdconn);
-    else if (events & UV_DISCONNECT)
+    if (events & UV_READABLE) 
+        broker_message(rdconn);       
+    else if (events & UV_DISCONNECT) 
         uv_close((uv_handle_t *) handle, close_connection);
 }
 
@@ -237,7 +216,6 @@ void run_rawdbus(struct dbus_broker_args *args)
     DBUS_BROKER_EVENT("<Server has started listening> [Port: %d]", args->port);
 
     int default_socket = server->dbus_socket;
-    //if (is_dom0)
     build_vm_policy();
     build_etc_policy(args->rule_file);
 
@@ -255,11 +233,11 @@ void run_rawdbus(struct dbus_broker_args *args)
 
         if (ret > 0) {
 	        socklen_t clilen = sizeof(server->peer);
-	        int client = accept(default_socket,
+	        int client = accept(default_socket, 
                                (struct sockaddr *) &server->peer, &clilen);
             if (args->verbose) {
                 DBUS_BROKER_EVENT("<Client> [Port: %d Addr: %d Client: %d]",
-                                    args->port, server->peer.sin_addr.s_addr,
+                                    args->port, server->peer.sin_addr.s_addr, 
                                                                      client);
             }
 
@@ -282,18 +260,18 @@ void run_rawdbus(struct dbus_broker_args *args)
 
             if (getpeername(client, &client_addr, &client_addr_len) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
-            else
+            else 
                 rdconn->client_domain = ntohl(client_addr.sin_addr.s_addr) & ~0x1000000;
 #endif
             rdconn->handle.data = rdconn;
 
-            uv_poll_init(&loop, &rdconn->handle, rdconn->client);
+            uv_poll_init(&loop, &rdconn->handle, rdconn->client); 
             memcpy(sdconn, rdconn, sizeof *rdconn);
-            uv_poll_init(&loop, &sdconn->handle, sdconn->server);
+            uv_poll_init(&loop, &sdconn->handle, sdconn->server); 
 
-            uv_poll_start(&rdconn->handle, UV_READABLE | UV_DISCONNECT,
+            uv_poll_start(&rdconn->handle, UV_READABLE | UV_DISCONNECT, 
                            service_rdconn_cb);
-            uv_poll_start(&sdconn->handle, UV_READABLE | UV_DISCONNECT,
+            uv_poll_start(&sdconn->handle, UV_READABLE | UV_DISCONNECT, 
                            service_rdconn_cb);
         }
 
@@ -301,7 +279,6 @@ void run_rawdbus(struct dbus_broker_args *args)
 
         if (reload_policy) {
             free_policy();
-        //    if (is_dom0)
             build_vm_policy();
             build_etc_policy(args->rule_file);
             reload_policy = false;
@@ -423,12 +400,6 @@ int main(int argc, char *argv[])
     dlinks = NULL;
     ring = NULL;
     reload_policy = false;
-    const char *domain = get_domain();
-    if (!domain || strcmp(domain, "0"))
-        is_dom0 = false;
-    else
-        is_dom0 = true;
-    DBUS_BROKER_EVENT("Domain: %d", is_dom0 ? 0 : 1);
     // XXX rm and use dbus-message-get-serial
     srand48(time(NULL));
 
