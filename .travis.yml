@@ -13,7 +13,7 @@ before_install:
 - sudo make install
 - cd ..
 - cd ..
-- git clone https://github.com/libuv/libuv.git
+- wget https://github.com/libuv/libuv/archive/v1.x.zip
 - cd libuv && ./autogen.sh && ./configure && make && sudo make install
 - cd ..
 
