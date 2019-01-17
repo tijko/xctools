@@ -76,6 +76,26 @@ signed int is_stubdom(uint16_t domid)
     return len;
 }
 
+static char *get_domain(void)
+{
+    char *domain = NULL;
+
+    #ifdef HAVE_XENSTORE
+
+    size_t len = 0;
+    struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
+
+    if (!xsh)
+        return NULL;
+
+    domain = xs_read(xsh, XBT_NULL, "domid", &len);
+    xs_close(xsh);
+
+    #endif
+
+    return domain;
+}
+
 void print_usage(void)
 {
     printf("rpc-broker <flag> <argument>\n");
@@ -320,7 +340,6 @@ int main(int argc, char *argv[])
     char *policy_file  = RULES_FILENAME;
     dbus_policy = calloc(1, sizeof *dbus_policy);
 
-
     bool proto = false;
 
     while ((opt = getopt_long(argc, argv, dbus_broker_opt_str,
@@ -400,6 +419,9 @@ int main(int argc, char *argv[])
     dlinks = NULL;
     ring = NULL;
     reload_policy = false;
+    char *domain = get_domain();
+    dom0 = strcmp("0", domain) ? false : true;
+
     // XXX rm and use dbus-message-get-serial
     srand48(time(NULL));
 

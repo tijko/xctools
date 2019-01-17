@@ -240,7 +240,7 @@ struct lws_ring *ring;
 bool verbose_logging;
 int dbus_broker_running;
 struct policy *dbus_policy;
-
+bool dom0;
 
 
 struct dbus_broker_args {
