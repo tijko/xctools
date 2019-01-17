@@ -78,7 +78,7 @@ signed int is_stubdom(uint16_t domid)
 
 static char *get_domain(void)
 {
-    char *domain = NULL;
+    char *domain = "";
 
 #ifdef HAVE_XENSTORE
 
@@ -86,7 +86,7 @@ static char *get_domain(void)
     struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
 
     if (!xsh)
-        return NULL;
+        return "";
 
     domain = xs_read(xsh, XBT_NULL, "domid", &len);
     xs_close(xsh);
