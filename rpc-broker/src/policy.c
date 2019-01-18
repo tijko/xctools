@@ -103,7 +103,8 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
 
 void build_etc_policy(const char *rule_filepath)
 {
-    struct etc_policy *etc = &dbus_policy->etc;
+    struct etc_policy *etc = malloc(sizeof *etc);
+    dbus_broker_policy->etc = etc;
     struct stat policy_stat;
     etc->count = 0;
 
@@ -219,7 +220,7 @@ void build_vm_policy(void)
         void *arg;
         dbus_message_iter_get_basic(&sub, &arg);
 
-        struct domain_policy *current = &(dbus_policy->domains[dom_idx]);
+        struct domain_policy *current = &(dbus_broker_policy->domains[dom_idx]);
         strcpy(current->uuid, arg);
 
         errno = 0;
@@ -237,7 +238,7 @@ void build_vm_policy(void)
         dom_idx++;
     }
 
-    dbus_policy->domain_number = dom_idx;
+    dbus_broker_policy->domain_number = dom_idx;
     return;
 }
 

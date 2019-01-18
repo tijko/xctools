@@ -133,9 +133,6 @@ struct policy {
     struct domain_policy domains[MAX_DOMAINS];
 };
 
-struct policy *dbus_broker_policy;
-bool reload_policy;
-
 // DBus-Broker server
 #define BROKER_DEFAULT_PORT 5555
 #define BROKER_UI_PORT      8080
@@ -239,8 +236,9 @@ static const char XML_TYPE_FIELD[]         = "type";
 struct lws_ring *ring;
 bool verbose_logging;
 int dbus_broker_running;
-struct policy *dbus_policy;
 bool dom0;
+struct policy *dbus_broker_policy;
+bool reload_policy;
 
 
 struct dbus_broker_args {

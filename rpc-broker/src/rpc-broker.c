@@ -338,7 +338,7 @@ int main(int argc, char *argv[])
     char *websockets = NULL;
     char *logging_file = "";
     char *policy_file  = RULES_FILENAME;
-    dbus_policy = calloc(1, sizeof *dbus_policy);
+    dbus_broker_policy = calloc(1, sizeof *dbus_broker_policy);
 
     bool proto = false;
 
