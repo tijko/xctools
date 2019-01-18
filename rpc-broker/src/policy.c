@@ -103,8 +103,8 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
 
 void build_etc_policy(const char *rule_filepath)
 {
-    struct etc_policy *etc = malloc(sizeof *etc);
-    dbus_broker_policy->etc = etc;
+    dbus_broker_policy->etc = malloc(sizeof(struct etc_policy));
+    struct etc_policy *etc = dbus_broker_policy->etc;
     struct stat policy_stat;
     etc->count = 0;
 
