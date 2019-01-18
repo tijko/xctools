@@ -38,11 +38,11 @@ int broker(struct dbus_message *dmsg, int domid)
     if (!dbus_broker_policy || !dom0) 
         return 1;
 
-    struct etc_policy etc = dbus_broker_policy->etc;
+    struct etc_policy *etc = dbus_broker_policy->etc;
 
     int i, j;
-    for (i=0; i < etc.count; i++)
-        policy = filter(&(etc.rules[i]), dmsg, domid);
+    for (i=0; i < etc->count; i++)
+        policy = filter(&(etc->rules[i]), dmsg, domid);
 
     int domains = dbus_broker_policy->domain_number;
 

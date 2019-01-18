@@ -278,10 +278,10 @@ void free_policy(void)
             free_rule(domain.rules[j]);
     }
 
-    struct etc_policy etc = dbus_broker_policy->etc;
+    struct etc_policy *etc = dbus_broker_policy->etc;
 
-    for (i=0; i < etc.count; i++)
-        free_rule(etc.rules[i]);
+    for (i=0; i < etc->count; i++)
+        free_rule(etc->rules[i]);
 
     free(dbus_broker_policy);
 }
