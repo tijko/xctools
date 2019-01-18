@@ -191,7 +191,7 @@ static void run_websockets(struct dbus_broker_args *args)
     struct lws_context *ws_context = NULL;
     ws_context = create_ws_context(args->port);
     build_etc_policy(args->rule_file);
-    build_vm_policy();
+    //build_vm_policy();
 
     if (!ws_context)
         DBUS_BROKER_ERROR("WebSockets-Server");
@@ -207,7 +207,7 @@ static void run_websockets(struct dbus_broker_args *args)
         if (reload_policy) {
             free_policy();
             build_etc_policy(args->rule_file);
-            build_vm_policy();
+     //       build_vm_policy();
             reload_policy = false;
         }
     }
