@@ -129,7 +129,7 @@ struct policy {
     size_t allowed_requests;
     size_t denied_requests;
     size_t total_requests;
-    struct etc_policy *etc;
+    struct etc_policy etc;
     struct domain_policy domains[MAX_DOMAINS];
 };
 
@@ -339,9 +339,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid);
 // src/policy.c
 DBusMessage *db_list(void);
 
-void build_vm_policy(void);
-
-void build_etc_policy(const char *rule_filepath);
+struct policy *build_policy(const char *rule_filepath);
 
 void free_rule(struct rule r);
 

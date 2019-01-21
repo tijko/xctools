@@ -101,10 +101,8 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
 
 }
 
-void build_etc_policy(const char *rule_filepath)
+static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
 {
-    dbus_broker_policy->etc = malloc(sizeof(struct etc_policy));
-    struct etc_policy *etc = dbus_broker_policy->etc;
     struct stat policy_stat;
     etc->count = 0;
 
@@ -201,13 +199,13 @@ DBusMessage *db_list(void)
     return vms;
 }
 
-void build_vm_policy(void)
+struct policy *build_policy(const char *rule_filename)
 {
     DBusMessage *vms = db_list();
-    DBusConnection *conn = create_dbus_connection();
-
     if (!vms)
-        return;
+        return NULL;
+    DBusConnection *conn = create_dbus_connection();
+    struct policy *dbus_policy = calloc(1, sizeof *dbus_policy);
 
     DBusMessageIter iter, sub;
     dbus_message_iter_init(vms, &iter);
@@ -220,7 +218,7 @@ void build_vm_policy(void)
         void *arg;
         dbus_message_iter_get_basic(&sub, &arg);
 
-        struct domain_policy *current = &(dbus_broker_policy->domains[dom_idx]);
+        struct domain_policy *current = &(dbus_policy->domains[dom_idx]);
         strcpy(current->uuid, arg);
 
         errno = 0;
@@ -238,8 +236,12 @@ void build_vm_policy(void)
         dom_idx++;
     }
 
-    dbus_broker_policy->domain_number = dom_idx;
-    return;
+    dbus_policy->domain_number = dom_idx;
+    struct etc_policy *etc = &(dbus_policy->etc);
+    get_etc_policy(etc, rule_filename);
+    dbus_message_unref(vms);
+
+    return dbus_policy;
 }
 
 void free_rule(struct rule r)
@@ -280,8 +282,8 @@ void free_policy(void)
 
     struct etc_policy *etc = dbus_broker_policy->etc;
 
-    for (i=0; i < etc->count; i++)
-        free_rule(etc->rules[i]);
+    for (i=0; i < etc.count; i++)
+        free_rule(etc.rules[i]);
 
     free(dbus_broker_policy);
 }
