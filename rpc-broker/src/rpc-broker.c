@@ -421,8 +421,9 @@ int main(int argc, char *argv[])
     dlinks = NULL;
     ring = NULL;
     reload_policy = false;
-    char *domain = get_domain();
-    dom0 = strcmp("0", domain) ? false : true;
+    //char *domain = get_domain();
+    //dom0 = strcmp("0", domain) ? false : true;
+    dom0 = true;
 
     // XXX rm and use dbus-message-get-serial
     srand48(time(NULL));
