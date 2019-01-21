@@ -88,16 +88,16 @@ int exchange(int rsock, int ssock, int domid,
 {
     int total = 0;
     char buf[DBUS_MSG_LEN] = { 0 };
-    fd_set recv_fd;
+    //fd_set recv_fd;
 
     while ( 1 ) {
 
-        struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_MSG_TIMEOUT };
-        FD_ZERO(&recv_fd);
-        FD_SET(rsock, &recv_fd);
+        //struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_MSG_TIMEOUT };
+        //FD_ZERO(&recv_fd);
+        //FD_SET(rsock, &recv_fd);
 
-        if (select(rsock + 1, &recv_fd, NULL, NULL, &tv) <= 0)
-            break;
+        //if (select(rsock + 1, &recv_fd, NULL, NULL, &tv) <= 0)
+        //    break;
 
         int rbytes = rcv(rsock, buf, DBUS_MSG_LEN, 0);
 
@@ -114,8 +114,8 @@ int exchange(int rsock, int ssock, int domid,
                 if (convert_raw_dbus(&dmsg, buf, len) < 1)
                     return -1;
 
-                if (broker(&dmsg, domid) < 1)
-                    return -1;
+                //if (broker(&dmsg, domid) < 1)
+                //    return -1;
             }
 
 /*
@@ -224,7 +224,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
                                                  dmsg->interface))       ||
         (policy_rule->member && strcmp(policy_rule->member, dmsg->member)))
         return -1;
-/*
+
     if (policy_rule->if_bool || policy_rule->domtype) {
         conn = create_dbus_connection();
         uuid = get_uuid(conn, domid);
@@ -246,7 +246,6 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
     if (uuid)
         free(uuid);
 
-*/
     return policy_rule->policy;
 }
 
