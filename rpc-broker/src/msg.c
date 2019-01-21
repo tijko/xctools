@@ -114,8 +114,8 @@ int exchange(int rsock, int ssock, int domid,
                 if (convert_raw_dbus(&dmsg, buf, len) < 1)
                     return -1;
 
-                //if (broker(&dmsg, domid) < 1)
-                //    return -1;
+                if (broker(&dmsg, domid) < 1)
+                    return -1;
             }
 
 /*
@@ -224,7 +224,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
                                                  dmsg->interface))       ||
         (policy_rule->member && strcmp(policy_rule->member, dmsg->member)))
         return -1;
-
+/*
     if (policy_rule->if_bool || policy_rule->domtype) {
         conn = create_dbus_connection();
         uuid = get_uuid(conn, domid);
@@ -246,6 +246,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
     if (uuid)
         free(uuid);
 
+*/
     return policy_rule->policy;
 }
 
