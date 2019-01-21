@@ -236,7 +236,6 @@ static const char XML_TYPE_FIELD[]         = "type";
 struct lws_ring *ring;
 bool verbose_logging;
 int dbus_broker_running;
-bool dom0;
 struct policy *dbus_broker_policy;
 bool reload_policy;
 

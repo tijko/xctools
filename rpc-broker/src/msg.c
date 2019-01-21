@@ -35,9 +35,6 @@ int broker(struct dbus_message *dmsg, int domid)
 
     int policy = 0;
 
-    if (!dbus_broker_policy || !dom0) 
-        return 1;
-
     struct etc_policy *etc = dbus_broker_policy->etc;
 
     int i, j;
