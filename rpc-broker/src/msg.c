@@ -43,7 +43,7 @@ int broker(struct dbus_message *dmsg, int domid)
     struct etc_policy etc = dbus_broker_policy->etc;
 
     int i, j;
-    for (i=0; i < etc->count; i++)
+    for (i=0; i < etc.count; i++)
         policy = filter(&(etc.rules[i]), dmsg, domid);
 
     int domains = dbus_broker_policy->domain_number;
