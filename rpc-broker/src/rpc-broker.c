@@ -190,7 +190,8 @@ static void run_websockets(struct dbus_broker_args *args)
 {
     struct lws_context *ws_context = NULL;
     ws_context = create_ws_context(args->port);
-    dbus_broker_policy = build_policy(args->rule_file);
+    if (dom0)
+        dbus_broker_policy = build_policy(args->rule_file);
 
     if (!ws_context)
         DBUS_BROKER_ERROR("WebSockets-Server");
@@ -236,7 +237,8 @@ void run_rawdbus(struct dbus_broker_args *args)
     DBUS_BROKER_EVENT("<Server has started listening> [Port: %d]", args->port);
 
     int default_socket = server->dbus_socket;
-    dbus_broker_policy = build_policy(args->rule_file);
+    if (dom0)
+        dbus_broker_policy = build_policy(args->rule_file);
 
     fd_set server_set;
     uv_loop_t loop;
@@ -419,6 +421,9 @@ int main(int argc, char *argv[])
     reload_policy = false;
 
     // XXX rm and use dbus-message-get-serial
+    char *domain = get_domain();
+    dom0 = strcmp(domain, "0") ? false : true;
+
     srand48(time(NULL));
 
     mainloop(&args);

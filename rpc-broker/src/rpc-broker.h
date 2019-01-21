@@ -238,6 +238,7 @@ bool verbose_logging;
 int dbus_broker_running;
 struct policy *dbus_broker_policy;
 bool reload_policy;
+bool dom0;
 
 
 struct dbus_broker_args {
