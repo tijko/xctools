@@ -423,6 +423,7 @@ int main(int argc, char *argv[])
     // XXX rm and use dbus-message-get-serial
     char *domain = get_domain();
     dom0 = strcmp(domain, "0") ? false : true;
+    DBUS_BROKER_EVENT("Domain: %s", domain);
 
     srand48(time(NULL));
 

@@ -110,17 +110,18 @@ int exchange(int rsock, int ssock, int domid,
                 //    return -1;
             }
 
-/*
-            char tmp[DBUS_MSG_LEN] = { '\0' };
-            for (int i=0; i < rbytes; i++) {
-                if (isalnum(buf[i]))
-                    tmp[i] = buf[i];
-                else
-                    tmp[i] = '-';
+            if (!dom0) {
+                char tmp[DBUS_MSG_LEN] = { '\0' };
+                for (int i=0; i < rbytes; i++) {
+                    if (isalnum(buf[i]))
+                        tmp[i] = buf[i];
+                    else
+                        tmp[i] = '-';
+                }
+
+                DBUS_BROKER_EVENT("5555: %s", tmp);
             }
 
-            DBUS_BROKER_EVENT("5555: %s", tmp);
-*/
         }
 
         total += rbytes;
