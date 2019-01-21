@@ -238,7 +238,7 @@ struct policy *build_policy(const char *rule_filename)
 
     dbus_policy->domain_number = dom_idx;
     struct etc_policy *etc = &(dbus_policy->etc);
-    get_etc_policy(etc, rule_filename);
+    build_etc_policy(etc, rule_filename);
     dbus_message_unref(vms);
 
     return dbus_policy;
@@ -280,7 +280,7 @@ void free_policy(void)
             free_rule(domain.rules[j]);
     }
 
-    struct etc_policy *etc = dbus_broker_policy->etc;
+    struct etc_policy etc = dbus_broker_policy->etc;
 
     for (i=0; i < etc.count; i++)
         free_rule(etc.rules[i]);
