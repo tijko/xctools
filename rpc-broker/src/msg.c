@@ -112,7 +112,8 @@ int exchange(int rsock, int ssock, int domid,
 
             if (!dom0) {
                 char tmp[DBUS_MSG_LEN] = { '\0' };
-                for (int i=0; i < rbytes; i++) {
+                int i;
+                for (i=0; i < rbytes; i++) {
                     if (isalnum(buf[i]))
                         tmp[i] = buf[i];
                     else
