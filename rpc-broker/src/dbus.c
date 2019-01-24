@@ -158,7 +158,6 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
         dbus_message_iter_next(&iter);
     }
 */
-    dbus_message_unref(dbus_msg);
 
     return ret;
 }

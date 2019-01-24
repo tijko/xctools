@@ -139,8 +139,11 @@ struct policy {
 
 struct dbus_broker_server {
     int dbus_socket;
+    int port;
     struct sockaddr_in addr;
     struct sockaddr_in peer;
+    uv_loop_t *mainloop;
+    uv_poll_t handle;
 };
 
 #define WS_LOOP_TIMEOUT             100  // length of time each service of the websocket
