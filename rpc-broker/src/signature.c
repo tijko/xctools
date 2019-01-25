@@ -169,13 +169,15 @@ void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
 
         switch (type) {
 
-            case (DBUS_TYPE_ARRAY):
+            case (DBUS_TYPE_ARRAY): {
                 add_json_array(args, key, iter);
                 break;
+            }
 
-            case (DBUS_TYPE_DICT_ENTRY):
+            case (DBUS_TYPE_DICT_ENTRY): {
                 parse_dbus_dict(args, key, iter);
                 break;
+            }
 
             case (DBUS_TYPE_OBJECT_PATH):
             case (DBUS_TYPE_STRING): {

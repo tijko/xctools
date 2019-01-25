@@ -228,7 +228,7 @@ static void close_server_rawdbus(uv_handle_t *handle)
     free(server);
 }
 
-void service_rdconn_cb(uv_poll_t *handle, int status, int events)
+static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
 {
     struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
 
@@ -238,11 +238,11 @@ void service_rdconn_cb(uv_poll_t *handle, int status, int events)
         uv_close((uv_handle_t *) handle, close_client_rawdbus);
 }
 
-void service_rawdbus_server(uv_poll_t *handle, int status, int events)
+static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
 {
     struct dbus_broker_server *server = (struct dbus_broker_server *) handle->data;
     uv_loop_t *loop = server->mainloop;
-   
+
     if (events & UV_READABLE) {
 	        socklen_t clilen = sizeof(server->peer);
 	        int client = accept(server->dbus_socket,
@@ -291,7 +291,7 @@ void service_rawdbus_server(uv_poll_t *handle, int status, int events)
     }
 }
 
-void run_rawdbus(struct dbus_broker_args *args)
+static void run_rawdbus(struct dbus_broker_args *args)
 {
     struct dbus_broker_server *server = start_server(args->port);
     DBUS_BROKER_EVENT("<Server has started listening> [Port: %d]", args->port);

@@ -267,8 +267,6 @@ signed int is_stubdom(uint16_t domid);
 
 void print_usage(void);
 
-void service_rdconns(void);
-
 void sigint_handler(int signal);
 
 
@@ -290,13 +288,11 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg);
 
 char *db_query(DBusConnection *conn, char *arg);
 
+DBusMessage *db_list(void);
+
 char *dbus_introspect(struct json_request *jreq);
 
 void add_ws_signal(DBusConnection *conn, struct lws *wsi);
-
-void add_rdconn(int client, int domid);
-
-void remove_rdconn(struct raw_dbus_conn *conn);
 
 void free_dlinks(void);
 
@@ -341,8 +337,6 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid);
 
 
 // src/policy.c
-DBusMessage *db_list(void);
-
 struct policy *build_policy(const char *rule_filepath);
 
 void free_rule(struct rule r);

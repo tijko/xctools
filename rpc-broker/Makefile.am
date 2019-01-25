@@ -1,5 +1,5 @@
 AM_CFLAGS = -g -Wall -lpthread \
-	$(DBUS_CFLAGS) $(V4V_CFLAGS) $(LIBWEBSOCKETS_CFLAGS) \
+	$(DBUS_CFLAGS) $(LIBWEBSOCKETS_CFLAGS) \
     $(JSON_C_CFLAGS) $(LIBXML_CFLAGS) 
 
 sbin_PROGRAMS = rpc-broker
@@ -17,7 +17,6 @@ noinst_HEADERS = src/rpc-broker.h
 
 rpc_broker_LDADD = \
     $(DBUS_LIBS) \
-    $(LIBV4V_LIBS) \
     $(LIBWEBSOCKETS_LIBS) \
     $(JSON_C_LIBS) \
     $(LIBXML_LIBS) \

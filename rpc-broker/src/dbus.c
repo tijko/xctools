@@ -80,42 +80,10 @@ int connect_to_system_bus(void)
     return srv;
 }
 
-/*
- * Used by client communications over port-5555 where, the raw-bytes are being
- * read directly from the client file-descriptor.  The `char` buffer is
- * de-marshalled into a dbus-protocol object `DBusMessage`
- */
-signed int convert_raw_dbus(struct dbus_message *dmsg,
-                            const char *msg, size_t len)
+static void debug_raw_msg(struct dbus_message *dmsg, DBusMessage *dbus_msg)
 {
-    DBusError error;
-    dbus_error_init(&error);
-
-    DBusMessage *dbus_msg = NULL;
-    dbus_msg = dbus_message_demarshal(msg, len, &error);
-
-    if (dbus_error_is_set(&error)) {
-        DBUS_BROKER_WARNING("<De-Marshal failed> [Length: %zu] error: %s",
-                              len, error.message);
-        return -1;
-    }
-
-    const char *destination = dbus_message_get_destination(dbus_msg);
-    dmsg->destination = destination ? destination : "NULL";
-
-    const char *path = dbus_message_get_path(dbus_msg);
-    dmsg->path = path ? path : "/";
-
-    const char *interface = dbus_message_get_interface(dbus_msg);
-    dmsg->interface = interface ? interface : "NULL";
-
-    const char *member = dbus_message_get_member(dbus_msg);
-    dmsg->member = member ? member : "NULL";
-
-    int ret = dbus_message_get_type(dbus_msg);
-/*
-    // XXX
-    DBUS_BROKER_EVENT("5555 %s %s %s %s", dmsg->destination, dmsg->path, dmsg->interface, dmsg->member);
+    DBUS_BROKER_EVENT("5555 %s %s %s %s", dmsg->destination, dmsg->path, 
+                                         dmsg->interface, dmsg->member);
     DBusMessageIter iter;
     dbus_message_iter_init(dbus_msg, &iter);
     int type;
@@ -150,14 +118,53 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
                 break;
             }
 
-            default:
+            default: {
                 DBUS_BROKER_EVENT("5555 other %d",  type);
                 break;
+            }
         }
 
         dbus_message_iter_next(&iter);
     }
-*/
+}
+
+/*
+ * Used by client communications over port-5555 where, the raw-bytes are being
+ * read directly from the client file-descriptor.  The `char` buffer is
+ * de-marshalled into a dbus-protocol object `DBusMessage`
+ */
+signed int convert_raw_dbus(struct dbus_message *dmsg,
+                            const char *msg, size_t len)
+{
+    DBusError error;
+    dbus_error_init(&error);
+
+    DBusMessage *dbus_msg = NULL;
+    dbus_msg = dbus_message_demarshal(msg, len, &error);
+
+    if (dbus_error_is_set(&error)) {
+        DBUS_BROKER_WARNING("<De-Marshal failed> [Length: %zu] error: %s",
+                              len, error.message);
+        return -1;
+    }
+
+    const char *destination = dbus_message_get_destination(dbus_msg);
+    dmsg->destination = destination ? destination : "NULL";
+
+    const char *path = dbus_message_get_path(dbus_msg);
+    dmsg->path = path ? path : "/";
+
+    const char *interface = dbus_message_get_interface(dbus_msg);
+    dmsg->interface = interface ? interface : "NULL";
+
+    const char *member = dbus_message_get_member(dbus_msg);
+    dmsg->member = member ? member : "NULL";
+
+    int ret = dbus_message_get_type(dbus_msg);
+
+#ifdef DEBUG
+    debug_raw_msg(dmsg, dbus_msg);
+#endif
 
     return ret;
 }
@@ -251,16 +258,14 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
                                                 dmsg->args[i]);
                 break;
 
-            case ('b'): {
+            case ('b'):
                 dbus_message_iter_append_basic(&iter, DBUS_TYPE_BOOLEAN,
                                                dmsg->args[i]);
                 break;
-            }
 
-            case ('v'): {
+            case ('v'):
                 append_variant(&iter, dmsg->json_sig[i], dmsg->args[i]);
                 break;
-            }
 
             default:
                 DBUS_BROKER_WARNING("<Invalid DBus Signature> [%c]",
@@ -318,6 +323,35 @@ free_msg:
     dbus_message_unref(msg);
 
     return reply;
+}
+
+DBusMessage *db_list(void)
+{
+    DBusConnection *conn = create_dbus_connection();
+
+    if (!conn)
+        return NULL;
+
+    struct dbus_message dmsg;
+
+    dbus_default(&dmsg);
+    dmsg.member = DBUS_LIST;
+    dmsg.args[0] = (void *) DBUS_VM_PATH;
+
+    DBusMessage *vms = make_dbus_call(conn, &dmsg);
+
+    if (!vms && verbose_logging) {
+        DBUS_BROKER_WARNING("DBus message return error <db-list> %s", "");
+    } else if (vms && dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) {
+        if (verbose_logging)
+            DBUS_BROKER_WARNING("DBus message return error <db-list> %s", "");
+        dbus_message_unref(vms);
+        vms = NULL;
+    }
+
+    dbus_connection_unref(conn);
+
+    return vms;
 }
 
 /*

@@ -46,7 +46,6 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
             memcpy(user, in, len);
             if (ws_request_handler(wsi, user) == 0)
                 lws_callback_on_writable(wsi);
-
             break;
         }
 
@@ -59,19 +58,20 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
                           strlen(rsp), LWS_WRITE_TEXT);
                 lws_callback_on_writable(wsi);
             }
-
             break;
         }
 
-        case LWS_CALLBACK_PROTOCOL_INIT:
+        case LWS_CALLBACK_PROTOCOL_INIT: {
             DBUS_BROKER_EVENT("<WS client request> %s", "");
             break;
+        }
 
         case LWS_CALLBACK_CLOSED:
-        case LWS_CALLBACK_WSI_DESTROY:
+        case LWS_CALLBACK_WSI_DESTROY: {
             DBUS_BROKER_WARNING("WS client session closed %s", "");
             free_dlinks();
             break;
+        }
 
         default:
             break;

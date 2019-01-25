@@ -170,35 +170,6 @@ static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
     close(policy_fd);
 }
 
-DBusMessage *db_list(void)
-{
-    DBusConnection *conn = create_dbus_connection();
-
-    if (!conn)
-        return NULL;
-
-    struct dbus_message dmsg;
-
-    dbus_default(&dmsg);
-    dmsg.member = DBUS_LIST;
-    dmsg.args[0] = (void *) DBUS_VM_PATH;
-
-    DBusMessage *vms = make_dbus_call(conn, &dmsg);
-
-    if (!vms && verbose_logging) {
-        DBUS_BROKER_WARNING("DBus message return error <db-list> %s", "");
-    } else if (vms && dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) {
-        if (verbose_logging)
-            DBUS_BROKER_WARNING("DBus message return error <db-list> %s", "");
-        dbus_message_unref(vms);
-        vms = NULL;
-    }
-
-    dbus_connection_unref(conn);
-
-    return vms;
-}
-
 struct policy *build_policy(const char *rule_filename)
 {
     DBusMessage *vms = db_list();
