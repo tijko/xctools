@@ -86,7 +86,7 @@ static void append_dbus_message_arg(int type, int idx, void **args,
 
     switch (type) {
 
-        case ('b'): { 
+        case ('b'): {
             int json_bool = json_object_get_boolean(jarg);
             args[idx] = malloc(sizeof(int));
             memcpy(args[idx], (void *) &json_bool, sizeof(int));
@@ -94,14 +94,14 @@ static void append_dbus_message_arg(int type, int idx, void **args,
         }
 
         case ('u'):
-        case ('i'): { 
+        case ('i'): {
             int json_int = json_object_get_int(jarg);
             args[idx] = malloc(sizeof(int));
             memcpy(args[idx], (void *) &json_int, sizeof(int));
             break;
         }
 
-        case ('s'): { 
+        case ('s'): {
             const char *json_str = json_object_get_string(jarg);
             args[idx] = malloc(strlen(json_str) + 1);
             if (json_str)
@@ -111,7 +111,7 @@ static void append_dbus_message_arg(int type, int idx, void **args,
             break;
         }
 
-        case ('v'): { 
+        case ('v'): {
             int jtype = json_object_get_type(jarg);
             type = json_dbus_types[jtype];
             append_dbus_message_arg(type, idx, args, jarg);
@@ -152,7 +152,7 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
             case 'a':
             case 'i':
             case 's':
-            case 'o': { 
+            case 'o': {
                 struct json_object *array = json_object_new_array();
                 json_object_array_add(jrsp->args, array);
                 args = array;

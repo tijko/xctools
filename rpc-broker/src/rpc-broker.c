@@ -242,7 +242,7 @@ void service_rawdbus_server(uv_poll_t *handle, int status, int events)
 {
     struct dbus_broker_server *server = (struct dbus_broker_server *) handle->data;
     uv_loop_t *loop = server->mainloop;
-   
+
     if (events & UV_READABLE) {
 	        socklen_t clilen = sizeof(server->peer);
 	        int client = accept(server->dbus_socket,

@@ -251,12 +251,12 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
                                                 dmsg->args[i]);
                 break;
 
-            case ('b'): 
+            case ('b'):
                 dbus_message_iter_append_basic(&iter, DBUS_TYPE_BOOLEAN,
                                                dmsg->args[i]);
                 break;
-            
-            case ('v'): 
+
+            case ('v'):
                 append_variant(&iter, dmsg->json_sig[i], dmsg->args[i]);
                 break;
 
