@@ -152,7 +152,7 @@ struct dbus_broker_server {
 #define DBUS_BROKER_MSG_TIMEOUT     100
 
 // DBus-Broker messages
-#define DBUS_REQ_TIMEOUT   10000
+#define DBUS_REQ_TIMEOUT    5000
 #define DBUS_MSG_LEN        8192
 #define DBUS_ARG_LEN        1024
 
@@ -242,7 +242,7 @@ int dbus_broker_running;
 struct policy *dbus_broker_policy;
 bool reload_policy;
 bool dom0;
-
+uv_loop_t *rawdbus_loop;
 
 struct dbus_broker_args {
     bool logging;
@@ -261,8 +261,6 @@ struct raw_dbus_conn {
 };
 
 // rpc-broker.c
-void broker_message(struct raw_dbus_conn *rdconn);
-
 signed int is_stubdom(uint16_t domid);
 
 void print_usage(void);

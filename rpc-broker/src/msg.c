@@ -137,7 +137,7 @@ int exchange(int rsock, int ssock, int domid,
     return total;
 }
 
-static inline char *get_uuid(DBusConnection *conn, uint16_t domid)
+static inline char *get_db_vm_path(DBusConnection *conn, uint16_t domid)
 {
 #ifdef HAVE_XENSTORE
     size_t len;
@@ -226,7 +226,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
 
     if (policy_rule->if_bool || policy_rule->domtype) {
         conn = create_dbus_connection();
-        uuid = get_uuid(conn, domid);
+        uuid = get_db_vm_path(conn, domid);
         if (uuid == NULL)
             return -1;
 

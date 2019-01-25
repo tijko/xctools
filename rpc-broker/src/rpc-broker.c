@@ -21,7 +21,6 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
-#include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -37,19 +36,20 @@
  * Polling on the client & server file-descriptors until the connection
  * communication is finished.
  */
-void broker_message(struct raw_dbus_conn *rdconn)
+static int broker_message(struct raw_dbus_conn *rdconn)
 {
     int srv = rdconn->server;
     int domid = rdconn->client_domain;
+
     int client = rdconn->client;
     int sret = 1, cret = 1;
 
     while (sret > 0 || cret > 0) {
         cret = exchange(client, srv, domid, recv, send);
-        if (cret < 0)
-            break;
         sret = exchange(srv, client, domid, recv, send);
     }
+
+    return cret;
 }
 
 signed int is_stubdom(uint16_t domid)
@@ -78,7 +78,7 @@ signed int is_stubdom(uint16_t domid)
 
 static char *get_domain(void)
 {
-    char *domain = "";
+    char *domain = NULL;
 
 #ifdef HAVE_XENSTORE
 
@@ -120,9 +120,15 @@ void sigint_handler(int signal)
     DBUS_BROKER_WARNING("<received signal interrupt> %s", "");
     free_dlinks();
     free_policy();
-    // handle cleanup of the uv handles
+
     if (ring)
         lws_ring_destroy(ring);
+
+    if (rawdbus_loop) {
+        uv_stop(rawdbus_loop);
+        uv_loop_close(rawdbus_loop);
+        free(rawdbus_loop);
+    }
 
     exit(0);
 }
@@ -199,6 +205,11 @@ static void run_websockets(struct dbus_broker_args *args)
     DBUS_BROKER_EVENT("<WebSockets-Server has started listening> [Port: %d]",
                         args->port);
 
+    // Test time
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    int start = ts.tv_sec;
+    
     while (dbus_broker_running) {
 
         lws_service(ws_context, WS_LOOP_TIMEOUT);
@@ -209,6 +220,11 @@ static void run_websockets(struct dbus_broker_args *args)
             dbus_broker_policy = build_policy(args->rule_file);
             reload_policy = false;
         }
+
+        //
+        clock_gettime(CLOCK_REALTIME, &ts);
+        if (ts.tv_sec - start > 60)
+            break;
     }
 
     lws_ring_destroy(ring);
@@ -218,6 +234,9 @@ static void run_websockets(struct dbus_broker_args *args)
 static void close_client_rawdbus(uv_handle_t *handle)
 {
     struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
+    uv_unref(handle);
+    close(rdconn->server);
+    close(rdconn->client);
     free(rdconn);
 }
 
@@ -225,6 +244,7 @@ static void close_server_rawdbus(uv_handle_t *handle)
 {
     struct dbus_broker_server *server = (struct dbus_broker_server *) handle->data;
     close(server->dbus_socket);
+    uv_unref(handle);
     free(server);
 }
 
@@ -232,25 +252,21 @@ static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
 {
     struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
 
-    if (events & UV_READABLE)
-        broker_message(rdconn);
-    else if (events & UV_DISCONNECT)
+    if (status < 0 || events & UV_DISCONNECT) 
         uv_close((uv_handle_t *) handle, close_client_rawdbus);
+    else if (events & UV_READABLE) 
+        broker_message(rdconn);
 }
 
 static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
 {
     struct dbus_broker_server *server = (struct dbus_broker_server *) handle->data;
     uv_loop_t *loop = server->mainloop;
-
+    
     if (events & UV_READABLE) {
 	        socklen_t clilen = sizeof(server->peer);
 	        int client = accept(server->dbus_socket,
                                (struct sockaddr *) &server->peer, &clilen);
-
-            DBUS_BROKER_EVENT("<Client> [Port: %d Addr: %d Client: %d]",
-                                server->port, server->peer.sin_addr.s_addr,
-                                                                   client);
 
             struct raw_dbus_conn *rdconn = malloc(sizeof *rdconn);
             struct raw_dbus_conn *sdconn = malloc(sizeof *sdconn);
@@ -284,7 +300,6 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
                            service_rdconn_cb);
             uv_poll_start(&sdconn->handle, UV_READABLE | UV_DISCONNECT,
                            service_rdconn_cb);
-
     } else if (events & UV_DISCONNECT) {
         dbus_broker_running = 0;
         uv_close((uv_handle_t *) handle, close_server_rawdbus);
@@ -299,20 +314,20 @@ static void run_rawdbus(struct dbus_broker_args *args)
     if (dom0)
         dbus_broker_policy = build_policy(args->rule_file);
 
-    uv_loop_t loop;
-    uv_loop_init(&loop);
+    rawdbus_loop = malloc(sizeof *rawdbus_loop);
+    uv_loop_init(rawdbus_loop);
 
-    uv_poll_init(&loop, &server->handle, server->dbus_socket);
+    uv_poll_init(rawdbus_loop, &server->handle, server->dbus_socket);
     uv_poll_start(&server->handle, UV_READABLE | UV_DISCONNECT,
                    service_rawdbus_server);
 
-    server->mainloop = &loop;
+    server->mainloop = rawdbus_loop;
     server->port = args->port;
     server->handle.data = server;
 
     while (dbus_broker_running) {
 
-        uv_run(&loop, UV_RUN_NOWAIT);
+        uv_run(rawdbus_loop, UV_RUN_ONCE);
 
         if (reload_policy) {
             free_policy();
@@ -321,6 +336,9 @@ static void run_rawdbus(struct dbus_broker_args *args)
         }
     }
 
+    uv_stop(rawdbus_loop);
+    uv_loop_close(rawdbus_loop);
+    free(rawdbus_loop);
 }
 
 int main(int argc, char *argv[])
@@ -352,7 +370,6 @@ int main(int argc, char *argv[])
     char *websockets = NULL;
     char *logging_file = "";
     char *policy_file  = RULES_FILENAME;
-    dbus_broker_policy = calloc(1, sizeof *dbus_broker_policy);
 
     bool proto = false;
 
@@ -431,15 +448,14 @@ int main(int argc, char *argv[])
 
     dbus_broker_running = 1;
     dlinks = NULL;
+    rawdbus_loop = NULL;
     ring = NULL;
     reload_policy = false;
 
-    // XXX rm and use dbus-message-get-serial
     char *domain = get_domain();
-    dom0 = strcmp(domain, "0") ? false : true;
     DBUS_BROKER_EVENT("Domain: %s", domain);
-
-    srand48(time(NULL));
+    dom0 = (!domain || strcmp(domain, "0")) ? false : true;
+    free(domain);
 
     mainloop(&args);
 
