@@ -76,6 +76,21 @@ int broker(struct dbus_message *dmsg, int domid)
     return policy;
 }
 
+static void debug_raw_buffer(char *buf, int rbytes)
+{
+    char tmp[DBUS_MSG_LEN] = { '\0' };
+
+    int i;
+    for (i=0; i < rbytes; i++) {
+        if (isalnum(buf[i]))
+            tmp[i] = buf[i];
+        else
+            tmp[i] = '-';
+    }
+
+    DBUS_BROKER_EVENT("5555: %s", tmp);
+}
+
 /*
  * This is an opaque function to pass raw dbus-bytes back in forth between
  * sender and receiver.  Its opaque in the sense that the function is unaware
@@ -110,20 +125,9 @@ int exchange(int rsock, int ssock, int domid,
 //                    return -1;
             }
 
-/*
-            if (!dom0) {
-                char tmp[DBUS_MSG_LEN] = { '\0' };
-                int i;
-                for (i=0; i < rbytes; i++) {
-                    if (isalnum(buf[i]))
-                        tmp[i] = buf[i];
-                    else
-                        tmp[i] = '-';
-                }
-
-                DBUS_BROKER_EVENT("5555: %s", tmp);
-            }
-*/
+#ifdef DEBUG
+        debug_raw_buffer(buf, rbytes);
+#endif
         }
 
         total += rbytes;

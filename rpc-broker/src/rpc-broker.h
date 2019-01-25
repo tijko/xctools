@@ -41,6 +41,7 @@
 #include <xenstore.h>
 #endif
 
+#define DEBUG 0
 
 #define DBUS_BROKER_ERROR(call)                                       \
     do {                                                              \
