@@ -35,7 +35,6 @@ struct json_response *init_jrsp(void)
 struct json_response *make_json_request(struct json_request *jreq)
 {
     struct json_response *jrsp = init_jrsp();
-
     DBusConnection *conn = jreq->conn;
     dbus_connection_flush(conn);
 
@@ -56,6 +55,8 @@ struct json_response *make_json_request(struct json_request *jreq)
 
     snprintf(jrsp->response_to, JSON_REQ_ID_MAX - 1, "%d", jreq->id);
     DBusMessage *msg = make_dbus_call(conn, &(jreq->dmsg));
+    jrsp->id = dbus_message_get_serial(msg);
+    DBUS_BROKER_EVENT("Serial: %d\n", jrsp->id);
 
     if (!msg || dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) {
         char *err;
