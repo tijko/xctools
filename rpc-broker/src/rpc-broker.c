@@ -215,10 +215,17 @@ static void run_websockets(struct dbus_broker_args *args)
     lws_context_destroy(ws_context);
 }
 
-static void close_connection(uv_handle_t *handle)
+static void close_client_rawdbus(uv_handle_t *handle)
 {
     struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
     free(rdconn);
+}
+
+static void close_server_rawdbus(uv_handle_t *handle)
+{
+    struct dbus_broker_server *server = (struct dbus_broker_server *) handle->data;
+    close(server->dbus_socket);
+    free(server);
 }
 
 void service_rdconn_cb(uv_poll_t *handle, int status, int events)
@@ -228,39 +235,22 @@ void service_rdconn_cb(uv_poll_t *handle, int status, int events)
     if (events & UV_READABLE)
         broker_message(rdconn);
     else if (events & UV_DISCONNECT)
-        uv_close((uv_handle_t *) handle, close_connection);
+        uv_close((uv_handle_t *) handle, close_client_rawdbus);
 }
 
-void run_rawdbus(struct dbus_broker_args *args)
+void service_rawdbus_server(uv_poll_t *handle, int status, int events)
 {
-    struct dbus_broker_server *server = start_server(args->port);
-    DBUS_BROKER_EVENT("<Server has started listening> [Port: %d]", args->port);
-
-    int default_socket = server->dbus_socket;
-    if (dom0)
-        dbus_broker_policy = build_policy(args->rule_file);
-
-    fd_set server_set;
-    uv_loop_t loop;
-    uv_loop_init(&loop);
-
-    while (dbus_broker_running) {
-
-        FD_ZERO(&server_set);
-        FD_SET(default_socket, &server_set);
-
-        struct timeval tv = { .tv_sec=0, .tv_usec=DBUS_BROKER_CLIENT_TIMEOUT };
-        int ret = select(default_socket + 1, &server_set, NULL, NULL, &tv);
-
-        if (ret > 0) {
+    struct dbus_broker_server *server = (struct dbus_broker_server *) handle->data;
+    uv_loop_t *loop = server->mainloop;
+   
+    if (events & UV_READABLE) {
 	        socklen_t clilen = sizeof(server->peer);
-	        int client = accept(default_socket,
+	        int client = accept(server->dbus_socket,
                                (struct sockaddr *) &server->peer, &clilen);
-            if (args->verbose) {
-                DBUS_BROKER_EVENT("<Client> [Port: %d Addr: %d Client: %d]",
-                                    args->port, server->peer.sin_addr.s_addr,
-                                                                     client);
-            }
+
+            DBUS_BROKER_EVENT("<Client> [Port: %d Addr: %d Client: %d]",
+                                server->port, server->peer.sin_addr.s_addr,
+                                                                   client);
 
             struct raw_dbus_conn *rdconn = malloc(sizeof *rdconn);
             struct raw_dbus_conn *sdconn = malloc(sizeof *sdconn);
@@ -286,15 +276,41 @@ void run_rawdbus(struct dbus_broker_args *args)
 #endif
             rdconn->handle.data = rdconn;
 
-            uv_poll_init(&loop, &rdconn->handle, rdconn->client);
+            uv_poll_init(loop, &rdconn->handle, rdconn->client);
             memcpy(sdconn, rdconn, sizeof *rdconn);
-            uv_poll_init(&loop, &sdconn->handle, sdconn->server);
+            uv_poll_init(loop, &sdconn->handle, sdconn->server);
 
             uv_poll_start(&rdconn->handle, UV_READABLE | UV_DISCONNECT,
                            service_rdconn_cb);
             uv_poll_start(&sdconn->handle, UV_READABLE | UV_DISCONNECT,
                            service_rdconn_cb);
-        }
+
+    } else if (events & UV_DISCONNECT) {
+        dbus_broker_running = 0;
+        uv_close((uv_handle_t *) handle, close_server_rawdbus);
+    }
+}
+
+void run_rawdbus(struct dbus_broker_args *args)
+{
+    struct dbus_broker_server *server = start_server(args->port);
+    DBUS_BROKER_EVENT("<Server has started listening> [Port: %d]", args->port);
+
+    if (dom0)
+        dbus_broker_policy = build_policy(args->rule_file);
+
+    uv_loop_t loop;
+    uv_loop_init(&loop);
+
+    uv_poll_init(&loop, &server->handle, server->dbus_socket);
+    uv_poll_start(&server->handle, UV_READABLE | UV_DISCONNECT,
+                   service_rawdbus_server);
+
+    server->mainloop = &loop;
+    server->port = args->port;
+    server->handle.data = server;
+
+    while (dbus_broker_running) {
 
         uv_run(&loop, UV_RUN_NOWAIT);
 
@@ -305,8 +321,6 @@ void run_rawdbus(struct dbus_broker_args *args)
         }
     }
 
-    free(server);
-    close(default_socket);
 }
 
 int main(int argc, char *argv[])

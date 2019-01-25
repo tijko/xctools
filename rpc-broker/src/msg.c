@@ -106,10 +106,11 @@ int exchange(int rsock, int ssock, int domid,
                 if (convert_raw_dbus(&dmsg, buf, len) < 1)
                     return -1;
 
-                //if (broker(&dmsg, domid) < 1)
-                //    return -1;
+//                if (broker(&dmsg, domid) < 1)
+//                    return -1;
             }
 
+/*
             if (!dom0) {
                 char tmp[DBUS_MSG_LEN] = { '\0' };
                 int i;
@@ -122,7 +123,7 @@ int exchange(int rsock, int ssock, int domid,
 
                 DBUS_BROKER_EVENT("5555: %s", tmp);
             }
-
+*/
         }
 
         total += rbytes;
