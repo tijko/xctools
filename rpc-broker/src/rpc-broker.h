@@ -267,8 +267,6 @@ signed int is_stubdom(uint16_t domid);
 
 void print_usage(void);
 
-void service_rdconns(void);
-
 void sigint_handler(int signal);
 
 
@@ -295,10 +293,6 @@ DBusMessage *db_list(void);
 char *dbus_introspect(struct json_request *jreq);
 
 void add_ws_signal(DBusConnection *conn, struct lws *wsi);
-
-void add_rdconn(int client, int domid);
-
-void remove_rdconn(struct raw_dbus_conn *conn);
 
 void free_dlinks(void);
 
