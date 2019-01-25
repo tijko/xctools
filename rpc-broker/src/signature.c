@@ -178,47 +178,41 @@ void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
                 break;
 
             case (DBUS_TYPE_OBJECT_PATH):
-            case (DBUS_TYPE_STRING): {
+            case (DBUS_TYPE_STRING): 
                 char *dbus_string;
                 dbus_message_iter_get_basic(iter, &dbus_string);
                 obj = json_object_new_string(dbus_string);
                 break;
-            }
 
             case (DBUS_TYPE_INT32):
-            case (DBUS_TYPE_UINT32): {
+            case (DBUS_TYPE_UINT32): 
                 int dbus_int;
                 dbus_message_iter_get_basic(iter, &dbus_int);
                 obj = json_object_new_int(dbus_int);
                 break;
-            }
 
-            case (DBUS_TYPE_DOUBLE): {
+            case (DBUS_TYPE_DOUBLE): 
                 double dbus_double;
                 dbus_message_iter_get_basic(iter, &dbus_double);
                 obj = json_object_new_double(dbus_double);
                 break;
-            }
 
-            case (DBUS_TYPE_BOOLEAN): {
+            case (DBUS_TYPE_BOOLEAN): 
                 int dbus_bool;
                 dbus_message_iter_get_basic(iter, &dbus_bool);
                 obj = json_object_new_boolean(dbus_bool);
                 break;
-            }
 
-            case (DBUS_TYPE_VARIANT): {
+            case (DBUS_TYPE_VARIANT): 
                 dbus_message_iter_recurse(iter, &sub);
                 parse_signature(args, key, &sub);
                 break;
-            }
 
-            case (DBUS_TYPE_INT64): {
+            case (DBUS_TYPE_INT64): 
                 uint64_t dbus_long;
                 dbus_message_iter_get_basic(iter, &dbus_long);
                 obj = json_object_new_int64(dbus_long);
                 break;
-            }
 
             default:
                 DBUS_BROKER_WARNING("<dbus signature unrecognized> [Type: %d]",
