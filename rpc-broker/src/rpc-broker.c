@@ -21,7 +21,6 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
-#include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -434,12 +433,9 @@ int main(int argc, char *argv[])
     ring = NULL;
     reload_policy = false;
 
-    // XXX rm and use dbus-message-get-serial
     char *domain = get_domain();
     dom0 = strcmp(domain, "0") ? false : true;
     DBUS_BROKER_EVENT("Domain: %s", domain);
-
-    srand48(time(NULL));
 
     mainloop(&args);
 
