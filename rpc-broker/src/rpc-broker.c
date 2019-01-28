@@ -21,7 +21,6 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
-#include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
