@@ -211,6 +211,7 @@ struct policy *build_policy(const char *rule_filename)
     struct etc_policy *etc = &(dbus_policy->etc);
     build_etc_policy(etc, rule_filename);
     dbus_message_unref(vms);
+    dbus_connection_unref(conn);
 
     return dbus_policy;
 }
