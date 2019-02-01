@@ -182,6 +182,7 @@ static void service_ws_signals(void)
         free(reply);
 
 free_msg:
+        json_object_put(jrsp->args);
         free(jrsp);
 
 unref_msg:
