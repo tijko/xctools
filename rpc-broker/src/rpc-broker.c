@@ -182,6 +182,7 @@ static void service_ws_signals(void)
         free(reply);
 
 free_msg:
+        json_object_put(jrsp->args);
         free(jrsp);
 
 unref_msg:
@@ -205,11 +206,6 @@ static void run_websockets(struct dbus_broker_args *args)
     DBUS_BROKER_EVENT("<WebSockets-Server has started listening> [Port: %d]",
                         args->port);
 
-    // Test time
-    struct timespec ts;
-    clock_gettime(CLOCK_REALTIME, &ts);
-    int start = ts.tv_sec;
-    
     while (dbus_broker_running) {
 
         lws_service(ws_context, WS_LOOP_TIMEOUT);
@@ -220,11 +216,6 @@ static void run_websockets(struct dbus_broker_args *args)
             dbus_broker_policy = build_policy(args->rule_file);
             reload_policy = false;
         }
-
-        //
-        clock_gettime(CLOCK_REALTIME, &ts);
-        if (ts.tv_sec - start > 60)
-            break;
     }
 
     lws_ring_destroy(ring);
