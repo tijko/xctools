@@ -98,7 +98,7 @@ struct lws_context *create_ws_context(int port)
     info.port = port;
     info.protocols = server_protos;
 
-    struct lws_context *context = NULL;
+    struct lws_context *context = NULL; 
     context = lws_create_context(&info);
 
     return context;
