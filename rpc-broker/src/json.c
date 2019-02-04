@@ -244,16 +244,12 @@ struct json_request *convert_json_request(char *raw_json_req)
         DBUS_BROKER_WARNING("<Error json-request> %s", raw_json_req);
         free(jreq);
         jreq = NULL;
-        goto put_jarray;
+        goto put_jobj;
     }
 
     struct json_object *jint;
     json_object_object_get_ex(jobj, "id", &jint);
     jreq->id = json_object_get_int(jint);
-    json_object_put(jint);
-
-put_jarray:
-    json_object_put(jarray);
 
 put_jobj:
     json_object_put(jobj);

@@ -182,7 +182,6 @@ static void service_ws_signals(void)
         free(reply);
 
 free_msg:
-        json_object_put(jrsp->args);
         free(jrsp);
 
 unref_msg:
@@ -196,12 +195,11 @@ next_link:
 static void run_websockets(struct dbus_broker_args *args)
 {
     struct lws_context *ws_context = NULL;
-    ws_context = create_ws_context(args->port);
+    if ((ws_context = create_ws_context(args->port)) == NULL)
+        DBUS_BROKER_ERROR("WebSockets-Server");
+
     if (dom0)
         dbus_broker_policy = build_policy(args->rule_file);
-
-    if (!ws_context)
-        DBUS_BROKER_ERROR("WebSockets-Server");
 
     DBUS_BROKER_EVENT("<WebSockets-Server has started listening> [Port: %d]",
                         args->port);
