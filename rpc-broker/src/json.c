@@ -145,7 +145,7 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
         dbus_message_iter_recurse(&iter, &sub);
         iter = sub;
         // This accomodates the legacy code in `rpc-proxy` where the
-        // signatures are being mis-handled and thus the UI is excpecting 
+        // signatures are being mis-handled and thus the UI is excpecting
         // the malformed dbus responses.
         switch (jrsp->arg_sig[1]) {
             case 'a':

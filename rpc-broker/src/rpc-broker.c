@@ -241,9 +241,9 @@ static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
 {
     struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
 
-    if (status < 0 || events & UV_DISCONNECT) 
+    if (status < 0 || events & UV_DISCONNECT)
         uv_close((uv_handle_t *) handle, close_client_rawdbus);
-    else if (events & UV_READABLE) 
+    else if (events & UV_READABLE)
         broker_message(rdconn);
 }
 
@@ -251,7 +251,7 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
 {
     struct dbus_broker_server *server = (struct dbus_broker_server *) handle->data;
     uv_loop_t *loop = server->mainloop;
-    
+
     if (events & UV_READABLE) {
 	        socklen_t clilen = sizeof(server->peer);
 	        int client = accept(server->dbus_socket,

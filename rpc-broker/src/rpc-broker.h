@@ -81,7 +81,7 @@ struct dbus_link *dlinks;
 
 #define RULES_FILENAME "/etc/rpc-broker.rules"
 #define RULES_MAX_LENGTH 256
-#define RULE_MAX_LENGTH  512 
+#define RULE_MAX_LENGTH  512
 
 struct rule {
     uint8_t out:1;

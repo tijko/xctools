@@ -82,7 +82,7 @@ int connect_to_system_bus(void)
 
 static void debug_raw_msg(struct dbus_message *dmsg, DBusMessage *dbus_msg)
 {
-    DBUS_BROKER_EVENT("5555 %s %s %s %s", dmsg->destination, dmsg->path, 
+    DBUS_BROKER_EVENT("5555 %s %s %s %s", dmsg->destination, dmsg->path,
                                          dmsg->interface, dmsg->member);
     DBusMessageIter iter;
     dbus_message_iter_init(dbus_msg, &iter);
