@@ -81,7 +81,7 @@ struct dbus_link *dlinks;
 
 #define RULES_FILENAME "/etc/rpc-broker.rules"
 #define RULES_MAX_LENGTH 256
-#define RULE_MAX_LENGTH  256
+#define RULE_MAX_LENGTH  512 
 
 struct rule {
     uint8_t out:1;
@@ -103,15 +103,6 @@ struct rule {
 #define ETC_MAX_FILE 0xffff
 
 struct etc_policy {
-    const char *filename;
-    const size_t filesize;
-    char etc_file[ETC_MAX_FILE];
-    uid_t  file_owner;
-    gid_t  file_group;
-    mode_t file_mode;
-    time_t last_access;
-    time_t last_modify;
-    // file-hash?
     size_t count;
     struct rule rules[MAX_RULES];
 };

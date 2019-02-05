@@ -26,19 +26,18 @@ static int create_rule(struct rule *current, char *rule)
 
     current->rule_string = strdup(rule);
 
-    char *ruleptr;
     const char *delimiter = " ";
-    char *token = strtok_r(rule, delimiter, &ruleptr);
+    char *token = strtok(rule, delimiter);
 
     if (!token)
         return -1;
 
     current->policy = token[0] == 'a';
-    token = strtok_r(NULL, delimiter, &ruleptr);
+    token = strtok(NULL, delimiter);
 
     while (token) {
 
-        char *field = strtok_r(NULL, delimiter, &ruleptr);
+        char *field = strtok(NULL, delimiter);
 
         if (!field && token[0] != 's') {
             return -1;
@@ -50,7 +49,7 @@ static int create_rule(struct rule *current, char *rule)
             current->interface = strdup(field);
         } else if (!strcmp("if-boolean", token)) {
             current->if_bool = strdup(field);
-            token = strtok_r(NULL, delimiter, &ruleptr);
+            token = strtok(NULL, delimiter);
             current->if_bool_flag = strcmp("true", token) == 0 ? 1 : 0;
         } else if (!strcmp("stubdom", token)) {
             current->stubdom = 1;
@@ -67,7 +66,7 @@ static int create_rule(struct rule *current, char *rule)
             return -1;
         }
 
-        token = strtok_r(NULL, delimiter, &ruleptr);
+        token = strtok(NULL, delimiter);
     }
 
     return 0;
@@ -103,71 +102,40 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
 
 static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
 {
-    struct stat policy_stat;
+    int rule_idx = 0;
     etc->count = 0;
 
-    if (stat(rule_filepath, &policy_stat) < 0) {
+    FILE *policy_fh = fopen(rule_filepath, "r");
+    if (!policy_fh) {
         DBUS_BROKER_WARNING("/etc policy stat of file <%s> failed %s",
                              rule_filepath, strerror(errno));
         return;
     }
 
-    char *filename = basename(rule_filepath);
+    int rbytes;
+    char *line = NULL;
+    char current_rule[RULE_MAX_LENGTH] = { 0 };
 
-    if (filename[0] == '\0') {
-        DBUS_BROKER_WARNING("/etc policy invalid file <%s>", rule_filepath);
-        return;
-    }
+    while ((getline(&line, &rbytes, policy_fh) > 0) && rule_idx < MAX_RULES) {
 
-    etc->filename = filename;
-
-    size_t policy_size = policy_stat.st_size;
-
-    // There is no officially defined limit on policy file size.
-    // Rpc-broker defines a buffer size and for now limit based on that size.
-    if (policy_size > ETC_MAX_FILE) {
-        DBUS_BROKER_WARNING("/etc policy file %s exceeds buffer size <%zu>",
-                             rule_filepath, policy_size);
-        return;
-    }
-
-    int policy_fd = open(rule_filepath, O_RDONLY);
-
-    if (policy_fd < 0) {
-        DBUS_BROKER_WARNING("/etc policy file %s failed to open %s",
-                              rule_filepath, strerror(errno));
-        return;
-    }
-
-    int rbytes = read(policy_fd, etc->etc_file, policy_size);
-
-    if (rbytes < 0) {
-        close(policy_fd);
-        DBUS_BROKER_WARNING("/etc policy file %s invalid read %s",
-                              rule_filepath, strerror(errno));
-        return;
-    }
-
-    etc->etc_file[rbytes] = '\0';
-
-    const char *newline = "\n";
-    char *fileptr;
-    char *rule_token = strtok_r(etc->etc_file, newline, &fileptr);
-    int idx = 0;
-
-    while (rule_token &&  idx < MAX_RULES) {
-        if (isalpha(rule_token[0])) {
-            char *line = strdup(rule_token);
-            struct rule *current = &(etc->rules[idx]);
-            create_rule(current, line) < 0 ? free_rule(*current) : idx++;
-            free(line);
+        if (rbytes > RULE_MAX_LENGTH - 1) {
+            DBUS_BROKER_WARNING("Invalid policy rule %d exceeds max-rule", 
+                                                                  rbytes); 
+        } else if (line && isalpha(line[0])) {
+            memcpy(current_rule, line, rbytes);
+            struct rule *current = &(etc->rules[rule_idx]);
+            create_rule(current, current_rule) < 0 ? free_rule(*current) : 
+                                                               rule_idx++;
         }
 
-        rule_token = strtok_r(NULL, newline, &fileptr);
+        if (line)
+            free(line);
+
+        line = NULL;
     }
 
-    etc->count = idx;
-    close(policy_fd);
+    etc->count = rule_idx;
+    fclose(policy_fh);
 }
 
 struct policy *build_policy(const char *rule_filename)
