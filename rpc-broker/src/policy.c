@@ -112,7 +112,7 @@ static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
         return;
     }
 
-    int rbytes;
+    size_t rbytes;
     char *line = NULL;
     char current_rule[RULE_MAX_LENGTH] = { 0 };
 
