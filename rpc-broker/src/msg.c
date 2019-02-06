@@ -97,16 +97,14 @@ static void debug_raw_buffer(char *buf, int rbytes)
  * who the client is and who the server is.  There are just sender and receiver
  * syscalls being made over port 5555.
  */
-int exchange(int rsock, int ssock, int domid,
-             ssize_t (*rcv)(int, void *, size_t, int),
-             ssize_t (*snd)(int, const void *, size_t, int))
+int exchange(int rsock, int ssock, int domid)
 {
     int total = 0;
     char buf[DBUS_MSG_LEN] = { 0 };
 
     while ( 1 ) {
 
-        int rbytes = rcv(rsock, buf, DBUS_MSG_LEN, 0);
+        int rbytes = recv(rsock, buf, DBUS_MSG_LEN, 0);
 
         if (rbytes <= 0)
             break;
@@ -131,7 +129,7 @@ int exchange(int rsock, int ssock, int domid,
         }
 
         total += rbytes;
-        snd(ssock, buf, rbytes, 0);
+        send(ssock, buf, rbytes, 0);
     }
 
     return total;
