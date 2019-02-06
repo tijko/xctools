@@ -247,6 +247,7 @@ struct dbus_broker_args {
 struct raw_dbus_conn {
     int server;
     int client;
+    bool is_client;
     uint32_t client_domain;
     uv_poll_t handle;
 };

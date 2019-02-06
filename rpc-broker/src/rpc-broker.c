@@ -29,24 +29,19 @@
 
 #include "rpc-broker.h"
 
-/*
- * Whenever clients connect to port 5555, this function will then connect
- * directly to the DBus system bus socket (/var/run/dbus/system_bus_socket).
- *
- * Polling on the client & server file-descriptors until the connection
- * communication is finished.
- */
+
 static int broker_message(struct raw_dbus_conn *rdconn)
 {
     int srv = rdconn->server;
     int domid = rdconn->client_domain;
-
     int client = rdconn->client;
-    int sret = 1, cret = 1;
+    int cret = 1;
 
-    while (sret > 0 || cret > 0) {
-        cret = exchange(client, srv, domid, recv, send);
-        sret = exchange(srv, client, domid, recv, send);
+    while (cret > 0) {
+        if (rdconn->is_client)
+            cret = exchange(client, srv, domid, recv, send);
+        else
+            cret = exchange(srv, client, domid, recv, send);
     }
 
     return cret;
@@ -224,9 +219,16 @@ static void close_client_rawdbus(uv_handle_t *handle)
 {
     struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
     uv_unref(handle);
-    close(rdconn->server);
-    close(rdconn->client);
-    free(rdconn);
+
+    if (rdconn->is_client)
+        close(rdconn->client);
+    else
+        close(rdconn->server);
+
+    if (rdconn)
+        free(rdconn);
+
+    rdconn = NULL;
 }
 
 static void close_server_rawdbus(uv_handle_t *handle)
@@ -241,10 +243,12 @@ static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
 {
     struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
 
-    if (status < 0 || events & UV_DISCONNECT)
+    int ret;
+
+    if (events & UV_READABLE)
+        ret = broker_message(rdconn);
+    else if (!(events & UV_READABLE) || ret == 0)
         uv_close((uv_handle_t *) handle, close_client_rawdbus);
-    else if (events & UV_READABLE)
-        broker_message(rdconn);
 }
 
 static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
@@ -280,11 +284,16 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
                 rdconn->client_domain = ntohl(client_addr.sin_addr.s_addr) & ~0x1000000;
 #endif
             rdconn->handle.data = rdconn;
+            rdconn->is_client = true;
 
             uv_poll_init(loop, &rdconn->handle, rdconn->client);
-            memcpy(sdconn, rdconn, sizeof *rdconn);
-            uv_poll_init(loop, &sdconn->handle, sdconn->server);
+            sdconn->is_client = false;
+            sdconn->server = rdconn->server;
+            sdconn->client = rdconn->client;
+            sdconn->client_domain = rdconn->client_domain;
+            sdconn->handle.data = sdconn;
 
+            uv_poll_init(loop, &sdconn->handle, sdconn->server);
             uv_poll_start(&rdconn->handle, UV_READABLE | UV_DISCONNECT,
                            service_rdconn_cb);
             uv_poll_start(&sdconn->handle, UV_READABLE | UV_DISCONNECT,
