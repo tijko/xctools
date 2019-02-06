@@ -30,21 +30,19 @@
 #include "rpc-broker.h"
 
 
-static int broker_message(struct raw_dbus_conn *rdconn)
+static int broker_message(struct raw_dbus_conn *conn)
 {
-    int srv = rdconn->server;
-    int domid = rdconn->client_domain;
-    int client = rdconn->client;
-    int cret = 1;
+    int ret;
+    int total = 0;
+    int domid = conn->client_domain;
 
-    while (cret > 0) {
-        if (rdconn->is_client)
-            cret = exchange(client, srv, domid, recv, send);
-        else
-            cret = exchange(srv, client, domid, recv, send);
-    }
+    int receiver = conn->receiver;
+    int sender = conn->sender;
 
-    return cret;
+    while ((ret = exchange(receiver, sender, domid)) > 0)
+        total += ret;
+
+    return total;
 }
 
 signed int is_stubdom(uint16_t domid)
@@ -217,18 +215,14 @@ static void run_websockets(struct dbus_broker_args *args)
 
 static void close_client_rawdbus(uv_handle_t *handle)
 {
-    struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
+    struct raw_dbus_conn *conn = (struct raw_dbus_conn *) handle->data;
+    close(conn->receiver);
+
+    if (conn)
+        free(conn);
+
     uv_unref(handle);
-
-    if (rdconn->is_client)
-        close(rdconn->client);
-    else
-        close(rdconn->server);
-
-    if (rdconn)
-        free(rdconn);
-
-    rdconn = NULL;
+    conn = NULL;
 }
 
 static void close_server_rawdbus(uv_handle_t *handle)
@@ -241,14 +235,15 @@ static void close_server_rawdbus(uv_handle_t *handle)
 
 static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
 {
-    struct raw_dbus_conn *rdconn = (struct raw_dbus_conn *) handle->data;
+    struct raw_dbus_conn *conn = (struct raw_dbus_conn *) handle->data;
 
-    int ret;
+    int ret = 0;
 
-    if (events & UV_READABLE)
-        ret = broker_message(rdconn);
-    else if (!(events & UV_READABLE) || ret == 0)
-        uv_close((uv_handle_t *) handle, close_client_rawdbus);
+    if (events & UV_READABLE) {
+        ret = broker_message(conn);
+        if (ret <= 0)
+            uv_close((uv_handle_t *) handle, close_client_rawdbus);
+    }
 }
 
 static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
@@ -261,12 +256,9 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
 	        int client = accept(server->dbus_socket,
                                (struct sockaddr *) &server->peer, &clilen);
 
-            struct raw_dbus_conn *rdconn = malloc(sizeof *rdconn);
-            struct raw_dbus_conn *sdconn = malloc(sizeof *sdconn);
+            struct raw_dbus_conn *client_conn = malloc(sizeof *client_conn);
+            struct raw_dbus_conn *server_conn = malloc(sizeof *server_conn);
 
-            rdconn->server = connect_to_system_bus();
-            rdconn->client = client;
-            rdconn->client_domain = 0;
     	    /*
              * When using rpc-broker over V4V, we want to be able to
              * firewall against domids. The V4V interposer stores the
@@ -281,23 +273,26 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
             if (getpeername(client, &client_addr, &client_addr_len) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
             else
-                rdconn->client_domain = ntohl(client_addr.sin_addr.s_addr) & ~0x1000000;
+                client_conn->client_domain = ntohl(client_addr.sin_addr.s_addr) & ~0x1000000;
 #endif
-            rdconn->handle.data = rdconn;
-            rdconn->is_client = true;
+            client_conn->sender = connect_to_system_bus();
+            client_conn->receiver = client;
+            client_conn->client_domain = 0;
+            client_conn->handle.data = client_conn;
 
-            uv_poll_init(loop, &rdconn->handle, rdconn->client);
-            sdconn->is_client = false;
-            sdconn->server = rdconn->server;
-            sdconn->client = rdconn->client;
-            sdconn->client_domain = rdconn->client_domain;
-            sdconn->handle.data = sdconn;
+            server_conn->receiver = client_conn->sender;
+            server_conn->sender = client_conn->receiver;
+            server_conn->client_domain = client_conn->client_domain;
+            server_conn->handle.data = server_conn;
 
-            uv_poll_init(loop, &sdconn->handle, sdconn->server);
-            uv_poll_start(&rdconn->handle, UV_READABLE | UV_DISCONNECT,
+            uv_poll_init(loop, &client_conn->handle, client_conn->receiver);
+            uv_poll_init(loop, &server_conn->handle, server_conn->receiver);
+
+            uv_poll_start(&client_conn->handle, UV_READABLE | UV_DISCONNECT,
                            service_rdconn_cb);
-            uv_poll_start(&sdconn->handle, UV_READABLE | UV_DISCONNECT,
+            uv_poll_start(&server_conn->handle, UV_READABLE | UV_DISCONNECT,
                            service_rdconn_cb);
+
     } else if (events & UV_DISCONNECT) {
         dbus_broker_running = 0;
         uv_close((uv_handle_t *) handle, close_server_rawdbus);
