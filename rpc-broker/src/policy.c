@@ -141,19 +141,27 @@ static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
     fclose(policy_fh);
 }
 
-struct policy *build_policy(const char *rule_filename)
+struct policy *build_policy(bool dom0, const char *rule_filename)
 {
+    struct policy *dbus_policy = calloc(1, sizeof *dbus_policy);
+    struct etc_policy *etc = &(dbus_policy->etc);
+    build_etc_policy(etc, rule_filename);
+
+    if (!dom0) {
+        dbus_policy->domain_number = 0;
+        return dbus_policy;
+    }
+
+    int dom_idx = 0;
     DBusMessage *vms = db_list();
     if (!vms)
         return NULL;
     DBusConnection *conn = create_dbus_connection();
-    struct policy *dbus_policy = calloc(1, sizeof *dbus_policy);
 
     DBusMessageIter iter, sub;
     dbus_message_iter_init(vms, &iter);
     dbus_message_iter_recurse(&iter, &sub);
 
-    int dom_idx = 0;
 
     while (dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_INVALID) {
 
@@ -164,7 +172,6 @@ struct policy *build_policy(const char *rule_filename)
         strcpy(current->uuid, arg);
 
         errno = 0;
-        // XXX domain ID's set?
         current->domid = strtol(arg + DOMID_SECTION, NULL, 10);
 
         if (errno != 0) {
@@ -179,8 +186,6 @@ struct policy *build_policy(const char *rule_filename)
     }
 
     dbus_policy->domain_number = dom_idx;
-    struct etc_policy *etc = &(dbus_policy->etc);
-    build_etc_policy(etc, rule_filename);
     dbus_message_unref(vms);
     dbus_connection_unref(conn);
 
