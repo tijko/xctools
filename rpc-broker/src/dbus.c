@@ -261,7 +261,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 
             case ('b'):
                 dbus_message_iter_append_basic(&iter, DBUS_TYPE_BOOLEAN,
-                                               dmsg->args[i]);
+                                                dmsg->args[i]);
                 break;
 
             case ('v'):

@@ -247,6 +247,7 @@ struct dbus_broker_args {
 struct raw_dbus_conn {
     int receiver;
     int sender;
+    bool is_client;
     uint32_t client_domain;
     uv_poll_t handle;
 };
@@ -318,7 +319,7 @@ void free_json_request(struct json_request *jreq);
 // src/msg.c
 int broker(struct dbus_message *dmsg, int domid);
 
-int exchange(int rsock, int ssock, int domid);
+int exchange(int rsock, int ssock, uint16_t domid, bool is_client);
 
 int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid);
 

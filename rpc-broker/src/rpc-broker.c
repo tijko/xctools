@@ -35,12 +35,13 @@ static int broker_message(struct raw_dbus_conn *conn)
     int ret;
     int total = 0;
     int domid = conn->client_domain;
-
+    bool is_client = conn->is_client;
     int receiver = conn->receiver;
     int sender = conn->sender;
 
-    while ((ret = exchange(receiver, sender, domid)) > 0)
+    while ((ret = exchange(receiver, sender, domid, is_client)) != 0) {
         total += ret;
+    }
 
     return total;
 }
@@ -72,9 +73,7 @@ signed int is_stubdom(uint16_t domid)
 static char *get_domain(void)
 {
     char *domain = NULL;
-
 #ifdef HAVE_XENSTORE
-
     size_t len = 0;
     struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
 
@@ -83,9 +82,7 @@ static char *get_domain(void)
 
     domain = xs_read(xsh, XBT_NULL, "domid", &len);
     xs_close(xsh);
-
 #endif
-
     return domain;
 }
 
@@ -216,6 +213,7 @@ static void run_websockets(struct dbus_broker_args *args)
 static void close_client_rawdbus(uv_handle_t *handle)
 {
     struct raw_dbus_conn *conn = (struct raw_dbus_conn *) handle->data;
+
     close(conn->receiver);
 
     if (conn)
@@ -277,12 +275,13 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
 #endif
             client_conn->sender = connect_to_system_bus();
             client_conn->receiver = client;
-            client_conn->client_domain = 0;
+            client_conn->is_client = true;
             client_conn->handle.data = client_conn;
 
             server_conn->receiver = client_conn->sender;
             server_conn->sender = client_conn->receiver;
             server_conn->client_domain = client_conn->client_domain;
+            server_conn->is_client = false;
             server_conn->handle.data = server_conn;
 
             uv_poll_init(loop, &client_conn->handle, client_conn->receiver);

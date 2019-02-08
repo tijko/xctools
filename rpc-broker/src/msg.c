@@ -30,21 +30,25 @@ int broker(struct dbus_message *dmsg, int domid)
 {
     if (!dmsg) {
         DBUS_BROKER_WARNING("Invalid args to broker-request %s", "");
-        return 1;
+        return -1;
     }
 
     if (!dbus_broker_policy) {
         DBUS_BROKER_WARNING("No policy in place %s", "");
-        return 1;
+        return -1;
     }
 
+    // deny by default
     int policy = 0;
+    int rule_policy = policy;
 
     struct etc_policy etc = dbus_broker_policy->etc;
 
     int i, j;
-    for (i=0; i < etc.count; i++)
-        policy = filter(&(etc.rules[i]), dmsg, domid);
+    for (i=0; i < etc.count; i++) {
+        rule_policy = filter(&(etc.rules[i]), dmsg, domid);
+        policy = rule_policy != -1 ? rule_policy : policy;
+    }
 
     int domains = dbus_broker_policy->domain_number;
 
@@ -53,8 +57,10 @@ int broker(struct dbus_message *dmsg, int domid)
 
             struct domain_policy domain = dbus_broker_policy->domains[i];
 
-            for (j=0; j < domain.count; j++)
-                policy = filter(&(domain.rules[j]), dmsg, domid);
+            for (j=0; j < domain.count; j++) {
+                rule_policy = filter(&(domain.rules[j]), dmsg, domid);
+                policy = rule_policy != -1 ? rule_policy : policy;
+            }
 
             break;
         }
@@ -97,30 +103,24 @@ static void debug_raw_buffer(char *buf, int rbytes)
  * who the client is and who the server is.  There are just sender and receiver
  * syscalls being made over port 5555.
  */
-int exchange(int rsock, int ssock, int domid)
+int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
 {
     int total = 0;
+    int rbytes = 0;
     char buf[DBUS_MSG_LEN] = { 0 };
 
-    while ( 1 ) {
+    while ((rbytes = recv(rsock, buf, DBUS_MSG_LEN, 0)) > 0) {
 
-        int rbytes = recv(rsock, buf, DBUS_MSG_LEN, 0);
-
-        if (rbytes <= 0)
-            break;
-
-        if (rbytes > DBUS_COMM_MIN) {
+        if (rbytes > DBUS_COMM_MIN && is_client) {
 
             struct dbus_message dmsg;
             int len = dbus_message_demarshal_bytes_needed(buf, rbytes);
 
             if (len == rbytes) {
-
                 if (convert_raw_dbus(&dmsg, buf, len) < 1)
                     return -1;
-
-//                if (broker(&dmsg, domid) < 1)
-//                    return -1;
+                if (broker(&dmsg, domid) <= 0)
+                    return -1;
             }
 
 #ifdef DEBUG
