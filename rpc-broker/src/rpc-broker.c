@@ -188,8 +188,7 @@ static void run_websockets(struct dbus_broker_args *args)
     if ((ws_context = create_ws_context(args->port)) == NULL)
         DBUS_BROKER_ERROR("WebSockets-Server");
 
-    if (dom0)
-        dbus_broker_policy = build_policy(args->rule_file);
+    dbus_broker_policy = build_policy(dom0, args->rule_file);
 
     DBUS_BROKER_EVENT("<WebSockets-Server has started listening> [Port: %d]",
                         args->port);
@@ -201,7 +200,7 @@ static void run_websockets(struct dbus_broker_args *args)
 
         if (reload_policy) {
             free_policy();
-            dbus_broker_policy = build_policy(args->rule_file);
+            dbus_broker_policy = build_policy(dom0, args->rule_file);
             reload_policy = false;
         }
     }
@@ -303,8 +302,7 @@ static void run_rawdbus(struct dbus_broker_args *args)
     struct dbus_broker_server *server = start_server(args->port);
     DBUS_BROKER_EVENT("<Server has started listening> [Port: %d]", args->port);
 
-    if (dom0)
-        dbus_broker_policy = build_policy(args->rule_file);
+    dbus_broker_policy = build_policy(dom0, args->rule_file);
 
     rawdbus_loop = malloc(sizeof *rawdbus_loop);
     uv_loop_init(rawdbus_loop);
@@ -323,7 +321,7 @@ static void run_rawdbus(struct dbus_broker_args *args)
 
         if (reload_policy) {
             free_policy();
-            dbus_broker_policy = build_policy(args->rule_file);
+            dbus_broker_policy = build_policy(dom0, args->rule_file);
             reload_policy = false;
         }
     }
@@ -445,7 +443,10 @@ int main(int argc, char *argv[])
     reload_policy = false;
 
     char *domain = get_domain();
-    DBUS_BROKER_EVENT("Domain: %s", domain);
+    if (domain)
+        DBUS_BROKER_EVENT("Domain: %s", domain);
+    else
+        DBUS_BROKER_EVENT("Failed to get domain %s", "");
     dom0 = (!domain || strcmp(domain, "0")) ? false : true;
     free(domain);
 
