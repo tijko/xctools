@@ -58,6 +58,7 @@ script:
 - dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames | sed 's/[0-9]\+\.[0-9]\+/xx.xx/g' | sort > /tmp/t1
 - DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames | sed 's/[0-9]\+\.[0-9]\+/xx.xx/g' | sort > /tmp/t2
 - kill $RPCBPID
+- diff -u /tmp/t1 /tmp/t2 ; RES=$?
 - test $RES -ne 0
 
 after_failure:
