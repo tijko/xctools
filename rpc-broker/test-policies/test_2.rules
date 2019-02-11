@@ -1,0 +1,2 @@
+allow destination org.freedesktop.DBus interface org.freedesktop.DBus
+deny destination org.freedesktop.DBus interface org.freedesktop.DBus member GetId
