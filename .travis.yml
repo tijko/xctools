@@ -32,6 +32,7 @@ script:
 - make
 - export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 - ulimit -c unlimited -S
+- sudo cp test.rules /etc/rpc-broker.rules
 - ./rpc-broker -r 5555 &
 - RPCBPID=$!
 #

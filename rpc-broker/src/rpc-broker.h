@@ -325,7 +325,7 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid);
 
 
 // src/policy.c
-struct policy *build_policy(const char *rule_filepath);
+struct policy *build_policy(bool dom0, const char *rule_filepath);
 
 void free_rule(struct rule r);
 
