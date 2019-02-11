@@ -48,6 +48,18 @@ script:
 #
 - kill $RPCBPID
 - test $RES -eq 0
+#
+# Test #2, remove the policy file and then repeat the same calls as above.
+# This time the results should vary, where rpc-broker blocks the call.
+#
+- sudo rm /etc/rpc-broker.rules
+- ./rpc-broker -r 5555 &
+- RPCBPID=$!
+- dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames | sed 's/[0-9]\+\.[0-9]\+/xx.xx/g' | sort > /tmp/t1
+- DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames | sed 's/[0-9]\+\.[0-9]\+/xx.xx/g' | sort > /tmp/t2
+- kill $RPCBPID
+- diff -u /tmp/t1 /tmp/t2 ; RES=$?
+- test $RES -ne 0
 
 after_failure:
 # http://jsteemann.github.io/blog/2014/10/30/getting-core-dumps-of-failed-travisci-builds/

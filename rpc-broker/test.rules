@@ -1,1 +1,2 @@
-allow destination org.freedesktop.DBus
+allow destination org.freedesktop.DBus interface org.freedesktop.DBus member Hello
+allow destination org.freedesktop.DBus interface org.freedesktop.DBus member ListNames

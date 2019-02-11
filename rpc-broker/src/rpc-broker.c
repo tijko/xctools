@@ -443,7 +443,10 @@ int main(int argc, char *argv[])
     reload_policy = false;
 
     char *domain = get_domain();
-    DBUS_BROKER_EVENT("Domain: %s", domain);
+    if (domain)
+        DBUS_BROKER_EVENT("Domain: %s", domain);
+    else
+        DBUS_BROKER_EVENT("Failed to get domain %s", "");
     dom0 = (!domain || strcmp(domain, "0")) ? false : true;
     free(domain);
 
