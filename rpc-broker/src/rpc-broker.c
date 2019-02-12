@@ -243,6 +243,20 @@ static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
     }
 }
 
+static void init_rawdbus_conn(uv_loop_t *rawdbus_loop, int sender, 
+                              int receiver, int domain, bool is_client)
+{
+    struct raw_dbus_conn *conn = malloc(sizeof *conn);
+    conn->sender = sender;
+    conn->receiver = receiver;
+    conn->client_domain = domain;
+    conn->is_client = is_client;
+    conn->handle.data = conn;
+    uv_poll_init(rawdbus_loop, &conn->handle, conn->receiver);
+    uv_poll_start(&conn->handle, UV_READABLE | UV_DISCONNECT,
+                   service_rdconn_cb);
+}
+
 static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
 {
     struct dbus_broker_server *server = (struct dbus_broker_server *) handle->data;
@@ -252,10 +266,8 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
 	        socklen_t clilen = sizeof(server->peer);
 	        int client = accept(server->dbus_socket,
                                (struct sockaddr *) &server->peer, &clilen);
-
-            struct raw_dbus_conn *client_conn = malloc(sizeof *client_conn);
-            struct raw_dbus_conn *server_conn = malloc(sizeof *server_conn);
-
+            int server = connect_to_system_bus();
+            int domain = 0;
     	    /*
              * When using rpc-broker over V4V, we want to be able to
              * firewall against domids. The V4V interposer stores the
@@ -266,30 +278,14 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
 #ifdef HAVE_V4V
             struct sockaddr_in client_addr;
             socklen_t client_addr_len = sizeof(client_addr);
-
+            
             if (getpeername(client, &client_addr, &client_addr_len) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
             else
-                client_conn->client_domain = ntohl(client_addr.sin_addr.s_addr) & ~0x1000000;
+                domain = ntohl(client_addr.sin_addr.s_addr) & ~0x1000000;
 #endif
-            client_conn->sender = connect_to_system_bus();
-            client_conn->receiver = client;
-            client_conn->is_client = true;
-            client_conn->handle.data = client_conn;
-
-            server_conn->receiver = client_conn->sender;
-            server_conn->sender = client_conn->receiver;
-            server_conn->client_domain = client_conn->client_domain;
-            server_conn->is_client = false;
-            server_conn->handle.data = server_conn;
-
-            uv_poll_init(loop, &client_conn->handle, client_conn->receiver);
-            uv_poll_init(loop, &server_conn->handle, server_conn->receiver);
-
-            uv_poll_start(&client_conn->handle, UV_READABLE | UV_DISCONNECT,
-                           service_rdconn_cb);
-            uv_poll_start(&server_conn->handle, UV_READABLE | UV_DISCONNECT,
-                           service_rdconn_cb);
+            init_rawdbus_conn(loop, server, client, domain, true);
+            init_rawdbus_conn(loop, client, server, domain, false);
 
     } else if (events & UV_DISCONNECT) {
         dbus_broker_running = 0;
