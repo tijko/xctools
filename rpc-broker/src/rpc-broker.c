@@ -227,7 +227,6 @@ static void close_server_rawdbus(uv_handle_t *handle)
     struct dbus_broker_server *server = (struct dbus_broker_server *) handle->data;
     close(server->dbus_socket);
     uv_unref(handle);
-    free(server);
 }
 
 static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
@@ -295,7 +294,10 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
 
 static void run_rawdbus(struct dbus_broker_args *args)
 {
-    struct dbus_broker_server *server = start_server(args->port);
+    struct dbus_broker_server server;
+    if (start_server(&server, args->port) < 0)
+        DBUS_BROKER_ERROR("DBus server failed to start!");
+
     DBUS_BROKER_EVENT("<Server has started listening> [Port: %d]", args->port);
 
     dbus_broker_policy = build_policy(dom0, args->rule_file);
@@ -303,13 +305,13 @@ static void run_rawdbus(struct dbus_broker_args *args)
     rawdbus_loop = malloc(sizeof *rawdbus_loop);
     uv_loop_init(rawdbus_loop);
 
-    uv_poll_init(rawdbus_loop, &server->handle, server->dbus_socket);
-    uv_poll_start(&server->handle, UV_READABLE | UV_DISCONNECT,
+    uv_poll_init(rawdbus_loop, &server.handle, server.dbus_socket);
+    uv_poll_start(&server.handle, UV_READABLE | UV_DISCONNECT,
                    service_rawdbus_server);
 
-    server->mainloop = rawdbus_loop;
-    server->port = args->port;
-    server->handle.data = server;
+    server.mainloop = rawdbus_loop;
+    server.port = args->port;
+    server.handle.data = &server;
 
     while (dbus_broker_running) {
 

@@ -263,7 +263,7 @@ void sigint_handler(int signal);
 // src/dbus.c
 DBusConnection *create_dbus_connection(void);
 
-struct dbus_broker_server *start_server(int port);
+int start_server(struct dbus_broker_server *server, int port);
 
 void dbus_default(struct dbus_message *dmsg);
 

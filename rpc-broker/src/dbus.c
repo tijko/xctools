@@ -31,19 +31,22 @@ DBusConnection *create_dbus_connection(void)
     return conn;
 }
 
-struct dbus_broker_server *start_server(int port)
+int start_server(struct dbus_broker_server *server, int port)
 {
-    struct dbus_broker_server *server = malloc(sizeof *server);
+    memset(&server->peer, 0, sizeof(server->peer));
+
     server->dbus_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (server->dbus_socket < 0)
+        DBUS_BROKER_ERROR("socket");
+
     int optval = 1;
     setsockopt(server->dbus_socket, SOL_SOCKET, SO_REUSEPORT, 
               &optval, sizeof(optval));
-    if (server->dbus_socket < 0)
-        DBUS_BROKER_ERROR("socket");
 
     server->addr.sin_family = AF_INET;
     server->addr.sin_addr.s_addr = INADDR_ANY;
     server->addr.sin_port = htons(port);
+
     server->peer.sin_family = AF_INET;
     server->peer.sin_addr.s_addr = INADDR_ANY;
     server->peer.sin_port = 0;
@@ -51,10 +54,10 @@ struct dbus_broker_server *start_server(int port)
     if (bind(server->dbus_socket, &server->addr, sizeof(server->addr)) < 0)
         DBUS_BROKER_ERROR("bind");
 
-    if (listen(server->dbus_socket, 1) < 0)
+    if (listen(server->dbus_socket, 1))
         DBUS_BROKER_ERROR("listen");
 
-    return server;
+    return 0;
 }
 
 void dbus_default(struct dbus_message *dmsg)
