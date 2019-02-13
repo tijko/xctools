@@ -15,11 +15,17 @@ rpc-broker <flag> <argument>
 ```
 ## Description
 
-rpc-broker is a DBus filtering system which allows or denys any messages that
-are going to or coming from the bus. Based off a given policy, rpc-broker will
-determine which messages are allowed to be communicated to DBus server.
-rpc-broker also has the capability to filter messaging that is being sent in
-response from the DBus.
+rpc-broker is a DBus filtering system which allows or denys any message that
+is going to or coming from the bus. Based off a given policy, rpc-broker will
+not only determine which messages are allowed to be communicated to the DBus 
+server but will also filter messaging that is being sent in response from the 
+server.
+
+rpc-broker has a policy file which determines the actions it should take given 
+any messaging traffic it receives.  Each policy has a list of rules which are
+structured upon keyword fields.  These keyword fields may have specific
+attributes that upon finding a match in any given message, rpc-broker then
+determines whether to drop or pass the message.
 
 ## Policy
 
@@ -34,8 +40,9 @@ Each rule in the policy **must** start with either `allow` or `deny`.  After
 the filter policy of the rule there **must** be a `destination` specified
 (as with `dbus-send` the destination is mandatory).  The filtering can be
 determined just from these first two tokens, it does allow for more fine
-grained control but isn't necessary.  You could allow/deny messages to all
-communication coming to/from a given destination.  
+grained control but it isn't necessary.  The policy rules are a last match
+precedence, meaning if a preceding rule has a contradictory rule in policy,
+the rule that follows is the action rpc-broker takes.
 
 ## Examples
 
@@ -47,7 +54,7 @@ path `/etc/my-policy`:
 `rpc-broker -v -r 5555 -b /var/run/dbus/my-dbus-server \
                        -p /etc/my-policy`
 
-A sample for what could be under `/etc/my-policy`:
+A sample policy for what could be written in `/etc/my-policy`:
 
     deny all
     allow destination org.freedesktop.DBus path /org/freedesktop/DBus interface org.freedesktop.DBus member Hello
