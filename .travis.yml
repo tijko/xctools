@@ -29,6 +29,7 @@ script:
 - autoreconf --verbose --install --force
 - ./configure
 - make
+- mv src/rpc-broker .
 - export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 - ulimit -c unlimited -S
 - sudo cp test-policies/test_1.rules /etc/rpc-broker.rules
