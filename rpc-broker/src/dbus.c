@@ -35,6 +35,9 @@ struct dbus_broker_server *start_server(int port)
 {
     struct dbus_broker_server *server = malloc(sizeof *server);
     server->dbus_socket = socket(AF_INET, SOCK_STREAM, 0);
+    int optval = 1;
+    setsockopt(server->dbus_socket, SOL_SOCKET, SO_REUSEPORT, 
+              &optval, sizeof(optval));
     if (server->dbus_socket < 0)
         DBUS_BROKER_ERROR("socket");
 
