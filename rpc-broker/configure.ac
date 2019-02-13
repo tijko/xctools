@@ -3,6 +3,7 @@ AC_INIT([rpc-broker], [1.0], [bug-automake@gnu.org])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 
 AC_PROG_CC
+AC_CONFIG_FILES([Makefile src/Makefile])
 
 PKG_CHECK_MODULES([DBUS], [dbus-1])
 PKG_CHECK_MODULES([LIBWEBSOCKETS], [libwebsockets])
@@ -16,4 +17,4 @@ PKG_CHECK_MODULES([XENSTORE], [xenstore],
    [AC_DEFINE([HAVE_XENSTORE], [1], [Use xenstore])],
    [AC_MSG_WARN([xenstore not found, building without it])])
 
-AC_OUTPUT([Makefile])
+AC_OUTPUT
