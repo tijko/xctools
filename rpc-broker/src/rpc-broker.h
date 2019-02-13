@@ -61,14 +61,18 @@
 
 
 struct dbus_link {
+    // add identifier
     DBusConnection *dconn;
     struct lws *wsi;
+    // 
     int client_fd;
     int server_fd;
     struct dbus_link *next;
+    struct dbus_link *prev;
 };
 
 struct dbus_link *dlinks;
+size_t signal_subscribers;
 
 #define DBUS_BROKER_WARNING(fmt, ...) DBUS_LOG(LOG_WARNING, fmt, __VA_ARGS__)
 #define DBUS_BROKER_EVENT(fmt, ...)   DBUS_LOG(LOG_INFO, fmt, __VA_ARGS__)
@@ -100,6 +104,7 @@ struct rule {
 #define MAX_UUID       128
 #define MAX_RULES      512
 #define MAX_DOMAINS    128
+#define MAX_SIGNALS     16 
 #define ETC_MAX_FILE 0xffff
 
 struct etc_policy {

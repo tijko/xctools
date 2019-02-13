@@ -82,7 +82,7 @@ int broker(struct dbus_message *dmsg, int domid)
     return policy;
 }
 
-static void debug_raw_buffer(char *buf, int rbytes)
+void debug_raw_buffer(char *buf, int rbytes)
 {
     char tmp[DBUS_MSG_LEN] = { '\0' };
 

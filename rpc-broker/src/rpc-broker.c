@@ -135,9 +135,14 @@ void sighup_handler(int signal)
  */
 static void service_ws_signals(void)
 {
-    struct dbus_link *curr = dlinks;
+    if (!dlinks)
+        return;
 
-    while (curr) {
+    struct dbus_link *curr, *head;
+    curr = dlinks;
+    head = dlinks;
+
+    do {
 
         DBusMessage *msg = NULL;
 
@@ -179,11 +184,13 @@ unref_msg:
 
 next_link:
         curr = curr->next;
-    }
+
+    } while (curr != head);
 }
 
 static void run_websockets(struct dbus_broker_args *args)
 {
+    signal_subscribers = 0;
     struct lws_context *ws_context = NULL;
     if ((ws_context = create_ws_context(args->port)) == NULL)
         DBUS_BROKER_ERROR("WebSockets-Server");
