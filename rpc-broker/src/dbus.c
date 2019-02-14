@@ -486,6 +486,13 @@ void add_ws_signal(DBusConnection *conn, struct lws *wsi)
     curr->dconn = conn;
 }
 
+void remove_dlink(struct dbus_link *link)
+{
+    link->next->prev = link->prev;
+    link->prev->next = link->next;
+    free(link);
+}
+
 void free_dlinks(void)
 {
     struct dbus_link *head, *curr;

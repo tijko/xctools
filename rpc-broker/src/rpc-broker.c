@@ -135,12 +135,15 @@ void sighup_handler(int signal)
  */
 static void service_ws_signals(void)
 {
+    bool remove_link;
+    struct dbus_link *curr, *head;
+
     if (!dlinks)
         return;
 
-    struct dbus_link *curr, *head;
     curr = dlinks;
     head = dlinks;
+    remove_link = false;
 
     do {
 
@@ -149,7 +152,8 @@ static void service_ws_signals(void)
         if (curr->dconn && dbus_connection_get_is_connected(curr->dconn)) {
             dbus_connection_read_write(curr->dconn, 0);
             msg = dbus_connection_pop_message(curr->dconn);
-        }
+        } else
+            remove_link = true;
 
         if (!msg)
             goto next_link;
@@ -184,6 +188,17 @@ unref_msg:
 
 next_link:
         curr = curr->next;
+        if (remove_link) {
+            if (curr == head) {
+                free(curr);
+                curr = NULL;
+                head = NULL;
+                dlinks = NULL;
+            } else {
+                remove_dlink(curr->prev);
+                remove_link = false;
+            }
+        }            
 
     } while (curr != head);
 }
