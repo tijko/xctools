@@ -33,14 +33,15 @@ DBusConnection *create_dbus_connection(void)
 
 int start_server(struct dbus_broker_server *server, int port)
 {
+    int optval;
     memset(&server->peer, 0, sizeof(server->peer));
 
     server->dbus_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server->dbus_socket < 0)
         DBUS_BROKER_ERROR("socket");
 
-    int optval = 1;
-    setsockopt(server->dbus_socket, SOL_SOCKET, SO_REUSEPORT, 
+    optval = 1;
+    setsockopt(server->dbus_socket, SOL_SOCKET, SO_REUSEPORT,
               &optval, sizeof(optval));
 
     server->addr.sin_family = AF_INET;
@@ -66,19 +67,21 @@ void dbus_default(struct dbus_message *dmsg)
     dmsg->interface = DBUS_DB_IFACE;
     dmsg->path = DBUS_BASE_PATH;
     dmsg->arg_number = 1;
-    snprintf(dmsg->arg_sig, DBUS_MAX_ARG_LEN - 1, "s");
+    memcpy(dmsg->arg_sig, "s", DBUS_MAX_ARG_LEN - 1);
 }
 
 int connect_to_system_bus(void)
 {
-    int srv = socket(AF_UNIX, SOCK_STREAM, 0);
+    int srv;
+    struct sockaddr_un addr;
+
+    srv = socket(AF_UNIX, SOCK_STREAM, 0);
     if (srv < 0)
         DBUS_BROKER_ERROR("socket");
 
-    struct sockaddr_un addr;
     addr.sun_family = AF_UNIX;
     // could have bus-path override (LEN would need checking)
-    snprintf(addr.sun_path, DBUS_BUS_ADDR_LEN, DBUS_BUS_ADDR);
+    memcpy(addr.sun_path, DBUS_BUS_ADDR, DBUS_BUS_ADDR_LEN);
 
     if (connect(srv, (struct sockaddr *) &addr, sizeof(addr)) < 0)
         DBUS_BROKER_ERROR("connect");
@@ -86,13 +89,15 @@ int connect_to_system_bus(void)
     return srv;
 }
 
-static void debug_raw_msg(struct dbus_message *dmsg, DBusMessage *dbus_msg)
+void debug_raw_msg(struct dbus_message *dmsg, DBusMessage *dbus_msg)
 {
+    int type;
+    DBusMessageIter iter;
+
     DBUS_BROKER_EVENT("5555 %s %s %s %s", dmsg->destination, dmsg->path,
                                          dmsg->interface, dmsg->member);
-    DBusMessageIter iter;
+
     dbus_message_iter_init(dbus_msg, &iter);
-    int type;
 
     while ((type = dbus_message_iter_get_arg_type(&iter)) != DBUS_TYPE_INVALID) {
 
@@ -143,9 +148,13 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
                             const char *msg, size_t len)
 {
     DBusError error;
-    dbus_error_init(&error);
+    DBusMessage *dbus_msg;
+    int ret;
+    const char *destination, *path, *interface, *member;
 
-    DBusMessage *dbus_msg = NULL;
+    dbus_error_init(&error);
+    dbus_msg = NULL;
+
     dbus_msg = dbus_message_demarshal(msg, len, &error);
 
     if (dbus_error_is_set(&error)) {
@@ -154,19 +163,19 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
         return -1;
     }
 
-    const char *destination = dbus_message_get_destination(dbus_msg);
+    destination = dbus_message_get_destination(dbus_msg);
     dmsg->destination = destination ? destination : "NULL";
 
-    const char *path = dbus_message_get_path(dbus_msg);
+    path = dbus_message_get_path(dbus_msg);
     dmsg->path = path ? path : "/";
 
-    const char *interface = dbus_message_get_interface(dbus_msg);
+    interface = dbus_message_get_interface(dbus_msg);
     dmsg->interface = interface ? interface : "NULL";
 
-    const char *member = dbus_message_get_member(dbus_msg);
+    member = dbus_message_get_member(dbus_msg);
     dmsg->member = member ? member : "NULL";
 
-    int ret = dbus_message_get_type(dbus_msg);
+    ret = dbus_message_get_type(dbus_msg);
 
 #ifdef DEBUG
     debug_raw_msg(dmsg, dbus_msg);
@@ -179,8 +188,11 @@ static inline void append_variant(DBusMessageIter *iter, int type, void *data)
 {
     DBusMessageIter sub;
 
-    char *dbus_sig = NULL;
-    int dbus_type = DBUS_TYPE_INVALID;
+    char *dbus_sig;
+    int dbus_type;
+
+    dbus_sig = NULL;
+    dbus_type = DBUS_TYPE_INVALID;
 
     switch (type) {
 
@@ -211,13 +223,14 @@ static inline void append_variant(DBusMessageIter *iter, int type, void *data)
 
         default:
             DBUS_BROKER_WARNING("Unrecognized DBus Variant <%d>", type);
-            break;
+            return;
     }
 
     if (dbus_type == DBUS_TYPE_INVALID)
         return;
 
-    dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, dbus_sig, &sub);
+    dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, 
+                                    (const char *) dbus_sig, &sub);
 
     if (type == 's')
         dbus_message_iter_append_basic(&sub, dbus_type, &data);
@@ -230,7 +243,9 @@ static inline void append_variant(DBusMessageIter *iter, int type, void *data)
 DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 {
     int i;
-    DBusMessage *msg;
+    DBusMessage *msg, *reply;
+    DBusError error;
+    DBusMessageIter iter;
 
     if (dmsg->destination)
         msg = dbus_message_new_method_call(dmsg->destination,
@@ -240,10 +255,8 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
     else
         msg = dbus_message_new_signal(dmsg->path, dmsg->interface, dmsg->member);
 
-    DBusError error;
     dbus_error_init(&error);
 
-    DBusMessageIter iter;
     dbus_message_iter_init_append(msg, &iter);
 
     for (i = 0; i < dmsg->arg_number; i++) {
@@ -275,14 +288,15 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
                 break;
 
             default:
-                DBUS_BROKER_WARNING("<Invalid DBus Signature> [%c]",
-                                      dmsg->arg_sig[i]);
+                DBUS_BROKER_ERROR("Failed Request <Invalid DBus Signature>");
+                dbus_message_unref(msg);
                 break;
         }
     }
 
-    DBusMessage *reply = dbus_connection_send_with_reply_and_block(conn, msg,
-                                                   DBUS_REQ_TIMEOUT, &error);
+    reply = dbus_connection_send_with_reply_and_block(conn, msg,
+                                                      DBUS_REQ_TIMEOUT,
+                                                     &error);
     dbus_message_unref(msg);
 
     if (reply == NULL) {
@@ -298,20 +312,22 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
  */
 char *db_query(DBusConnection *conn, char *arg)
 {
-    char *buf;
-    char *reply = NULL;
-
+    char *reply;
+    const char *buf;
     struct dbus_message dmsg;
+    DBusMessage *msg;
+    DBusMessageIter iter;
+
+    reply = NULL;
     dbus_default(&dmsg);
     dmsg.member = DBUS_READ;
-    dmsg.args[0] = (void *) arg;
+    dmsg.args[0] = arg;
 
-    DBusMessage *msg = make_dbus_call(conn, &dmsg);
+    msg = make_dbus_call(conn, &dmsg);
 
     if (!msg)
         return NULL;
 
-    DBusMessageIter iter;
     if (!dbus_message_iter_init(msg, &iter))
         goto free_msg;
 
@@ -324,6 +340,9 @@ char *db_query(DBusConnection *conn, char *arg)
         goto free_msg;
 
     reply = calloc(1, RULE_MAX_LENGTH);
+    if (!reply)
+        DBUS_BROKER_ERROR("Calloc Failed!");
+
     strcpy(reply, buf);
 
 free_msg:
@@ -334,18 +353,20 @@ free_msg:
 
 DBusMessage *db_list(void)
 {
-    DBusConnection *conn = create_dbus_connection();
+    DBusConnection *conn;
+    struct dbus_message dmsg;
+    DBusMessage *vms;
 
+    conn = create_dbus_connection();
     if (!conn)
         return NULL;
 
-    struct dbus_message dmsg;
 
     dbus_default(&dmsg);
     dmsg.member = DBUS_LIST;
     dmsg.args[0] = (void *) DBUS_VM_PATH;
 
-    DBusMessage *vms = make_dbus_call(conn, &dmsg);
+    vms = make_dbus_call(conn, &dmsg);
 
     if (!vms && verbose_logging) {
         DBUS_BROKER_WARNING("DBus message return error <db-list> %s", "");
@@ -373,6 +394,10 @@ DBusMessage *db_list(void)
  */
 char *dbus_introspect(struct json_request *jreq)
 {
+    char *signature, *xml, *reply, *xmlbuf;
+    DBusMessage *introspect;
+    DBusMessageIter iter;
+
     struct dbus_message dmsg = { .destination=jreq->dmsg.destination,
                                  .interface=DBUS_INTRO_IFACE,
                                  .member=DBUS_INTRO_METH,
@@ -381,9 +406,12 @@ char *dbus_introspect(struct json_request *jreq)
 
     dbus_connection_flush(jreq->conn);
 
-    char *signature = NULL;
-    char *xml = malloc(DBUS_INTROSPECT_MAX);
-    DBusMessage *introspect = make_dbus_call(jreq->conn, &dmsg);
+    signature = NULL;
+    xml = malloc(DBUS_INTROSPECT_MAX);
+    if (!xml)
+        DBUS_BROKER_ERROR("Malloc Failed!");
+
+    introspect = make_dbus_call(jreq->conn, &dmsg);
 
     if (!introspect) {
         DBUS_BROKER_WARNING("DBus Introspection message failed %s", "");
@@ -395,9 +423,6 @@ char *dbus_introspect(struct json_request *jreq)
         goto msg_error;
     }
 
-    char *reply;
-
-    DBusMessageIter iter;
     dbus_message_iter_init(introspect, &iter);
 
     if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_STRING) {
@@ -409,7 +434,10 @@ char *dbus_introspect(struct json_request *jreq)
     strcpy(xml, reply);
 
     signature = calloc(1, XML_SIGNATURE_MAX);
-    char *xmlbuf = strdup(xml);
+    if (!signature)
+        DBUS_BROKER_ERROR("Calloc Failed!");
+
+    xmlbuf = strdup(xml);
     if (retrieve_xml_signature((const xmlChar *) xmlbuf, signature,
                                 jreq->dmsg.interface, jreq->dmsg.member) < 1)
         signature[0] = '\0';
@@ -427,39 +455,57 @@ xml_error:
 
 static struct dbus_link *add_dbus_signal(void)
 {
-    struct dbus_link *curr = dlinks;
+    // also unscribed signals need to be released
+    // add extra field to show signals already subscribed to?
+    struct dbus_link *head, *tail, *new_link;
 
-    if (!dlinks) {
-        dlinks = malloc(sizeof *dlinks);
-        curr = dlinks;
+    head = dlinks;
+    new_link = malloc(sizeof *new_link);
+
+    if (!head) {
+        dlinks = new_link;
+        dlinks->prev = dlinks;
+        dlinks->next = dlinks;
     } else {
-        while (curr->next)
-            curr = curr->next;
-        curr->next = malloc(sizeof *dlinks);
-        curr = curr->next;
+        tail = head->prev; 
+        tail->next = new_link;
+        head->prev = new_link;
+        new_link->next = head;
+        new_link->prev = tail;
     }
 
-    curr->next = NULL;
-
-    return curr;
+    return new_link;
 }
 
 void add_ws_signal(DBusConnection *conn, struct lws *wsi)
 {
-    struct dbus_link *curr = add_dbus_signal();
+    struct dbus_link *curr;
+
+    curr = add_dbus_signal();
     curr->wsi = wsi;
     curr->dconn = conn;
 }
 
 void free_dlinks(void)
 {
-    struct dbus_link *curr = dlinks;
-    while (curr) {
-        struct dbus_link *tmp = curr->next;
+    struct dbus_link *head, *curr;
+
+    if (!dlinks)
+        return;
+
+    head = dlinks;
+    curr = head;
+    
+    while (curr->next != head) {
+        struct dbus_link *tmp;
+        tmp = curr->next;
         free(curr);
         curr = tmp;
     }
 
+    free(head);
+
     curr = NULL;
+    head = NULL;
     dlinks = NULL;
 }
