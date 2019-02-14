@@ -198,6 +198,8 @@ next_link:
                 remove_dlink(curr->prev);
                 remove_link = false;
             }
+
+            signal_subscribers--;
         }            
 
     } while (curr != head);
