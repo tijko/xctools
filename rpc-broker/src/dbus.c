@@ -455,7 +455,6 @@ xml_error:
 
 static struct dbus_link *add_dbus_signal(void)
 {
-    // also unscribed signals need to be released
     // add extra field to show signals already subscribed to?
     struct dbus_link *head, *tail, *new_link;
 
