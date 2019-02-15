@@ -85,7 +85,7 @@ struct json_response *make_json_request(struct json_request *jreq)
 }
 
 static void append_dbus_message_arg(int type, int idx, void **args,
-                                          struct json_object *jarg)
+                                    struct json_object *jarg)
 {
     // XXX todo: have the "argument" array -> `void **args`
     //           be set-up as an array of `struct arg` 
