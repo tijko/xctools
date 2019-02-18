@@ -229,8 +229,11 @@ static void run_websockets(struct dbus_broker_args *args)
         }
     }
 
-    lws_ring_destroy(ring);
-    lws_context_destroy(ws_context);
+    if (ring)
+        lws_ring_destroy(ring);
+
+    if (ws_context)
+        lws_context_destroy(ws_context);
 }
 
 static void close_client_rawdbus(uv_handle_t *handle)
