@@ -212,7 +212,7 @@ static int filter_domtype(DBusConnection *conn, char *uuid,
     if (dom_type)
         free(dom_type);
 
-    return 0;
+    return ret;
 }
 
 /*

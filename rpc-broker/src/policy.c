@@ -21,13 +21,16 @@
 
 static int create_rule(struct rule *current, char *rule)
 {
+    char *token;
+    const char *delimiter;
+
     if (!rule || rule[0] == '\0')
         return -1;
 
     current->rule_string = strdup(rule);
 
-    const char *delimiter = " ";
-    char *token = strtok(rule, delimiter);
+    delimiter = " ";
+    token = strtok(rule, delimiter);
 
     if (!token)
         return -1;
@@ -75,20 +78,21 @@ static int create_rule(struct rule *current, char *rule)
 static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
 {
     int rule_idx;
+    char *rulestring;
+    char *arg;
+    struct rule *policy_rule;
 
     for (rule_idx=0; rule_idx < MAX_RULES; rule_idx++) {
-        char *arg;
         DBUS_REQ_ARG(arg, "/vm/%s/rpc-firewall-rules/%d",
                      dom->uuid, rule_idx);
 
-        char *rulestring = db_query(conn, arg);
-
+        rulestring = db_query(conn, arg);
         free(arg);
 
         if (!rulestring)
             break;
 
-        struct rule *policy_rule = &(dom->rules[rule_idx]);
+        policy_rule = &(dom->rules[rule_idx]);
 
         if (create_rule(policy_rule, rulestring) < 0)
             free_rule(*policy_rule);
@@ -102,19 +106,24 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
 
 static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
 {
-    int rule_idx = 0;
+    int rule_idx;
+    FILE *policy_fh;
+    size_t rbytes, line_length;
+    char *line;
+    char current_rule[RULE_MAX_LENGTH] = { 0 };
+    struct rule *current;
+
+    rule_idx = 0;
     etc->count = 0;
 
-    FILE *policy_fh = fopen(rule_filepath, "r");
+    policy_fh = fopen(rule_filepath, "r");
     if (!policy_fh) {
         DBUS_BROKER_WARNING("/etc policy stat of file <%s> failed %s",
                              rule_filepath, strerror(errno));
         return;
     }
 
-    size_t rbytes;
-    char *line = NULL;
-    char current_rule[RULE_MAX_LENGTH] = { 0 };
+    line = NULL;
 
     while ((getline(&line, &rbytes, policy_fh) > 0) && rule_idx < MAX_RULES) {
 
@@ -122,11 +131,11 @@ static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
             DBUS_BROKER_WARNING("Invalid policy rule %zu exceeds max-rule",
                                                                   rbytes);
         } else if (line && isalpha(line[0])) {
-            size_t line_length = strlen(line);
+            line_length = strlen(line);
             if (line[line_length - 1] == '\n')
                 line[line_length - 1] = '\0';
             memcpy(current_rule, line, rbytes);
-            struct rule *current = &(etc->rules[rule_idx]);
+            current = &(etc->rules[rule_idx]);
             create_rule(current, current_rule) < 0 ? free_rule(*current) :
                                                                rule_idx++;
         }
@@ -146,8 +155,17 @@ static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
 
 struct policy *build_policy(bool dom0, const char *rule_filename)
 {
-    struct policy *dbus_policy = calloc(1, sizeof *dbus_policy);
-    struct etc_policy *etc = &(dbus_policy->etc);
+    struct policy *dbus_policy;
+    struct etc_policy *etc;
+    int dom_idx;
+    DBusMessage *vms;
+    DBusConnection *conn;
+    DBusMessageIter iter, sub;
+    void *arg;
+    struct domain_policy *current;
+    
+    dbus_policy = calloc(1, sizeof *dbus_policy);
+    etc = &(dbus_policy->etc);
     build_etc_policy(etc, rule_filename);
 
     if (!dom0) {
@@ -155,23 +173,21 @@ struct policy *build_policy(bool dom0, const char *rule_filename)
         return dbus_policy;
     }
 
-    int dom_idx = 0;
-    DBusMessage *vms = db_list();
+    dom_idx = 0;
+    vms = db_list();
     if (!vms)
         return NULL;
-    DBusConnection *conn = create_dbus_connection();
+    conn = create_dbus_connection();
 
-    DBusMessageIter iter, sub;
     dbus_message_iter_init(vms, &iter);
     dbus_message_iter_recurse(&iter, &sub);
 
 
     while (dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_INVALID) {
 
-        void *arg;
         dbus_message_iter_get_basic(&sub, &arg);
 
-        struct domain_policy *current = &(dbus_policy->domains[dom_idx]);
+        current = &(dbus_policy->domains[dom_idx]);
         strcpy(current->uuid, arg);
 
         errno = 0;
@@ -221,17 +237,20 @@ void free_rule(struct rule r)
 
 void free_policy(void)
 {
-    int count = dbus_broker_policy->domain_count;
-
+    int count; 
+    struct domain_policy domain;
+    struct etc_policy etc;
     int i, j;
+
+    count = dbus_broker_policy->domain_count;
     for (i=0; i < count; i++) {
 
-        struct domain_policy domain = dbus_broker_policy->domains[i];
+        domain = dbus_broker_policy->domains[i];
         for (j=0; j < domain.count; j++)
             free_rule(domain.rules[j]);
     }
 
-    struct etc_policy etc = dbus_broker_policy->etc;
+    etc = dbus_broker_policy->etc;
 
     for (i=0; i < etc.count; i++)
         free_rule(etc.rules[i]);
