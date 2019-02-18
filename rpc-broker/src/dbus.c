@@ -510,7 +510,8 @@ void free_dlinks(void)
         curr = tmp;
     }
 
-    free(head);
+    if (head)
+        free(head);
 
     curr = NULL;
     head = NULL;
