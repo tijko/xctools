@@ -27,10 +27,12 @@
 xmlNodePtr find_xml_property(const char *target, const xmlChar *property,
                              xmlNodePtr node)
 {
+    const xmlChar *name;
+
     if (node == NULL)
         return NULL;
 
-    const xmlChar *name = NULL;
+    name = NULL;
     name = xmlGetProp(node, property);
 
     if (name && !strcmp((const char *) name, target)) {
@@ -56,19 +58,25 @@ xmlNodePtr find_xml_property(const char *target, const xmlChar *property,
 int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
                            const char *interface, const char *member)
 {
-    int idx = 0;
-    char *error = NULL;
-    const xmlChar *name = NULL;
-    const xmlChar *type = NULL;
+    int idx;
+    char *error;
+    const xmlChar *name, *type;
 
-    xmlDocPtr doc = xmlParseDoc(xml_dump);
+    idx = 0;
+    error = NULL;
+    name = NULL;
+    type = NULL;
 
+    xmlDocPtr doc;
+    xmlNodePtr root, interface_node, member_node;
+
+    doc = xmlParseDoc(xml_dump);
     if (doc == NULL) {
         error = "doc";
         goto xml_error;
     }
 
-    xmlNodePtr root = xmlDocGetRootElement(doc);
+    root = xmlDocGetRootElement(doc);
 
     if (root == NULL) {
         error = "doc";
@@ -76,16 +84,15 @@ int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
     }
 
     /* Find the interface for the request */
-    xmlNodePtr interface_node = find_xml_property(interface, XML_NAME_PROPERTY,
-                                                   xmlFirstElementChild(root));
+    interface_node = find_xml_property(interface, XML_NAME_PROPERTY,
+                                       xmlFirstElementChild(root));
     if (interface_node == NULL) {
         error = "interface";
         goto xml_error;
     }
 
     /* Find the method being requested */
-    xmlNodePtr member_node = find_xml_property(member, XML_NAME_PROPERTY,
-                                               interface_node);
+    member_node = find_xml_property(member, XML_NAME_PROPERTY, interface_node);
     if (member_node == NULL) {
         error = "member";
         goto xml_error;
@@ -131,10 +138,11 @@ static inline void add_json_array(struct json_object *args, char *key,
                                      DBusMessageIter *iter)
 {
     DBusMessageIter sub;
+    struct json_object *empty_array;
     dbus_message_iter_recurse(iter, &sub);
 
     if (dbus_message_iter_get_arg_type(&sub) == DBUS_TYPE_INVALID && key) {
-        struct json_object *empty_array = json_object_new_object();
+        empty_array = json_object_new_object();
         add_jobj(args, key, empty_array);
         return;
     }
@@ -144,12 +152,14 @@ static inline void add_json_array(struct json_object *args, char *key,
 
 void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter)
 {
-    struct json_object *dbus_dict = json_object_new_object();
+    struct json_object *dbus_dict;
+    char *new_key;
+    DBusMessageIter sub;
+
+    dbus_dict = json_object_new_object();
     add_jobj(args, key, dbus_dict);
 
     while (dbus_message_iter_get_arg_type(iter) != DBUS_TYPE_INVALID) {
-        char *new_key;
-        DBusMessageIter sub;
         dbus_message_iter_recurse(iter, &sub);
         dbus_message_iter_get_basic(&sub, &new_key);
         dbus_message_iter_next(&sub);
@@ -162,10 +172,11 @@ void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
 {
     int type;
     DBusMessageIter sub;
+    struct json_object *obj;
 
     while ((type = dbus_message_iter_get_arg_type(iter)) != DBUS_TYPE_INVALID) {
 
-        struct json_object *obj = NULL;
+        obj = NULL;
 
         switch (type) {
 
