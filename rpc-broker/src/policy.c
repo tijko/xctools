@@ -137,6 +137,9 @@ static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
         line = NULL;
     }
 
+    if (line)
+        free(line);
+
     etc->count = rule_idx;
     fclose(policy_fh);
 }
