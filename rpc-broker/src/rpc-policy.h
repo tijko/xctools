@@ -53,7 +53,7 @@ struct domain_policy {
 };
 
 struct policy {
-    size_t domain_number;
+    size_t domain_count;
     time_t policy_load_time;
     size_t allowed_requests;
     size_t denied_requests;

@@ -148,7 +148,7 @@ struct policy *build_policy(bool dom0, const char *rule_filename)
     build_etc_policy(etc, rule_filename);
 
     if (!dom0) {
-        dbus_policy->domain_number = 0;
+        dbus_policy->domain_count= 0;
         return dbus_policy;
     }
 
@@ -185,7 +185,7 @@ struct policy *build_policy(bool dom0, const char *rule_filename)
         dom_idx++;
     }
 
-    dbus_policy->domain_number = dom_idx;
+    dbus_policy->domain_count = dom_idx;
     dbus_message_unref(vms);
     dbus_connection_unref(conn);
 
@@ -218,7 +218,7 @@ void free_rule(struct rule r)
 
 void free_policy(void)
 {
-    int count = dbus_broker_policy->domain_number;
+    int count = dbus_broker_policy->domain_count;
 
     int i, j;
     for (i=0; i < count; i++) {
