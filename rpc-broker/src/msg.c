@@ -186,7 +186,6 @@ static int filter_if_bool(DBusConnection *conn, char *uuid,
 
     if (!attr_cond || (attr_cond[0] == 't' && bool_flag == 0) ||
                       (attr_cond[0] == 'f' && bool_flag == 1)) {
-        free(uuid);
         return -1;
     }
 
@@ -199,17 +198,16 @@ static int filter_if_bool(DBusConnection *conn, char *uuid,
 static int filter_domtype(DBusConnection *conn, char *uuid,
                                                 char *policy_domtype)
 {
+    int ret;
     char *arg, *dom_type;
 
     DBUS_REQ_ARG(arg, "%s/type", uuid);
     dom_type = db_query(conn, arg);
     free(arg);
 
-    if (dom_type && strcmp(policy_domtype, dom_type)) {
-        free(dom_type);
-        free(uuid);
-        return -1;
-    }
+    ret = 0;
+    if (dom_type && strcmp(policy_domtype, dom_type)) 
+        ret = -1;
 
     if (dom_type)
         free(dom_type);

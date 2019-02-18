@@ -181,6 +181,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
     debug_raw_msg(dmsg, dbus_msg);
 #endif
 
+    dbus_message_unref(dbus_msg);
     return ret;
 }
 
