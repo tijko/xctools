@@ -33,12 +33,17 @@
 static int broker_message(struct raw_dbus_conn *conn)
 {
     int ret;
-    int total = 0;
-    int domid = conn->client_domain;
-    bool is_client = conn->is_client;
-    int receiver = conn->receiver;
-    int sender = conn->sender;
+    int total;
+    int domid;
+    bool is_client;
+    int receiver;
+    int sender;
 
+    total = 0;
+    domid = conn->client_domain;
+    is_client = conn->is_client;
+    receiver = conn->receiver;
+    sender = conn->sender;
     while ((ret = exchange(receiver, sender, domid, is_client)) != 0) {
         total += ret;
     }
@@ -48,18 +53,23 @@ static int broker_message(struct raw_dbus_conn *conn)
 
 signed int is_stubdom(uint16_t domid)
 {
-    size_t len = 0;
+    size_t len;
+    len = 0;
 #ifdef HAVE_XENSTORE
-    struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
+    struct xs_handle *xsh;
+    char *path;
+    void *ret;
+
+    xsh = xs_open(XS_OPEN_READONLY);
 
     if (!xsh)
         return -1;
 
-    char *path = xs_get_domain_path(xsh, domid);
+    path = xs_get_domain_path(xsh, domid);
     path = realloc(path, strlen(path) + XENSTORE_TARGET_LEN);
     strcat(path, XENSTORE_TARGET);
 
-    void *ret = xs_read(xsh, XBT_NULL, path, &len);
+    ret = xs_read(xsh, XBT_NULL, path, &len);
 
     if (ret)
        free(ret);
@@ -72,11 +82,15 @@ signed int is_stubdom(uint16_t domid)
 
 static char *get_domain(void)
 {
-    char *domain = NULL;
-#ifdef HAVE_XENSTORE
-    size_t len = 0;
-    struct xs_handle *xsh = xs_open(XS_OPEN_READONLY);
+    char *domain;
 
+    domain = NULL;
+#ifdef HAVE_XENSTORE
+    size_t len;
+    struct xs_handle *xsh;
+
+    len = 0;
+    xsh = xs_open(XS_OPEN_READONLY);
     if (!xsh)
         return "";
 
@@ -137,6 +151,9 @@ static void service_ws_signals(void)
 {
     bool remove_link;
     struct dbus_link *curr, *head;
+    DBusMessage *msg;
+    struct json_response *jrsp;
+    char *reply;
 
     if (!dlinks)
         return;
@@ -147,7 +164,7 @@ static void service_ws_signals(void)
 
     do {
 
-        DBusMessage *msg = NULL;
+        msg = NULL;
 
         if (curr->dconn && dbus_connection_get_is_connected(curr->dconn)) {
             dbus_connection_read_write(curr->dconn, 0);
@@ -161,7 +178,7 @@ static void service_ws_signals(void)
         if (dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
             goto unref_msg;
 
-        struct json_response *jrsp = init_jrsp();
+        jrsp = init_jrsp();
         jrsp->response_to[0] = '\0';
         snprintf(jrsp->type, JSON_REQ_ID_MAX - 1, "%s", JSON_SIG);
 
@@ -171,7 +188,7 @@ static void service_ws_signals(void)
         jrsp->member = dbus_message_get_member(msg);
         jrsp->path = dbus_message_get_path(msg);
 
-        char *reply = prepare_json_reply(jrsp);
+        reply = prepare_json_reply(jrsp);
 
         if (!reply)
             goto free_msg;
@@ -207,8 +224,10 @@ next_link:
 
 static void run_websockets(struct dbus_broker_args *args)
 {
+    struct lws_context *ws_context;
+
+    ws_context = NULL;
     signal_subscribers = 0;
-    struct lws_context *ws_context = NULL;
     if ((ws_context = create_ws_context(args->port)) == NULL)
         DBUS_BROKER_ERROR("WebSockets-Server");
 
@@ -238,8 +257,9 @@ static void run_websockets(struct dbus_broker_args *args)
 
 static void close_client_rawdbus(uv_handle_t *handle)
 {
-    struct raw_dbus_conn *conn = (struct raw_dbus_conn *) handle->data;
+    struct raw_dbus_conn *conn;
 
+    conn = (struct raw_dbus_conn *) handle->data;
     close(conn->receiver);
     uv_unref(handle);
 
@@ -251,16 +271,19 @@ static void close_client_rawdbus(uv_handle_t *handle)
 
 static void close_server_rawdbus(uv_handle_t *handle)
 {
-    struct dbus_broker_server *server = (struct dbus_broker_server *) handle->data;
+    struct dbus_broker_server *server;
+    server = (struct dbus_broker_server *) handle->data;
     close(server->dbus_socket);
     uv_unref(handle);
 }
 
 static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
 {
-    struct raw_dbus_conn *conn = (struct raw_dbus_conn *) handle->data;
+    int ret;
+    struct raw_dbus_conn *conn;
 
-    int ret = 0;
+    conn = (struct raw_dbus_conn *) handle->data;
+    ret = 0;
 
     if (events & UV_READABLE) {
         ret = broker_message(conn);
@@ -272,7 +295,12 @@ static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
 static void init_rawdbus_conn(uv_loop_t *rawdbus_loop, int sender, 
                               int receiver, int domain, bool is_client)
 {
-    struct raw_dbus_conn *conn = malloc(sizeof *conn);
+    struct raw_dbus_conn *conn;
+
+    conn = malloc(sizeof *conn);
+    if (!conn)
+        DBUS_BROKER_ERROR("Malloc Failed!");
+
     conn->sender = sender;
     conn->receiver = receiver;
     conn->client_domain = domain;
@@ -285,15 +313,22 @@ static void init_rawdbus_conn(uv_loop_t *rawdbus_loop, int sender,
 
 static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
 {
-    struct dbus_broker_server *server = (struct dbus_broker_server *) handle->data;
-    uv_loop_t *loop = server->mainloop;
+    struct dbus_broker_server *server;
+    uv_loop_t *loop;
+    int client;
+    int domain;
+    struct sockaddr_in client_addr;
+    socklen_t client_addr_len;
+
+    server = (struct dbus_broker_server *) handle->data;
+    loop = server->mainloop;
 
     if (events & UV_READABLE) {
 	        socklen_t clilen = sizeof(server->peer);
-	        int client = accept(server->dbus_socket,
-                               (struct sockaddr *) &server->peer, &clilen);
-            int server = connect_to_system_bus();
-            int domain = 0;
+	        client = accept(server->dbus_socket,
+                           (struct sockaddr *) &server->peer, &clilen);
+            server = connect_to_system_bus();
+            domain = 0;
     	    /*
              * When using rpc-broker over V4V, we want to be able to
              * firewall against domids. The V4V interposer stores the
@@ -302,8 +337,7 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
              * If we're not using V4V, just return 0 for the domid.
              */
 #ifdef HAVE_V4V
-            struct sockaddr_in client_addr;
-            socklen_t client_addr_len = sizeof(client_addr);
+            client_addr_len = sizeof(client_addr);
             
             if (getpeername(client, &client_addr, &client_addr_len) < 0)
                 DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
@@ -330,6 +364,9 @@ static void run_rawdbus(struct dbus_broker_args *args)
     dbus_broker_policy = build_policy(dom0, args->rule_file);
 
     rawdbus_loop = malloc(sizeof *rawdbus_loop);
+    if (!rawdbus_loop)
+        DBUS_BROKER_ERROR("Malloc Failed!");
+
     uv_loop_init(rawdbus_loop);
 
     uv_poll_init(rawdbus_loop, &server.handle, server.dbus_socket);
@@ -373,20 +410,31 @@ int main(int argc, char *argv[])
 
     int opt;
     int option_index;
-
-    uint32_t port;
-
-    bool logging = false;
-    verbose_logging = false;
+    bool logging;
     void (*mainloop)(struct dbus_broker_args *args);
 
-    char *bus_file = NULL;
-    char *raw_dbus = NULL;
-    char *websockets = NULL;
-    char *logging_file = "";
-    char *policy_file  = RULES_FILENAME;
+    char *domain;
+    char *bus_file;
+    char *raw_dbus;
+    char *websockets;
+    char *logging_file;
+    char *policy_file;
+    uint32_t port;
+    bool proto;
 
-    bool proto = false;
+
+    logging = false;
+    verbose_logging = false;
+
+    bus_file = NULL;
+    raw_dbus = NULL;
+    websockets = NULL;
+    logging_file = "";
+    policy_file  = RULES_FILENAME;
+
+    proto = false;
+
+    dbus_broker_opt_str = "b:hl::p:r:vw:";
 
     while ((opt = getopt_long(argc, argv, dbus_broker_opt_str,
                               dbus_broker_opts, &option_index)) != -1) {
@@ -467,7 +515,7 @@ int main(int argc, char *argv[])
     ring = NULL;
     reload_policy = false;
 
-    char *domain = get_domain();
+    domain = get_domain();
     if (domain)
         DBUS_BROKER_EVENT("Domain: %s", domain);
     else
