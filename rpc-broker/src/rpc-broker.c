@@ -238,11 +238,11 @@ static void close_client_rawdbus(uv_handle_t *handle)
     struct raw_dbus_conn *conn = (struct raw_dbus_conn *) handle->data;
 
     close(conn->receiver);
+    uv_unref(handle);
 
     if (conn)
         free(conn);
 
-    uv_unref(handle);
     conn = NULL;
 }
 
