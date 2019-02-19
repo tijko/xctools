@@ -37,11 +37,6 @@ struct dbus_message {
     const char *path;
     const char *member;
     const char *type;
-    // struct argument {
-    //   void *data;
-    //   char dbus_type;
-    //   char actual_type;
-    // };
     uint8_t arg_number;
     char arg_sig[DBUS_MAX_ARG_LEN];
     char json_sig[DBUS_MAX_ARG_LEN];
