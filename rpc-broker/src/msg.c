@@ -226,12 +226,14 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
 {
     DBusConnection *conn;
     char *uuid;
+    int filter_policy;
 
     if (!policy_rule || !dmsg) {
         DBUS_BROKER_WARNING("Invalid filter request %s", "");
         return -1;
     }
 
+    filter_policy = policy_rule->policy;
     conn = NULL;
     uuid = NULL;
 
@@ -241,30 +243,38 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
         (policy_rule->path && strcmp(policy_rule->path, dmsg->path))     ||
         (policy_rule->interface && strcmp(policy_rule->interface,
                                                  dmsg->interface))       ||
-        (policy_rule->member && strcmp(policy_rule->member, dmsg->member)))
-        return -1;
+        (policy_rule->member && strcmp(policy_rule->member, dmsg->member))) {
+        filter_policy = -1;
+        goto policy_set;
+    }
 
     if (policy_rule->if_bool || policy_rule->domtype) {
         conn = create_dbus_connection();
         uuid = get_db_vm_path(conn, domid);
-        if (uuid == NULL)
-            return -1;
+        if (uuid == NULL) {
+            filter_policy = -1;
+            goto policy_set;
+        }
 
         if (policy_rule->if_bool &&
             filter_if_bool(conn, uuid, (char *) policy_rule->if_bool,
                                        policy_rule->if_bool_flag) < 0) {
-            return -1;
+            filter_policy = -1;
+            goto policy_set;
         }
 
         if (policy_rule->domtype &&
             filter_domtype(conn, uuid, (char *) policy_rule->domtype) < 0) {
-            return -1;
+            filter_policy = -1;
+            goto policy_set;
         }
     }
+
+policy_set:
 
     if (uuid)
         free(uuid);
 
-    return policy_rule->policy;
+    return filter_policy; 
 }
 

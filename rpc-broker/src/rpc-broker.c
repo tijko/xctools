@@ -295,8 +295,6 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
     struct dbus_broker_server *dbus_server;
     uv_loop_t *loop;
     int client, server, domain;
-    struct sockaddr_in client_addr;
-    socklen_t client_addr_len;
 
     dbus_server= (struct dbus_broker_server *) handle->data;
     loop = dbus_server->mainloop;
@@ -315,6 +313,9 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
              * If we're not using V4V, just return 0 for the domid.
              */
 #ifdef HAVE_V4V
+            struct sockaddr_in client_addr;
+            socklen_t client_addr_len;
+
             client_addr_len = sizeof(client_addr);
             
             if (getpeername(client, &client_addr, &client_addr_len) < 0)
