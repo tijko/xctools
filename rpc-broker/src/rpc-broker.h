@@ -87,7 +87,6 @@ struct dbus_broker_server {
 bool verbose_logging;
 int dbus_broker_running;
 bool reload_policy;
-bool dom0;
 uv_loop_t *rawdbus_loop;
 
 struct dbus_broker_args {
