@@ -80,26 +80,6 @@ signed int is_stubdom(uint16_t domid)
     return len;
 }
 
-static char *get_domain(void)
-{
-    char *domain;
-
-    domain = NULL;
-#ifdef HAVE_XENSTORE
-    size_t len;
-    struct xs_handle *xsh;
-
-    len = 0;
-    xsh = xs_open(XS_OPEN_READONLY);
-    if (!xsh)
-        return "";
-
-    domain = xs_read(xsh, XBT_NULL, "domid", &len);
-    xs_close(xsh);
-#endif
-    return domain;
-}
-
 void print_usage(void)
 {
     printf("rpc-broker <flag> <argument>\n");
@@ -231,7 +211,7 @@ static void run_websockets(struct dbus_broker_args *args)
     if ((ws_context = create_ws_context(args->port)) == NULL)
         DBUS_BROKER_ERROR("WebSockets-Server");
 
-    dbus_broker_policy = build_policy(dom0, args->rule_file);
+    dbus_broker_policy = build_policy(args->rule_file);
 
     DBUS_BROKER_EVENT("<WebSockets-Server has started listening> [Port: %d]",
                         args->port);
@@ -243,7 +223,7 @@ static void run_websockets(struct dbus_broker_args *args)
 
         if (reload_policy) {
             free_policy();
-            dbus_broker_policy = build_policy(dom0, args->rule_file);
+            dbus_broker_policy = build_policy(args->rule_file);
             reload_policy = false;
         }
     }
@@ -313,20 +293,19 @@ static void init_rawdbus_conn(uv_loop_t *rawdbus_loop, int sender,
 
 static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
 {
-    struct dbus_broker_server *server;
+    struct dbus_broker_server *dbus_server;
     uv_loop_t *loop;
-    int client;
-    int domain;
+    int client, server, domain;
     struct sockaddr_in client_addr;
     socklen_t client_addr_len;
 
-    server = (struct dbus_broker_server *) handle->data;
-    loop = server->mainloop;
+    dbus_server= (struct dbus_broker_server *) handle->data;
+    loop = dbus_server->mainloop;
 
     if (events & UV_READABLE) {
-	        socklen_t clilen = sizeof(server->peer);
-	        client = accept(server->dbus_socket,
-                           (struct sockaddr *) &server->peer, &clilen);
+	        socklen_t clilen = sizeof(dbus_server->peer);
+	        client = accept(dbus_server->dbus_socket,
+                           (struct sockaddr *) &dbus_server->peer, &clilen);
             server = connect_to_system_bus();
             domain = 0;
     	    /*
@@ -361,7 +340,7 @@ static void run_rawdbus(struct dbus_broker_args *args)
 
     DBUS_BROKER_EVENT("<Server has started listening> [Port: %d]", args->port);
 
-    dbus_broker_policy = build_policy(dom0, args->rule_file);
+    dbus_broker_policy = build_policy(args->rule_file);
 
     rawdbus_loop = malloc(sizeof *rawdbus_loop);
     if (!rawdbus_loop)
@@ -383,7 +362,7 @@ static void run_rawdbus(struct dbus_broker_args *args)
 
         if (reload_policy) {
             free_policy();
-            dbus_broker_policy = build_policy(dom0, args->rule_file);
+            dbus_broker_policy = build_policy(args->rule_file);
             reload_policy = false;
         }
     }
@@ -413,7 +392,6 @@ int main(int argc, char *argv[])
     bool logging;
     void (*mainloop)(struct dbus_broker_args *args);
 
-    char *domain;
     char *bus_file;
     char *raw_dbus;
     char *websockets;
@@ -514,14 +492,6 @@ int main(int argc, char *argv[])
     rawdbus_loop = NULL;
     ring = NULL;
     reload_policy = false;
-
-    domain = get_domain();
-    if (domain)
-        DBUS_BROKER_EVENT("Domain: %s", domain);
-    else
-        DBUS_BROKER_EVENT("Failed to get domain %s", "");
-    dom0 = (!domain || strcmp(domain, "0")) ? false : true;
-    free(domain);
 
     mainloop(&args);
 

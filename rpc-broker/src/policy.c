@@ -153,7 +153,7 @@ static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
     fclose(policy_fh);
 }
 
-struct policy *build_policy(bool dom0, const char *rule_filename)
+struct policy *build_policy(const char *rule_filename)
 {
     struct policy *dbus_policy;
     struct etc_policy *etc;
@@ -167,16 +167,12 @@ struct policy *build_policy(bool dom0, const char *rule_filename)
     dbus_policy = calloc(1, sizeof *dbus_policy);
     etc = &(dbus_policy->etc);
     build_etc_policy(etc, rule_filename);
-
-    if (!dom0) {
-        dbus_policy->domain_count= 0;
-        return dbus_policy;
-    }
+    dbus_policy->domain_count= 0;
 
     dom_idx = 0;
     vms = db_list();
     if (!vms)
-        return NULL;
+        return dbus_policy;
     conn = create_dbus_connection();
 
     dbus_message_iter_init(vms, &iter);
