@@ -18,17 +18,16 @@
 
 #define _GNU_SOURCE
 #include <errno.h>
-#include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
-#include <sys/stat.h>
 #include <sys/time.h>
-#include <sys/types.h>
 #include <unistd.h>
-#include <uv.h>
 
 #include "rpc-broker.h"
 
+
+uv_loop_t *rawdbus_loop;
+bool reload_policy;
 
 static int broker_message(struct raw_dbus_conn *conn)
 {
