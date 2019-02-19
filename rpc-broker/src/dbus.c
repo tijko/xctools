@@ -501,9 +501,9 @@ void free_dlinks(void)
         return;
 
     head = dlinks;
-    curr = head;
+    curr = head->next;
     
-    while (curr->next != head) {
+    while (curr != head) {
         struct dbus_link *tmp;
         tmp = curr->next;
         free(curr);
