@@ -40,9 +40,9 @@
 
 #include "rpc-dbus.h"
 #include "rpc-json.h"
-#include "rpc-policy.h"
-#include "rpc-signature.h"
-#include "rpc-websockets.h"
+#include "policy.h"
+#include "signature.h"
+#include "websockets.h"
 
 
 #define DBUS_BROKER_ERROR(call)                                       \
