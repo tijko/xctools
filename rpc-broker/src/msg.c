@@ -176,7 +176,9 @@ static int filter_if_bool(DBusConnection *conn, char *uuid,
                           char *bool_cond, int bool_flag)
 {
     char *arg, *attr_cond;
+    int rc;
 
+    rc = 0;
     arg = NULL;
     attr_cond = NULL;
 
@@ -184,15 +186,16 @@ static int filter_if_bool(DBusConnection *conn, char *uuid,
     attr_cond = db_query(conn, arg);
     free(arg);
 
-    if (!attr_cond || (attr_cond[0] == 't' && bool_flag == 0) ||
-                      (attr_cond[0] == 'f' && bool_flag == 1)) {
+    if (!attr_cond) 
         return -1;
-    }
 
-    if (attr_cond)
-        free(attr_cond);
+    if ((!strcmp("true", attr_cond) && bool_flag == 0) ||
+        (!strcmp("false", attr_cond) && bool_flag == 1))
+        rc = -1;
 
-    return 0;
+    free(attr_cond);
+
+    return rc;
 }
 
 static int filter_domtype(DBusConnection *conn, char *uuid,
