@@ -8,9 +8,9 @@ rpc_broker_SOURCES = \
     rpc-broker.c \
     websockets.c \
     policy.c \
-    dbus.c \
+    rpc-dbus.c \
     msg.c \
-    json.c \
+    rpc-json.c \
     signature.c \
     rpc-broker.h
 
