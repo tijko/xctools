@@ -132,8 +132,7 @@ static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
                                                                   rbytes);
         } else if (line && isalpha(line[0])) {
             line_length = strlen(line);
-            if (line[line_length - 1] == '\n')
-                line[line_length - 1] = '\0';
+            line[line_length - 1] = '\0';
             memcpy(current_rule, line, rbytes);
             current = &(etc->rules[rule_idx]);
             create_rule(current, current_rule) < 0 ? free_rule(*current) :
