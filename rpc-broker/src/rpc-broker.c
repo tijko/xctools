@@ -358,7 +358,7 @@ static void run_rawdbus(struct dbus_broker_args *args)
 
     while (dbus_broker_running) {
 
-        uv_run(rawdbus_loop, UV_RUN_ONCE);
+        uv_run(rawdbus_loop, UV_RUN_DEFAULT);
 
         if (reload_policy) {
             free_policy();
