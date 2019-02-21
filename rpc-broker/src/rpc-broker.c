@@ -31,12 +31,11 @@ bool reload_policy;
 
 static int broker_message(struct raw_dbus_conn *conn)
 {
-    int ret;
-    int total;
     int domid;
+    int ret, total;
+
     bool is_client;
-    int receiver;
-    int sender;
+    int receiver, sender;
 
     total = 0;
     domid = conn->client_domain;
@@ -129,7 +128,7 @@ void sighup_handler(int signal)
 static void service_ws_signals(void)
 {
     bool remove_link;
-    struct dbus_link *curr, *head;
+    struct dbus_link *curr;
     DBusMessage *msg;
     struct json_response *jrsp;
     char *reply;
@@ -138,7 +137,6 @@ static void service_ws_signals(void)
         return;
 
     curr = dlinks;
-    head = dlinks;
     remove_link = false;
 
     do {
@@ -184,21 +182,14 @@ unref_msg:
 
 next_link:
         curr = curr->next;
-        if (remove_link) {
-            if (curr == head) {
-                free(curr);
-                curr = NULL;
-                head = NULL;
-                dlinks = NULL;
-            } else {
-                remove_dlink(curr->prev);
-                remove_link = false;
-            }
 
+        if (remove_link) {
+            remove_dlink(curr->prev);
+            remove_link = false;
             signal_subscribers--;
         }            
 
-    } while (curr != head);
+    } while (curr != dlinks);
 }
 
 static void run_websockets(struct dbus_broker_args *args)
@@ -387,19 +378,13 @@ int main(int argc, char *argv[])
         {  0,            0,        0,         0      }
     };
 
-    int opt;
-    int option_index;
-    bool logging;
+    int opt, option_index;
     void (*mainloop)(struct dbus_broker_args *args);
 
-    char *bus_file;
-    char *raw_dbus;
-    char *websockets;
-    char *logging_file;
-    char *policy_file;
+    char *websockets, *raw_dbus;
+    char *logging_file, *bus_file, *policy_file;
     uint32_t port;
-    bool proto;
-
+    bool proto, logging;
 
     logging = false;
     verbose_logging = false;
