@@ -21,12 +21,17 @@
 
 char *prepare_json_reply(struct json_response *jrsp)
 {
-    struct json_object *jobj = convert_dbus_response(jrsp);
+    char *reply;
+    struct json_object *jobj;
+
+    jobj = convert_dbus_response(jrsp);
 
     if (!jobj)
         return NULL;
 
-    char *reply = malloc(WS_RING_BUFFER_MEMBER_SIZE);
+    reply = malloc(WS_RING_BUFFER_MEMBER_SIZE);
+    if (!reply)
+        DBUS_BROKER_ERROR("Malloc Failed!");
 
     snprintf(reply, WS_RING_BUFFER_MEMBER_SIZE - 1, "%s",
              json_object_to_json_string(jobj));
@@ -39,6 +44,8 @@ char *prepare_json_reply(struct json_response *jrsp)
 static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
                               void *user, void *in, size_t len)
 {
+    char *rsp;
+
     switch (reason) {
 
         case LWS_CALLBACK_RECEIVE: {
@@ -51,7 +58,7 @@ static int ws_server_callback(struct lws *wsi, enum lws_callback_reasons reason,
 
         case LWS_CALLBACK_SERVER_WRITEABLE: {
             if (lws_ring_get_count_waiting_elements(ring, NULL) > 0) {
-                char *rsp = (char *) lws_ring_get_element(ring, NULL);
+                rsp = (char *) lws_ring_get_element(ring, NULL);
                 lws_ring_consume(ring, NULL, NULL, 1);
                 memcpy(user + LWS_SEND_BUFFER_PRE_PADDING, rsp, strlen(rsp));
                 lws_write(wsi, user + LWS_SEND_BUFFER_PRE_PADDING,
@@ -90,6 +97,8 @@ static struct lws_protocols server_protos[] = {
 struct lws_context *create_ws_context(int port)
 {
     struct lws_context_creation_info info;
+    struct lws_context *context;
+
     ring = lws_ring_create(WS_RING_BUFFER_MEMBER_SIZE,
                            WS_RING_BUFFER_MEMBER_NUM, NULL);
     server_protos[0].per_session_data_size = WS_USER_MEM_SIZE;
@@ -97,7 +106,7 @@ struct lws_context *create_ws_context(int port)
     info.port = port;
     info.protocols = server_protos;
 
-    struct lws_context *context = NULL;
+    context = NULL;
     context = lws_create_context(&info);
 
     return context;
@@ -105,22 +114,26 @@ struct lws_context *create_ws_context(int port)
 
 int ws_request_handler(struct lws *wsi, char *raw_req)
 {
-    int client = lws_get_socket_fd(wsi);
+    int client;
+    struct json_request *jreq;
+    struct json_response *jrsp;
+    char *reply;
+
+    client = lws_get_socket_fd(wsi);
     if (client < 0)
         return -1;
 
-    struct json_request *jreq = convert_json_request(raw_req);
-
+    jreq = convert_json_request(raw_req);
     if (!jreq)
         return -1;
 
     jreq->wsi = wsi;
-    struct json_response *jrsp = make_json_request(jreq);
+    jrsp = make_json_request(jreq);
 
     if (!jrsp)
         goto free_req;
 
-    char *reply = prepare_json_reply(jrsp);
+    reply = prepare_json_reply(jrsp);
     if (!reply)
         goto free_resp;
 
