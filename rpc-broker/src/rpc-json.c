@@ -205,6 +205,7 @@ static signed int parse_json_args(struct json_object *jarray,
 
     if (!signature) {
         DBUS_BROKER_WARNING("dbus-introspect %s", "");
+        jreq->dmsg.arg_number = 0;
         return -1;
     }
 
@@ -251,6 +252,7 @@ struct json_request *convert_json_request(char *raw_json_req)
         return NULL;
     }
 
+    memset(&jreq->dmsg, 0, sizeof(jreq->dmsg));
     jreq->dmsg.destination = get_json_str_obj(jobj, "destination");
     // XXX supports the removal of network-daemon/slave
     if (!jreq->dmsg.destination) {
