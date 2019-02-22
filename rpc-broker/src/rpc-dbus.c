@@ -94,8 +94,8 @@ void debug_raw_msg(struct dbus_message *dmsg, DBusMessage *dbus_msg)
     int type;
     DBusMessageIter iter;
 
-    DBUS_BROKER_EVENT("5555 %s %s %s %s", dmsg->destination, dmsg->path,
-                                         dmsg->interface, dmsg->member);
+    DBUS_BROKER_EVENT("Raw-DBus %s %s %s %s", dmsg->destination, dmsg->path,
+                                              dmsg->interface, dmsg->member);
 
     dbus_message_iter_init(dbus_msg, &iter);
 
@@ -108,29 +108,29 @@ void debug_raw_msg(struct dbus_message *dmsg, DBusMessage *dbus_msg)
             case DBUS_TYPE_INT32:
             case DBUS_TYPE_UINT32: {
                 dbus_message_iter_get_basic(&iter, arg);
-                DBUS_BROKER_EVENT("5555 %d", *(int *) arg);
+                DBUS_BROKER_EVENT("%d", *(int *) arg);
                 break;
             }
 
             case DBUS_TYPE_BOOLEAN: {
                 dbus_message_iter_get_basic(&iter, arg);
-                DBUS_BROKER_EVENT("5555 bool %d", *(bool *) arg);
+                DBUS_BROKER_EVENT("bool %d", *(bool *) arg);
                 break;
             }
 
             case DBUS_TYPE_STRING: {
                 dbus_message_iter_get_basic(&iter, &arg);
-                DBUS_BROKER_EVENT("5555 %s", (char *) arg);
+                DBUS_BROKER_EVENT("%s", (char *) arg);
                 break;
             }
 
             case DBUS_TYPE_VARIANT: {
-                DBUS_BROKER_EVENT("5555 variant %s", "");
+                DBUS_BROKER_EVENT("variant %s", "");
                 break;
             }
 
             default: {
-                DBUS_BROKER_EVENT("5555 other %d",  type);
+                DBUS_BROKER_EVENT("other %d",  type);
                 break;
             }
         }
