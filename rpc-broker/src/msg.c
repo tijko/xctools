@@ -33,6 +33,7 @@ int broker(struct dbus_message *dmsg, int domid)
 
     int i, j;
     char req_msg[1024] = { '\0' };
+    char *uuid;
 
     if (!dmsg) {
         DBUS_BROKER_WARNING("Invalid args to broker-request %s", "");
@@ -69,10 +70,15 @@ int broker(struct dbus_message *dmsg, int domid)
     }
 
     domains = dbus_broker_policy->domain_count;
+    if (domain_uuids[domid])
+        uuid = domain_uuids[domid];
+    else {
+        uuid = get_uuid_from_domid(domid); 
+        domain_uuids[domid] = uuid;
+    }
 
     for (i=0; i < domains; i++) {
-        if (dbus_broker_policy->domains[i].domid == domid) {
-
+        if (uuid && !strcmp(dbus_broker_policy->domains[i].uuid_db_fmt, uuid)) {
             struct domain_policy domain = dbus_broker_policy->domains[i];
 
             for (j=0; j < domain.count; j++) {

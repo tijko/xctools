@@ -86,6 +86,7 @@ struct dbus_broker_server {
 
 bool verbose_logging;
 int dbus_broker_running;
+char *domain_uuids[1024];
 
 struct dbus_broker_args {
     bool logging;
@@ -106,6 +107,8 @@ struct raw_dbus_conn {
 
 // rpc-broker.c
 signed int is_stubdom(uint16_t domid);
+
+int get_domid(int client);
 
 void print_usage(void);
 

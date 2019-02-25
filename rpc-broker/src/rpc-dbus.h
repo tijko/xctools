@@ -102,6 +102,8 @@ void remove_dlink(struct dbus_link *link);
 
 void free_dlinks(void);
 
+char *get_uuid_from_domid(int domid);
+
 #define DBUS_DB_DEST     "com.citrix.xenclient.db"
 #define DBUS_DB_IFACE    DBUS_DB_DEST
 

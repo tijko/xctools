@@ -114,7 +114,7 @@ struct lws_context *create_ws_context(int port)
 
 int ws_request_handler(struct lws *wsi, char *raw_req)
 {
-    int client;
+    int client, domain;
     struct json_request *jreq;
     struct json_response *jrsp;
     char *reply;
@@ -123,8 +123,10 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     if (client < 0)
         return -1;
 
+    domain = get_domid(client);
+
     jreq = convert_json_request(raw_req);
-    if (!jreq)
+    if (!jreq || broker(&jreq->dmsg, domain) <= 0)
         return -1;
 
     jreq->wsi = wsi;

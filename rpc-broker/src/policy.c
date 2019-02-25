@@ -162,6 +162,7 @@ struct policy *build_policy(const char *rule_filename)
     DBusMessageIter iter, sub;
     void *arg;
     struct domain_policy *current;
+    char uuid[64];
     
     dbus_policy = calloc(1, sizeof *dbus_policy);
     etc = &(dbus_policy->etc);
@@ -181,13 +182,20 @@ struct policy *build_policy(const char *rule_filename)
     while (dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_INVALID) {
 
         dbus_message_iter_get_basic(&sub, &arg);
-
+        size_t uuid_len = strlen(arg);
+        int i;
+        for (i=0; i < uuid_len; i++) {
+            if (((char *) arg)[i] == '-')
+                uuid[i] = '_';
+            else
+                uuid[i] = ((char *) arg)[i];
+        }
+        uuid[uuid_len] = '\0';
         current = &(dbus_policy->domains[dom_idx]);
         strcpy(current->uuid, arg);
+        strcpy(current->uuid_db_fmt, uuid);
 
         errno = 0;
-        current->domid = strtol(arg + DOMID_SECTION, NULL, 10);
-
         if (errno != 0) {
             DBUS_BROKER_WARNING("Domain ID error <%s>", strerror(errno));
             continue;
