@@ -49,6 +49,7 @@ struct domain_policy {
     uint16_t domid;
     size_t count;
     char uuid[MAX_UUID];
+    char uuid_db_fmt[MAX_UUID];
     struct rule rules[MAX_RULES];
 };
 

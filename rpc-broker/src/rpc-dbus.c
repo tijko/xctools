@@ -241,6 +241,55 @@ static inline void append_variant(DBusMessageIter *iter, int type, void *data)
     dbus_message_iter_close_container(iter, &sub);
 }
 
+char *get_uuid_from_domid(int domid)
+{
+    DBusMessage *msg;
+    DBusConnection *conn;
+    DBusMessageIter iter;
+    char *path, *uuid;
+
+    struct dbus_message dmsg = { .destination="com.citrix.xenclient.xenmgr",
+                                 .path="/",
+                                 .interface="com.citrix.xenclient.xenmgr",
+                                 .member="find_vm_by_domid",
+                                 .args={&domid},
+                                 .arg_number=1,
+                                 .arg_sig={'i'},
+                               };
+
+    uuid = NULL;
+    conn = create_dbus_connection();
+    if (!conn) 
+        goto uuid_error;
+
+    msg = make_dbus_call(conn, &dmsg);
+
+    if (!msg)
+        goto uuid_error;
+
+
+    if (dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) 
+        goto uuid_error;
+
+    dbus_message_iter_init(msg, &iter);
+    if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_OBJECT_PATH) 
+        goto uuid_error;
+
+    dbus_message_iter_get_basic(&iter, &path);
+    char *delimiter = "/";
+
+    if (!strtok(path, delimiter)) 
+        goto uuid_error;
+
+    uuid = strtok(NULL, delimiter); 
+    if (!uuid) 
+        goto uuid_error;
+
+uuid_error:
+
+    return uuid;
+}
+
 DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 {
     int i;

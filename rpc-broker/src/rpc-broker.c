@@ -78,6 +78,33 @@ signed int is_stubdom(uint16_t domid)
     return len;
 }
 
+int get_domid(int client)
+{
+    int domain;
+
+    domain = 0;
+    /*
+     * When using rpc-broker over V4V, we want to be able to
+     * firewall against domids. The V4V interposer stores the
+     * domid as follows:
+     * sin.sin_addr.s_addr = htonl ((uint32_t) peer->domain | 0x1000000);
+     * If we're not using V4V, just return 0 for the domid.
+     */
+#ifdef HAVE_V4V
+    struct sockaddr_in client_addr;
+    socklen_t client_addr_len;
+
+    client_addr_len = sizeof(client_addr);
+    
+    if (getpeername(client, &client_addr, &client_addr_len) < 0)
+        DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
+    else
+        domain = ntohl(client_addr.sin_addr.s_addr) & ~0x1000000;
+#endif
+
+    return domain;
+}
+
 void print_usage(void)
 {
     printf("rpc-broker <flag> <argument>\n");
@@ -295,25 +322,7 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
 	        client = accept(dbus_server->dbus_socket,
                            (struct sockaddr *) &dbus_server->peer, &clilen);
             server = connect_to_system_bus();
-            domain = 0;
-    	    /*
-             * When using rpc-broker over V4V, we want to be able to
-             * firewall against domids. The V4V interposer stores the
-             * domid as follows:
-             * sin.sin_addr.s_addr = htonl ((uint32_t) peer->domain | 0x1000000);
-             * If we're not using V4V, just return 0 for the domid.
-             */
-#ifdef HAVE_V4V
-            struct sockaddr_in client_addr;
-            socklen_t client_addr_len;
-
-            client_addr_len = sizeof(client_addr);
-            
-            if (getpeername(client, &client_addr, &client_addr_len) < 0)
-                DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
-            else
-                domain = ntohl(client_addr.sin_addr.s_addr) & ~0x1000000;
-#endif
+            domain = get_domid(client);
             init_rawdbus_conn(loop, server, client, domain, true);
             init_rawdbus_conn(loop, client, server, domain, false);
 
@@ -477,7 +486,9 @@ int main(int argc, char *argv[])
     rawdbus_loop = NULL;
     ring = NULL;
     reload_policy = false;
-
+    int i;
+    for (i=0; i < 1024; i++)
+        domain_uuids[i] = NULL;
     mainloop(&args);
 
     free_policy();
