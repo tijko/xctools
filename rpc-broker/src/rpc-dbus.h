@@ -113,5 +113,5 @@ char *get_uuid_from_domid(int domid);
 #define DBUS_INTRO_IFACE "org.freedesktop.DBus.Introspectable"
 #define DBUS_INTRO_METH  "Introspect"
 
-#define DBUS_COMM_MIN     56
+#define DBUS_COMM_MIN     28
 

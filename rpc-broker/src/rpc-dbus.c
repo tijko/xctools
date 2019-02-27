@@ -269,10 +269,8 @@ char *get_uuid_from_domid(int domid)
         goto conn_error;
 
     msg = make_dbus_call(conn, &dmsg);
-
     if (!msg)
         goto conn_error;
-
 
     if (dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR)
         goto uuid_error;
@@ -314,7 +312,6 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
         msg = dbus_message_new_signal(dmsg->path, dmsg->interface, dmsg->member);
 
     dbus_error_init(&error);
-
     dbus_message_iter_init_append(msg, &iter);
 
     for (i = 0; i < dmsg->arg_number; i++) {
@@ -382,7 +379,6 @@ char *db_query(DBusConnection *conn, char *arg)
     dmsg.args[0] = arg;
 
     msg = make_dbus_call(conn, &dmsg);
-
     if (!msg)
         return NULL;
 
@@ -419,13 +415,11 @@ DBusMessage *db_list(void)
     if (!conn)
         return NULL;
 
-
     dbus_default(&dmsg);
     dmsg.member = DBUS_LIST;
     dmsg.args[0] = (void *) DBUS_VM_PATH;
 
     vms = make_dbus_call(conn, &dmsg);
-
     if (!vms && verbose_logging) {
         DBUS_BROKER_WARNING("DBus message return error <db-list> %s", "");
     } else if (vms && dbus_message_get_type(vms) == DBUS_MESSAGE_TYPE_ERROR) {
@@ -537,7 +531,6 @@ static struct dbus_link *add_dbus_signal(void)
 void add_ws_signal(DBusConnection *conn, struct lws *wsi)
 {
     struct dbus_link *curr;
-
     curr = add_dbus_signal();
     curr->wsi = wsi;
     curr->dconn = conn;

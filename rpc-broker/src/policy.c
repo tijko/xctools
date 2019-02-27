@@ -178,7 +178,6 @@ struct policy *build_policy(const char *rule_filename)
     dbus_message_iter_init(vms, &iter);
     dbus_message_iter_recurse(&iter, &sub);
 
-
     while (dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_INVALID) {
 
         dbus_message_iter_get_basic(&sub, &arg);
