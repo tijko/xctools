@@ -167,7 +167,6 @@ static void service_ws_signals(void)
     remove_link = false;
 
     do {
-
         msg = NULL;
 
         if (curr->dconn && dbus_connection_get_is_connected(curr->dconn)) {
