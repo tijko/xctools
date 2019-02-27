@@ -163,7 +163,7 @@ struct policy *build_policy(const char *rule_filename)
     void *arg;
     struct domain_policy *current;
     char uuid[64];
-    
+
     dbus_policy = calloc(1, sizeof *dbus_policy);
     etc = &(dbus_policy->etc);
     build_etc_policy(etc, rule_filename);
@@ -182,17 +182,12 @@ struct policy *build_policy(const char *rule_filename)
     while (dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_INVALID) {
 
         dbus_message_iter_get_basic(&sub, &arg);
-        size_t uuid_len = strlen(arg);
-        int i;
-        for (i=0; i < uuid_len; i++) {
-            if (((char *) arg)[i] == '-')
-                uuid[i] = '_';
-            else
-                uuid[i] = ((char *) arg)[i];
-        }
-        uuid[uuid_len] = '\0';
         current = &(dbus_policy->domains[dom_idx]);
         strcpy(current->uuid, arg);
+        // alter the uuid from underscores to dashes
+        // dbus returns underscores while the vm db uses dashes
+        // if not the vm db policy check on strcmp on the uuid is off
+        TRANSFORM_UUID(arg, uuid);
         strcpy(current->uuid_db_fmt, uuid);
 
         errno = 0;
@@ -240,7 +235,7 @@ void free_rule(struct rule r)
 
 void free_policy(void)
 {
-    int count; 
+    int count;
     struct domain_policy domain;
     struct etc_policy etc;
     int i, j;

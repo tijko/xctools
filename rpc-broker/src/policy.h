@@ -16,6 +16,7 @@
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+
 #define RULES_FILENAME "/etc/rpc-broker.rules"
 #define RULES_MAX_LENGTH 256
 #define RULE_MAX_LENGTH  512
@@ -37,8 +38,20 @@ struct rule {
 #define MAX_UUID       128
 #define MAX_RULES      512
 #define MAX_DOMAINS    128
-#define MAX_SIGNALS     16 
+#define MAX_SIGNALS     16
 #define ETC_MAX_FILE 0xffff
+
+#define TRANSFORM_UUID(uuid, uuid_buf)            \
+ ({     size_t uuid_len = strlen(uuid);           \
+        int i;                                    \
+        for (i=0; i < uuid_len; i++) {            \
+            if (((char *) uuid)[i] == '-')        \
+                uuid_buf[i] = '_';                \
+            else                                  \
+                uuid_buf[i] = ((char *) uuid)[i]; \
+        }                                         \
+        uuid_buf[uuid_len] = '\0';                \
+})                                                \
 
 struct etc_policy {
     size_t count;

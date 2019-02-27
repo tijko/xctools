@@ -60,7 +60,7 @@ struct dbus_link {
     // add identifier
     DBusConnection *dconn;
     struct lws *wsi;
-    // 
+    //
     int client_fd;
     int server_fd;
     struct dbus_link *next;

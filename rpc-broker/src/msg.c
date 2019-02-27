@@ -21,8 +21,8 @@
 
 /*
  * All requests are handled by this function whether they are raw requests
- * or Websocket requests.  For every policy rule listed either in the 
- * /etc/rpc-broker.policy file or the domain-specific rules listed in the 
+ * or Websocket requests.  For every policy rule listed either in the
+ * /etc/rpc-broker.policy file or the domain-specific rules listed in the
  * xenclient database, each is passed to `filter` to determine whether or not
  * the message is dropped or passed through.
  */
@@ -73,7 +73,7 @@ int broker(struct dbus_message *dmsg, int domid)
     if (domain_uuids[domid])
         uuid = domain_uuids[domid];
     else {
-        uuid = get_uuid_from_domid(domid); 
+        uuid = get_uuid_from_domid(domid);
         domain_uuids[domid] = uuid;
     }
 
@@ -121,7 +121,7 @@ void debug_raw_buffer(char *buf, int rbytes)
 
 /*
  * This is an opaque exchange reading off from the receiving end of a raw-dbus
- * connection.   
+ * connection.
  */
 int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
 {
@@ -192,7 +192,7 @@ static int filter_if_bool(DBusConnection *conn, char *uuid,
     attr_cond = db_query(conn, arg);
     free(arg);
 
-    if (!attr_cond) 
+    if (!attr_cond)
         return -1;
 
     if ((!strcmp("true", attr_cond) && bool_flag == 0) ||
@@ -215,7 +215,7 @@ static int filter_domtype(DBusConnection *conn, char *uuid,
     free(arg);
 
     ret = 0;
-    if (dom_type && strcmp(policy_domtype, dom_type)) 
+    if (dom_type && strcmp(policy_domtype, dom_type))
         ret = -1;
 
     if (dom_type)
@@ -281,6 +281,6 @@ policy_set:
     if (uuid)
         free(uuid);
 
-    return filter_policy; 
+    return filter_policy;
 }
 

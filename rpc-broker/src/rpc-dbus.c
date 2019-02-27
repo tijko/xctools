@@ -230,7 +230,7 @@ static inline void append_variant(DBusMessageIter *iter, int type, void *data)
     if (dbus_type == DBUS_TYPE_INVALID)
         return;
 
-    dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, 
+    dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT,
                                     (const char *) dbus_sig, &sub);
 
     if (type == 's')
@@ -241,6 +241,12 @@ static inline void append_variant(DBusMessageIter *iter, int type, void *data)
     dbus_message_iter_close_container(iter, &sub);
 }
 
+/*
+ * For every request being made to the dom0 dbus-server the domid needs to be
+ * mapped to its corresponding UUID.  This is needed in order to find the VM
+ * database policy to a given request.  The UUID's mapping to the domid can be
+ * hashed but this function has to run once for each domain.
+ */
 char *get_uuid_from_domid(int domid)
 {
     DBusMessage *msg;
@@ -249,7 +255,7 @@ char *get_uuid_from_domid(int domid)
     char *path, *uuid;
 
     struct dbus_message dmsg = { .destination="com.citrix.xenclient.xenmgr",
-                                 .path="/",
+                                 .path=DBUS_BASE_PATH,
                                  .interface="com.citrix.xenclient.xenmgr",
                                  .member="find_vm_by_domid",
                                  .args={&domid},
@@ -259,33 +265,35 @@ char *get_uuid_from_domid(int domid)
 
     uuid = NULL;
     conn = create_dbus_connection();
-    if (!conn) 
-        goto uuid_error;
+    if (!conn)
+        goto conn_error;
 
     msg = make_dbus_call(conn, &dmsg);
 
     if (!msg)
-        goto uuid_error;
+        goto conn_error;
 
 
-    if (dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR) 
+    if (dbus_message_get_type(msg) == DBUS_MESSAGE_TYPE_ERROR)
         goto uuid_error;
 
     dbus_message_iter_init(msg, &iter);
-    if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_OBJECT_PATH) 
+    // dbus message returns an "object-path"
+    if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_OBJECT_PATH)
         goto uuid_error;
 
     dbus_message_iter_get_basic(&iter, &path);
-    char *delimiter = "/";
-
-    if (!strtok(path, delimiter)) 
+    uuid = malloc(MAX_UUID);
+    if (!uuid)
         goto uuid_error;
 
-    uuid = strtok(NULL, delimiter); 
-    if (!uuid) 
-        goto uuid_error;
+    // cut off the "/vm/" of the path
+    strncpy(uuid, path + 4, MAX_UUID - 1);
 
 uuid_error:
+    dbus_message_unref(msg);
+
+conn_error:
 
     return uuid;
 }
@@ -516,7 +524,7 @@ static struct dbus_link *add_dbus_signal(void)
         dlinks->prev = dlinks;
         dlinks->next = dlinks;
     } else {
-        tail = head->prev; 
+        tail = head->prev;
         tail->next = new_link;
         head->prev = new_link;
         new_link->next = head;
@@ -556,7 +564,7 @@ void free_dlinks(void)
 
     head = dlinks;
     curr = head->next;
-    
+
     while (curr != head) {
         struct dbus_link *tmp;
         tmp = curr->next;
