@@ -75,6 +75,16 @@
 #define BROKER_DEFAULT_PORT 5555
 #define BROKER_UI_PORT      8080
 
+#define UUID_CACHE_LIMIT 1024
+
+#define CACHE_INIT(cache, limit)        \
+({                                      \
+    int i;                              \
+    for (i=0; i < limit; i++)           \
+        cache[i] = NULL;                \
+})                                      \
+
+
 struct dbus_broker_server {
     int dbus_socket;
     int port;
@@ -86,7 +96,8 @@ struct dbus_broker_server {
 
 bool verbose_logging;
 int dbus_broker_running;
-char *domain_uuids[1024];
+
+char *domain_uuids[UUID_CACHE_LIMIT];
 
 struct dbus_broker_args {
     bool logging;

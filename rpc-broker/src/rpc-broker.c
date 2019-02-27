@@ -95,7 +95,7 @@ int get_domid(int client)
     socklen_t client_addr_len;
 
     client_addr_len = sizeof(client_addr);
-    
+
     if (getpeername(client, &client_addr, &client_addr_len) < 0)
         DBUS_BROKER_WARNING("getpeername call failed <%s>", strerror(errno));
     else
@@ -214,7 +214,7 @@ next_link:
             remove_dlink(curr->prev);
             remove_link = false;
             signal_subscribers--;
-        }            
+        }
 
     } while (curr != dlinks);
 }
@@ -289,7 +289,7 @@ static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
     }
 }
 
-static void init_rawdbus_conn(uv_loop_t *rawdbus_loop, int sender, 
+static void init_rawdbus_conn(uv_loop_t *rawdbus_loop, int sender,
                               int receiver, int domain, bool is_client)
 {
     struct raw_dbus_conn *conn;
@@ -486,9 +486,7 @@ int main(int argc, char *argv[])
     rawdbus_loop = NULL;
     ring = NULL;
     reload_policy = false;
-    int i;
-    for (i=0; i < 1024; i++)
-        domain_uuids[i] = NULL;
+    CACHE_INIT(domain_uuids, UUID_CACHE_LIMIT);
     mainloop(&args);
 
     free_policy();

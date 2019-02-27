@@ -88,7 +88,7 @@ static void append_dbus_message_arg(int type, int idx, void **args,
                                     struct json_object *jarg)
 {
     // XXX todo: have the "argument" array -> `void **args`
-    //           be set-up as an array of `struct arg` 
+    //           be set-up as an array of `struct arg`
     //           and these types won't need to be declared
     //      (possibly adding union-type in the `struct arg`)
 
@@ -220,7 +220,7 @@ static signed int parse_json_args(struct json_object *jarray,
         jtype = json_object_get_type(jarg);
 
         if (jtype == json_type_null) {
-            jreq->dmsg.args[i] = strdup(""); 
+            jreq->dmsg.args[i] = strdup("");
             continue;
         }
 
@@ -268,10 +268,10 @@ struct json_request *convert_json_request(char *raw_json_req)
     jreq->conn = create_dbus_connection();
     json_object_object_get_ex(jobj, "args", &jarray);
 
-    if (!jarray) 
+    if (!jarray)
         goto request_error;
 
-    if (parse_json_args(jarray, jreq) < 0) 
+    if (parse_json_args(jarray, jreq) < 0)
         goto request_error;
 
     json_object_object_get_ex(jobj, "id", &jint);

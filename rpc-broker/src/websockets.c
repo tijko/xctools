@@ -142,7 +142,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     lws_ring_insert(ring, reply, 1);
     free(reply);
 
-    if (signal_subscribers < MAX_SIGNALS && 
+    if (signal_subscribers < MAX_SIGNALS &&
         strcmp("AddMatch", jreq->dmsg.member) == 0) {
         add_ws_signal(jreq->conn, wsi);
         // add an interface field (jreq->dmsg.args[0])
