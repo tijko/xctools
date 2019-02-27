@@ -491,6 +491,7 @@ int main(int argc, char *argv[])
 
     free_policy();
     free_dlinks();
+    free_uuids();
 
     return 0;
 

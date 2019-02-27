@@ -555,6 +555,15 @@ void remove_dlink(struct dbus_link *link)
     }
 }
 
+void free_uuids(void)
+{
+    int i;
+    for (i=0; i < UUID_CACHE_LIMIT; i++) {
+        if (domain_uuids[i] != NULL)
+            free(domain_uuids[i]);
+    }
+}
+
 void free_dlinks(void)
 {
     struct dbus_link *head, *curr;
