@@ -46,15 +46,16 @@ script:
 #
 # End of Test #1, the result is in $RES
 #
-- kill $RPCBPID
-- test $RES -eq 0
+#- kill $RPCBPID
+#- test $RES -eq 0
 #
 # Test #2, remove the policy file and then repeat the same calls as above.
 # This time the results should vary, where rpc-broker blocks the call.
 #
 - sudo rm /etc/rpc-broker.rules
-- ./rpc-broker -r 5555 &
-- RPCBPID=$!
+#- ./rpc-broker -r 5555 &
+#- RPCBPID=$!
+- kill -1 $RPCBPID
 - dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames | sed 's/[0-9]\+\.[0-9]\+/xx.xx/g' | sort > /tmp/t1
 - DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames | sed 's/[0-9]\+\.[0-9]\+/xx.xx/g' | sort > /tmp/t2
 - kill $RPCBPID

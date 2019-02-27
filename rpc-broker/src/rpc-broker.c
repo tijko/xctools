@@ -357,7 +357,7 @@ static void run_rawdbus(struct dbus_broker_args *args)
 
     while (dbus_broker_running) {
 
-        uv_run(rawdbus_loop, UV_RUN_DEFAULT);
+        uv_run(rawdbus_loop, UV_RUN_ONCE);
 
         if (reload_policy) {
             free_policy();
@@ -475,9 +475,14 @@ int main(int argc, char *argv[])
         .port=port,
     };
 
-    struct sigaction sa = { .sa_handler=sigint_handler };
+    struct sigaction sa_sigint = { .sa_handler=sigint_handler };
 
-    if (sigaction(SIGINT, &sa, NULL) < 0)
+    if (sigaction(SIGINT, &sa_sigint, NULL) < 0)
+        DBUS_BROKER_ERROR("sigaction");
+
+    struct sigaction sa_sighup = { .sa_handler=sighup_handler };
+
+    if (sigaction(SIGHUP, &sa_sighup, NULL) < 0)
         DBUS_BROKER_ERROR("sigaction");
 
     dbus_broker_running = 1;
