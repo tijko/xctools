@@ -131,6 +131,3 @@ void free_uuids(void);
 bool is_request_allowed(struct dbus_message *dmsg, int domid);
 
 int exchange(int rsock, int ssock, uint16_t domid, bool is_client);
-
-int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid);
-

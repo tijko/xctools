@@ -29,158 +29,6 @@
 #include "rpc-broker.h"
 
 
-/**
- * All requests are handled by this function whether they are raw requests
- * or Websocket requests.  For every policy rule listed either in the
- * /etc/rpc-broker.policy file or the domain-specific rules listed in the
- * xenclient database, each is passed to `filter` to determine whether or not
- * the message is dropped or passed through.
- *
- * @param dmsg The dbus request message fields.
- * @param domid The domain id of the where the request is being made.
- *
- * @return true to allow false to deny
- */
-bool is_request_allowed(struct dbus_message *dmsg, int domid)
-{
-    int policy, current_rule_policy, domains;
-    struct etc_policy etc;
-
-    int i, j;
-    char req_msg[1024] = { '\0' };
-    char *uuid;
-
-    if (!dmsg) {
-        DBUS_BROKER_WARNING("Invalid args to broker-request %s", "");
-        return -1;
-    }
-
-    if (!dbus_broker_policy) {
-        DBUS_BROKER_WARNING("No policy in place %s", "");
-        return -1;
-    }
-
-    // deny by default
-    policy = 0;
-    // sets the current-rule-policy to default
-    current_rule_policy = policy;
-
-    etc = dbus_broker_policy->etc;
-
-    for (i=0; i < etc.count; i++) {
-        current_rule_policy = filter(&(etc.rules[i]), dmsg, domid);
-        /*
-         *  1 = the rule matched the request and rule's policy is allow
-         *  0 = the rule matched the request and rule's policy is deny
-         * -1 = the rule did *not* match the request
-         *
-         *  The filter is set up as last match, with the default being "deny".
-         *  Iterating through all the rules, if a rule matches a request, then
-         *  update the "policy" to fit with the "current-rule-policy"
-         *  (whether thats allow or deny).  If there is no match (-1) then the
-         *  "policy" remains unchanged, remaining set as it was before the
-         *  rule being checked.
-         */
-        policy = current_rule_policy != -1 ? current_rule_policy : policy;
-    }
-
-    domains = dbus_broker_policy->domain_count;
-    if (domain_uuids[domid])
-        uuid = domain_uuids[domid];
-    else {
-        uuid = get_uuid_from_domid(domid);
-        domain_uuids[domid] = uuid;
-    }
-
-    for (i=0; i < domains; i++) {
-        if (uuid && !strcmp(dbus_broker_policy->domains[i].uuid_db_fmt, uuid)) {
-            struct domain_policy domain = dbus_broker_policy->domains[i];
-
-            for (j=0; j < domain.count; j++) {
-                current_rule_policy = filter(&(domain.rules[j]), dmsg, domid);
-                policy = current_rule_policy != -1 ? current_rule_policy : policy;
-            }
-
-            break;
-        }
-    }
-
-    if (verbose_logging) {
-        snprintf(req_msg, 1023, "Dom: %d [Dest: %s Path: %s Iface: %s Meth: %s]",
-                          domid, dmsg->destination, dmsg->path,
-                                 dmsg->interface, dmsg->member);
-
-        if (policy == 0)
-            DBUS_BROKER_WARNING("%s <%s>", req_msg, "Dropped request");
-        else
-            DBUS_BROKER_EVENT("%s <%s>", req_msg, "Passed request");
-    }
-
-    return policy;
-}
-
-void debug_raw_buffer(char *buf, int rbytes)
-{
-    char tmp[DBUS_MSG_LEN] = { '\0' };
-
-    int i;
-    for (i=0; i < rbytes; i++) {
-        if (isalnum(buf[i]))
-            tmp[i] = buf[i];
-        else
-            tmp[i] = '-';
-    }
-
-    DBUS_BROKER_EVENT("5555: %s", tmp);
-}
-
-/*
- * This is an opaque exchange reading off from the receiving end of a raw-dbus
- * connection.  For rpc-broker sessions running "raw" mode, whenever a client
- * connects, another connection is opened on the bus.  Each of these sockets
- * are added to the event-loop.  Whenever a connection triggers the callback,
- * this function is invocated to receive the data being sent and then determine
- * (from the filter) if this message should be allowed or denied.
- * 
- * @param rsock The socket ready to be read.
- * @param ssock The other end of the connection that possible gets sent to.
- * @param domid The domain id from where the data is being sent.
- * @param is_client A flag to show if this is client end being recv'd from.
- *
- * @return The total number of bytes exchanged, -1 for failure (block) 
- */
-int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
-{
-    struct dbus_message dmsg;
-    int total, rbytes, len;
-    char buf[DBUS_MSG_LEN] = { 0 };
-
-    total = 0;
-    rbytes = 0;
-
-    while ((rbytes = recv(rsock, buf, DBUS_MSG_LEN, 0)) > 0) {
-        if (rbytes > DBUS_COMM_MIN && is_client) {
-
-            len = dbus_message_demarshal_bytes_needed(buf, rbytes);
-
-            if (len == rbytes) {
-                if (convert_raw_dbus(&dmsg, buf, len) < 1)
-                    return -1;
-                if (is_request_allowed(&dmsg, domid) == false)
-                    return -1;
-            }
-#ifdef DEBUG
-        debug_raw_buffer(buf, rbytes);
-#endif
-        }
-
-        total += rbytes;
-        send(ssock, buf, rbytes, 0);
-    }
-
-    return total;
-}
-
 static inline char *get_db_vm_path(DBusConnection *conn, uint16_t domid)
 {
 #ifdef HAVE_XENSTORE
@@ -251,8 +99,8 @@ static int filter_domtype(DBusConnection *conn, char *uuid,
 }
 
 /*
- * The main policy filtering function, compares the policy-rule against the dbus
- * request being made.
+ * Checks a rule for any given request, compares the policy-rule against 
+ * the dbus request being made.
  *
  * @param policy_rule One of the policy rules being compared against.
  * @param dmsg Structure object of the request being made.
@@ -260,7 +108,9 @@ static int filter_domtype(DBusConnection *conn, char *uuid,
  * 
  * @return 0 policy is to deny, 1 policy is to allow, -1 the rule did not match
  */
-int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
+static int rule_matches_request(struct rule *policy_rule, 
+                                struct dbus_message *dmsg,
+                                uint16_t domid)
 {
     DBusConnection *conn;
     char *uuid;
@@ -317,5 +167,165 @@ policy_set:
         free(uuid);
 
     return filter_policy;
+}
+
+/**
+ * All requests are handled by this function whether they are raw requests
+ * or Websocket requests.  For every policy rule listed either in the
+ * /etc/rpc-broker.policy file or the domain-specific rules listed in the
+ * xenclient database, each is passed to `filter` to determine whether or not
+ * the message is dropped or passed through.
+ *
+ * @param dmsg The dbus request message fields.
+ * @param domid The domain id of the where the request is being made.
+ *
+ * @return true to allow false to deny
+ */
+bool is_request_allowed(struct dbus_message *dmsg, int domid)
+{
+    bool allowed;
+    int current_rule_policy, domains;
+    struct etc_policy etc;
+
+    int i, j;
+    char req_msg[1024] = { '\0' };
+    char *uuid;
+
+    if (!dmsg) {
+        DBUS_BROKER_WARNING("Invalid args to broker-request %s", "");
+        return -1;
+    }
+
+    if (!dbus_broker_policy) {
+        DBUS_BROKER_WARNING("No policy in place %s", "");
+        return -1;
+    }
+
+    // deny by default
+    allowed = false;
+    // sets the current-rule-policy to default
+    current_rule_policy = 0;
+
+    etc = dbus_broker_policy->etc;
+
+    for (i=0; i < etc.count; i++) {
+        current_rule_policy = rule_matches_request(&(etc.rules[i]), dmsg, 
+                                                   domid);
+        /*
+         *  1 = the rule matched the request and rule's policy is allow
+         *  0 = the rule matched the request and rule's policy is deny
+         * -1 = the rule did *not* match the request
+         *
+         *  The filter is set up as last match, with the default being "deny".
+         *  Iterating through all the rules, if a rule matches a request, then
+         *  update "allowed" to fit with the "current-rule-policy" (whether
+         *  thats allow or deny).  If there is no match (-1) then "allowed"
+         *  remains unchanged, remaining set as it was before the rule being
+         *  checked.
+         */
+        if (current_rule_policy == -1)
+            continue;
+
+        allowed = current_rule_policy == 0 ? false : true; 
+    }
+
+    domains = dbus_broker_policy->domain_count;
+    if (domain_uuids[domid])
+        uuid = domain_uuids[domid];
+    else {
+        uuid = get_uuid_from_domid(domid);
+        domain_uuids[domid] = uuid;
+    }
+
+    for (i=0; i < domains; i++) {
+        if (uuid && !strcmp(dbus_broker_policy->domains[i].uuid_db_fmt, uuid)) {
+            struct domain_policy domain = dbus_broker_policy->domains[i];
+
+            for (j=0; j < domain.count; j++) {
+                current_rule_policy = rule_matches_request(&(domain.rules[j]), 
+                                                           dmsg, domid);
+                if (current_rule_policy == -1)
+                    continue;
+                allowed = current_rule_policy == 0 ? false : true; 
+            }
+
+            break;
+        }
+    }
+
+    if (verbose_logging) {
+        snprintf(req_msg, 1023, "Dom: %d [Dest: %s Path: %s Iface: %s Meth: %s]",
+                          domid, dmsg->destination, dmsg->path,
+                                 dmsg->interface, dmsg->member);
+
+        if (allowed == true)
+            DBUS_BROKER_EVENT("%s <%s>", req_msg, "Passed request");
+        else
+            DBUS_BROKER_WARNING("%s <%s>", req_msg, "Dropped request");
+    }
+
+    return allowed;
+}
+
+void debug_raw_buffer(char *buf, int rbytes)
+{
+    char tmp[DBUS_MSG_LEN] = { '\0' };
+
+    int i;
+    for (i=0; i < rbytes; i++) {
+        if (isalnum(buf[i]))
+            tmp[i] = buf[i];
+        else
+            tmp[i] = '-';
+    }
+
+    DBUS_BROKER_EVENT("5555: %s", tmp);
+}
+
+/*
+ * This is an opaque exchange reading off from the receiving end of a raw-dbus
+ * connection.  For rpc-broker sessions running "raw" mode, whenever a client
+ * connects, another connection is opened on the bus.  Each of these sockets
+ * are added to the event-loop.  Whenever a connection triggers the callback,
+ * this function is invocated to receive the data being sent and then determine
+ * (from the filter) if this message should be allowed or denied.
+ * 
+ * @param rsock The socket ready to be read.
+ * @param ssock The other end of the connection that possible gets sent to.
+ * @param domid The domain id from where the data is being sent.
+ * @param is_client A flag to show if this is client end being recv'd from.
+ *
+ * @return The total number of bytes exchanged, -1 for failure (block) 
+ */
+int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
+{
+    struct dbus_message dmsg;
+    int total, rbytes, len;
+    char buf[DBUS_MSG_LEN] = { 0 };
+
+    total = 0;
+    rbytes = 0;
+
+    while ((rbytes = recv(rsock, buf, DBUS_MSG_LEN, 0)) > 0) {
+        if (rbytes > DBUS_COMM_MIN && is_client) {
+
+            len = dbus_message_demarshal_bytes_needed(buf, rbytes);
+
+            if (len == rbytes) {
+                if (convert_raw_dbus(&dmsg, buf, len) < 1)
+                    return -1;
+                if (is_request_allowed(&dmsg, domid) == false)
+                    return -1;
+            }
+#ifdef DEBUG
+        debug_raw_buffer(buf, rbytes);
+#endif
+        }
+
+        total += rbytes;
+        send(ssock, buf, rbytes, 0);
+    }
+
+    return total;
 }
 
