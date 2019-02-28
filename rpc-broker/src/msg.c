@@ -169,6 +169,21 @@ policy_set:
     return filter_policy;
 }
 
+static struct domain_policy *get_domain_policy(char *uuid)
+{
+    int domains;
+    int i;
+
+    domains = dbus_broker_policy->domain_count;
+
+    for (i=0; i < domains; i++) {
+        if (!strcmp(dbus_broker_policy->domains[i].uuid_db_fmt, uuid)) {
+            return &(dbus_broker_policy->domains[i]);
+    }
+
+    return NULL;
+}
+
 /**
  * All requests are handled by this function whether they are raw requests
  * or Websocket requests.  For every policy rule listed either in the
@@ -185,20 +200,20 @@ bool is_request_allowed(struct dbus_message *dmsg, int domid)
 {
     bool allowed;
     int current_rule_policy, domains;
-    struct etc_policy etc;
+    struct etc_policy domain_etc_policy;
 
-    int i, j;
+    int i;
     char req_msg[1024] = { '\0' };
     char *uuid;
 
     if (!dmsg) {
         DBUS_BROKER_WARNING("Invalid args to broker-request %s", "");
-        return -1;
+        return false;
     }
 
     if (!dbus_broker_policy) {
         DBUS_BROKER_WARNING("No policy in place %s", "");
-        return -1;
+        return false;
     }
 
     // deny by default
@@ -206,11 +221,11 @@ bool is_request_allowed(struct dbus_message *dmsg, int domid)
     // sets the current-rule-policy to default
     current_rule_policy = 0;
 
-    etc = dbus_broker_policy->etc;
+    domain_etc_policy = dbus_broker_policy->domain_etc_policy;
 
     for (i=0; i < etc.count; i++) {
-        current_rule_policy = rule_matches_request(&(etc.rules[i]), dmsg, 
-                                                   domid);
+        current_rule_policy = rule_matches_request(&(domain_etc_policy.rules[i]), 
+                                                   dmsg, domid);
         /*
          *  1 = the rule matched the request and rule's policy is allow
          *  0 = the rule matched the request and rule's policy is deny
@@ -229,7 +244,6 @@ bool is_request_allowed(struct dbus_message *dmsg, int domid)
         allowed = current_rule_policy == 0 ? false : true; 
     }
 
-    domains = dbus_broker_policy->domain_count;
     if (domain_uuids[domid])
         uuid = domain_uuids[domid];
     else {
@@ -237,21 +251,24 @@ bool is_request_allowed(struct dbus_message *dmsg, int domid)
         domain_uuids[domid] = uuid;
     }
 
-    for (i=0; i < domains; i++) {
-        if (uuid && !strcmp(dbus_broker_policy->domains[i].uuid_db_fmt, uuid)) {
-            struct domain_policy domain = dbus_broker_policy->domains[i];
+    if (!uuid)
+        goto filtering_done;
 
-            for (j=0; j < domain.count; j++) {
-                current_rule_policy = rule_matches_request(&(domain.rules[j]), 
-                                                           dmsg, domid);
-                if (current_rule_policy == -1)
-                    continue;
-                allowed = current_rule_policy == 0 ? false : true; 
-            }
+    struct domain_policy *domain = get_domain_policy(uuid);
 
-            break;
-        }
+    if (!domain)
+        goto filtering_done;
+
+    for (i=0; i < domain->count; i++) {
+        current_rule_policy = rule_matches_request(&(domain->rules[i]), 
+                                                   dmsg, domid);
+        if (current_rule_policy == -1)
+            continue;
+        allowed = current_rule_policy == 0 ? false : true; 
     }
+
+
+filtering_done:
 
     if (verbose_logging) {
         snprintf(req_msg, 1023, "Dom: %d [Dest: %s Path: %s Iface: %s Meth: %s]",

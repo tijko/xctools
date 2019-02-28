@@ -120,7 +120,8 @@ static inline void get_rules(DBusConnection *conn, struct domain_policy *dom)
 
 }
 
-static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
+static void build_etc_policy(struct etc_policy *domain_etc_policy,
+                             const char *rule_filepath)
 {
     int rule_idx;
     FILE *policy_fh;
@@ -130,7 +131,7 @@ static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
     struct rule *current;
 
     rule_idx = 0;
-    etc->count = 0;
+    domain_etc_policy->count = 0;
 
     policy_fh = fopen(rule_filepath, "r");
     if (!policy_fh) {
@@ -141,7 +142,7 @@ static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
 
     line = NULL;
 
-    while ((getline(&line, &rbytes, policy_fh) > 0) && rule_idx < MAX_RULES) {
+    while (rule_idx < MAX_RULES && (getline(&line, &rbytes, policy_fh) > 0)) {
 
         if (rbytes > RULE_MAX_LENGTH - 1) {
             DBUS_BROKER_WARNING("Invalid policy rule %zu exceeds max-rule",
@@ -150,7 +151,7 @@ static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
             line_length = strlen(line);
             line[line_length - 1] = '\0';
             memcpy(current_rule, line, rbytes);
-            current = &(etc->rules[rule_idx]);
+            current = &(domain_etc_policy->rules[rule_idx]);
             create_rule(current, current_rule) < 0 ? free_rule(*current) :
                                                                rule_idx++;
         }
@@ -164,7 +165,7 @@ static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
     if (line)
         free(line);
 
-    etc->count = rule_idx;
+    domain_etc_policy->count = rule_idx;
     fclose(policy_fh);
 }
 
@@ -181,7 +182,7 @@ static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
 struct policy *build_policy(const char *rule_filename)
 {
     struct policy *dbus_policy;
-    struct etc_policy *etc;
+    struct etc_policy *domain_etc_policy;
     int dom_idx;
     DBusMessage *vms;
     DBusConnection *conn;
@@ -191,8 +192,8 @@ struct policy *build_policy(const char *rule_filename)
     char uuid[64];
 
     dbus_policy = calloc(1, sizeof *dbus_policy);
-    etc = &(dbus_policy->etc);
-    build_etc_policy(etc, rule_filename);
+    domain_etc_policy = &(dbus_policy->domain_etc_policy);
+    build_etc_policy(domain_etc_policy, rule_filename);
     dbus_policy->domain_count= 0;
 
     dom_idx = 0;
@@ -262,7 +263,7 @@ void free_policy(void)
 {
     int count;
     struct domain_policy domain;
-    struct etc_policy etc;
+    struct etc_policy domain_etc_policy;
     int i, j;
 
     count = dbus_broker_policy->domain_count;
@@ -273,10 +274,10 @@ void free_policy(void)
             free_rule(domain.rules[j]);
     }
 
-    etc = dbus_broker_policy->etc;
+    domain_etc_policy = dbus_broker_policy->domain_etc_policy;
 
-    for (i=0; i < etc.count; i++)
-        free_rule(etc.rules[i]);
+    for (i=0; i < domain_etc_policy.count; i++)
+        free_rule(domain_etc_policy.rules[i]);
 
     free(dbus_broker_policy);
 }
