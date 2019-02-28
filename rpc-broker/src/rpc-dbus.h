@@ -19,15 +19,12 @@
 #define DBUS_BROKER_CLIENT_TIMEOUT  100
 #define DBUS_BROKER_MSG_TIMEOUT     100
 
-// DBus-Broker messages
+/* DBus-Broker messages */
 #define DBUS_REQ_TIMEOUT    5000
 #define DBUS_MSG_LEN        8192
 #define DBUS_ARG_LEN        1024
 
 #define DBUS_INTROSPECT_MAX 0xFFFF
-
-// The actual length is 32, but sockaddr_un.sun_path is 108 chars maximum
-#define DBUS_BUS_ADDR_LEN   108
 
 #define DBUS_MAX_ARG_LEN    16
 
@@ -57,10 +54,9 @@ struct dbus_message {
 #define XENSTORE_TARGET "/target"
 
 struct dbus_link {
-    // add identifier
+    /* add identifier */
     DBusConnection *dconn;
     struct lws *wsi;
-    //
     int client_fd;
     int server_fd;
     struct dbus_link *next;
@@ -70,11 +66,11 @@ struct dbus_link {
 struct dbus_link *dlinks;
 size_t signal_subscribers;
 
-// forward declarations
+/* forward declarations */
 struct dbus_broker_server;
 struct json_request;
 
-// src/dbus.c
+/* src/rpc-dbus.c */
 DBusConnection *create_dbus_connection(void);
 
 int start_server(struct dbus_broker_server *server, int port);

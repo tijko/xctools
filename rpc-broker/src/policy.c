@@ -60,23 +60,23 @@ static int create_rule(struct rule *current, char *rule)
 
         if (!field && token[0] != 's') {
             return -1;
-        } else if (!strcmp("destination", token)) {
+        } else if (strcmp("destination", token) == 0) {
             current->destination = strdup(field);
-        } else if (!strcmp("dom-type", token)) {
+        } else if (strcmp("dom-type", token) == 0) {
             current->domtype = strdup(field);
-        } else if (!strcmp("interface", token)) {
+        } else if (strcmp("interface", token) == 0) {
             current->interface = strdup(field);
-        } else if (!strcmp("if-boolean", token)) {
+        } else if (strcmp("if-boolean", token) == 0) {
             current->if_bool = strdup(field);
             token = strtok(NULL, delimiter);
             current->if_bool_flag = strcmp("true", token) == 0 ? 1 : 0;
-        } else if (!strcmp("stubdom", token)) {
+        } else if (strcmp("stubdom", token) == 0) {
             current->stubdom = 1;
-        } else if (!strcmp("path", token)) {
+        } else if (strcmp("path", token) == 0) {
             current->path = strdup(field);
-        } else if (!strcmp("member", token)) {
+        } else if (strcmp("member", token) == 0) {
             current->member = strdup(field);
-        } else if (!strcmp("out-any", token)) {
+        } else if (strcmp("out-any", token) == 0) {
             current->out = 1;
         } else {
             DBUS_BROKER_WARNING("Unrecognized Rule-Token: %s", token);
@@ -210,9 +210,11 @@ struct policy *build_policy(const char *rule_filename)
         dbus_message_iter_get_basic(&sub, &arg);
         current = &(dbus_policy->domains[dom_idx]);
         strcpy(current->uuid, arg);
-        // alter the uuid from underscores to dashes
-        // dbus returns underscores while the vm db uses dashes
-        // if not the vm db policy check on strcmp on the uuid is off
+        /* 
+         * alter the uuid from underscores to dashes
+         * dbus returns underscores while the vm db uses dashes
+         * if not the vm db policy check on strcmp on the uuid is off
+         */
         TRANSFORM_UUID(arg, uuid);
         strcpy(current->uuid_db_fmt, uuid);
 

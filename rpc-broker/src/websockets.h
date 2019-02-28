@@ -19,21 +19,21 @@
 #include <libwebsockets.h>
 
 
-#define WS_LOOP_TIMEOUT             100  // length of time each service of the websocket
-                                         // event-loop (millisecs)
+#define WS_LOOP_TIMEOUT             100  /* length of time each service of the websocket */
+                                         /* event-loop (millisecs) */
 #define WS_RING_BUFFER_MEMBER_SIZE 8192
 #define WS_RING_BUFFER_MEMBER_NUM    64
 
 struct lws_ring *ring;
 
 
-#define WS_USER_MEM_SIZE 8192  // the amount memory that is allocated for user
-                               // for each ws-callback
+#define WS_USER_MEM_SIZE 8192  /* the amount memory that is allocated for user */
+                               /* for each ws-callback */
 
 
 struct json_response;
 
-// src/websockets.c
+/* src/websockets.c */
 char *prepare_json_reply(struct json_response *jrsp);
 
 struct lws_context *create_ws_context(int port);

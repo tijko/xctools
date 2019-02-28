@@ -71,7 +71,7 @@
             exit(0);                              \
     })                                            \
 
-// DBus-Broker server
+/* DBus-Broker server */
 #define BROKER_DEFAULT_PORT 5555
 #define BROKER_UI_PORT      8080
 
@@ -116,7 +116,7 @@ struct raw_dbus_conn {
     uv_poll_t handle;
 };
 
-// rpc-broker.c
+/* rpc-broker.c */
 signed int is_stubdom(uint16_t domid);
 
 int get_domid(int client);
@@ -127,7 +127,7 @@ void sigint_handler(int signal);
 
 void free_uuids(void);
 
-// src/msg.c
+/* src/msg.c */
 bool is_request_allowed(struct dbus_message *dmsg, int domid);
 
 int exchange(int rsock, int ssock, uint16_t domid, bool is_client);

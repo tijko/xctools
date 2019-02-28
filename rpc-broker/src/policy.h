@@ -79,7 +79,7 @@ struct policy {
 
 struct policy *dbus_broker_policy;
 
-// src/policy.c
+/* src/policy.c */
 struct policy *build_policy(const char *rule_filepath);
 
 void free_rule(struct rule r);

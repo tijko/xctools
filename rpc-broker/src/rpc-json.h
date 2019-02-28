@@ -49,7 +49,7 @@ static const char json_dbus_types[] = {
 };
 
 
-// src/json.c
+// src/rpc-json.c
 struct json_response *init_jrsp(void);
 
 struct json_response *make_json_request(struct json_request *jreq);
@@ -66,4 +66,3 @@ void free_json_request(struct json_request *jreq);
 
 #define JSON_RESP "response"
 #define JSON_SIG  "signal"
-

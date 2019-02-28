@@ -87,10 +87,12 @@ struct json_response *make_json_request(struct json_request *jreq)
 static void append_dbus_message_arg(int type, int idx, void **args,
                                     struct json_object *jarg)
 {
-    // XXX todo: have the "argument" array -> `void **args`
-    //           be set-up as an array of `struct arg`
-    //           and these types won't need to be declared
-    //      (possibly adding union-type in the `struct arg`)
+    /* 
+     * todo: have the "argument" array -> `void **args`
+     *       be set-up as an array of `struct arg`
+     *       and these types won't need to be declared
+     *      (possibly adding union-type in the `struct arg`)
+     */
 
     switch (type) {
 
@@ -164,9 +166,11 @@ void load_json_response(DBusMessage *msg, struct json_response *jrsp)
 
         dbus_message_iter_recurse(&iter, &sub);
         iter = sub;
-        // This accomodates the legacy code in `rpc-proxy` where the
-        // signatures are being mis-handled and thus the UI is excpecting
-        // the malformed dbus responses.
+        /*
+         * This accomodates the legacy code in `rpc-proxy` where the
+         * signatures are being mis-handled and thus the UI is excpecting
+         * the malformed dbus responses.
+         */
         switch (jrsp->arg_sig[1]) {
             case 'a':
             case 'i':
@@ -194,7 +198,7 @@ static signed int parse_json_args(struct json_object *jarray,
     int i, jtype;
     struct json_object *jarg;
 
-    // XXX supports the removal of network-daemon/slave
+    /* supports the removal of network-daemon/slave */
     if (!jreq->dmsg.destination && jreq->dmsg.type) {
         signature = malloc(3);
         if (!signature)
@@ -254,7 +258,7 @@ struct json_request *convert_json_request(char *raw_json_req)
 
     memset(&jreq->dmsg, 0, sizeof(jreq->dmsg));
     jreq->dmsg.destination = get_json_str_obj(jobj, "destination");
-    // XXX supports the removal of network-daemon/slave
+    /* supports the removal of network-daemon/slave */
     if (!jreq->dmsg.destination) {
         jreq->dmsg.type = get_json_str_obj(jobj, "type");
     } else
@@ -277,7 +281,7 @@ struct json_request *convert_json_request(char *raw_json_req)
     json_object_object_get_ex(jobj, "id", &jint);
     jreq->id = json_object_get_int(jint);
 
-    // json free's recursively on objects
+    /* json free's recursively on objects */
     json_object_put(jobj);
 
     return jreq;
