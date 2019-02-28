@@ -39,9 +39,9 @@
  * @param dmsg The dbus request message fields.
  * @param domid The domain id of the where the request is being made.
  *
- * @return 1 to allow 0 to deny
+ * @return true to allow false to deny
  */
-int broker(struct dbus_message *dmsg, int domid)
+bool is_request_allowed(struct dbus_message *dmsg, int domid)
 {
     int policy, current_rule_policy, domains;
     struct etc_policy etc;
@@ -166,7 +166,7 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
             if (len == rbytes) {
                 if (convert_raw_dbus(&dmsg, buf, len) < 1)
                     return -1;
-                if (broker(&dmsg, domid) <= 0)
+                if (is_request_allowed(&dmsg, domid) == false)
                     return -1;
             }
 #ifdef DEBUG

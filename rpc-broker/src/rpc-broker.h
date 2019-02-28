@@ -127,7 +127,7 @@ void sigint_handler(int signal);
 
 
 // src/msg.c
-int broker(struct dbus_message *dmsg, int domid);
+bool is_request_allowed(struct dbus_message *dmsg, int domid);
 
 int exchange(int rsock, int ssock, uint16_t domid, bool is_client);
 

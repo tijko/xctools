@@ -126,7 +126,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
     domain = get_domid(client);
 
     jreq = convert_json_request(raw_req);
-    if (!jreq || broker(&jreq->dmsg, domain) <= 0)
+    if (!jreq || is_request_allowed(&jreq->dmsg, domain) == false)
         return -1;
 
     jreq->wsi = wsi;
