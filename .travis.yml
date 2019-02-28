@@ -137,6 +137,10 @@ script:
 - diff -u first-fail.txt test-policies/blocked-interface-reply.txt ; RES=$? 
 - DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames; RES=$? 
 - test $RES -eq 0
+- DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.GetId; RES=$? 
+- test $RES -eq 0
+- DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListActivatableNames; RES=$? 
+- test $RES -eq 0
 
 # End of testsuite
 - kill $RPCBPID
