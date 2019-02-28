@@ -99,16 +99,16 @@ static int filter_domtype(DBusConnection *conn, char *uuid,
 }
 
 /*
- * Checks a rule for any given request, compares the policy-rule against 
+ * Checks a rule for any given request, compares the policy-rule against
  * the dbus request being made.
  *
  * @param policy_rule One of the policy rules being compared against.
  * @param dmsg Structure object of the request being made.
  * @param domid Domain id from where the request came.
- * 
+ *
  * @return 0 policy is to deny, 1 policy is to allow, -1 the rule did not match
  */
-static int rule_matches_request(struct rule *policy_rule, 
+static int rule_matches_request(struct rule *policy_rule,
                                 struct dbus_message *dmsg,
                                 uint16_t domid)
 {
@@ -177,7 +177,7 @@ static struct domain_policy *get_domain_policy(char *uuid)
     domains = dbus_broker_policy->domain_count;
 
     for (i=0; i < domains; i++) {
-        if (!strcmp(dbus_broker_policy->domains[i].uuid_db_fmt, uuid)) {
+        if (!strcmp(dbus_broker_policy->domains[i].uuid_db_fmt, uuid))
             return &(dbus_broker_policy->domains[i]);
     }
 
@@ -199,7 +199,7 @@ static struct domain_policy *get_domain_policy(char *uuid)
 bool is_request_allowed(struct dbus_message *dmsg, int domid)
 {
     bool allowed;
-    int current_rule_policy, domains;
+    int current_rule_policy;
     struct etc_policy domain_etc_policy;
 
     int i;
@@ -223,8 +223,8 @@ bool is_request_allowed(struct dbus_message *dmsg, int domid)
 
     domain_etc_policy = dbus_broker_policy->domain_etc_policy;
 
-    for (i=0; i < etc.count; i++) {
-        current_rule_policy = rule_matches_request(&(domain_etc_policy.rules[i]), 
+    for (i=0; i < domain_etc_policy.count; i++) {
+        current_rule_policy = rule_matches_request(&(domain_etc_policy.rules[i]),
                                                    dmsg, domid);
         /*
          *  1 = the rule matched the request and rule's policy is allow
@@ -241,7 +241,7 @@ bool is_request_allowed(struct dbus_message *dmsg, int domid)
         if (current_rule_policy == -1)
             continue;
 
-        allowed = current_rule_policy == 0 ? false : true; 
+        allowed = current_rule_policy == 0 ? false : true;
     }
 
     if (domain_uuids[domid])
@@ -260,13 +260,12 @@ bool is_request_allowed(struct dbus_message *dmsg, int domid)
         goto filtering_done;
 
     for (i=0; i < domain->count; i++) {
-        current_rule_policy = rule_matches_request(&(domain->rules[i]), 
+        current_rule_policy = rule_matches_request(&(domain->rules[i]),
                                                    dmsg, domid);
         if (current_rule_policy == -1)
             continue;
-        allowed = current_rule_policy == 0 ? false : true; 
+        allowed = current_rule_policy == 0 ? false : true;
     }
-
 
 filtering_done:
 
@@ -306,13 +305,13 @@ void debug_raw_buffer(char *buf, int rbytes)
  * are added to the event-loop.  Whenever a connection triggers the callback,
  * this function is invocated to receive the data being sent and then determine
  * (from the filter) if this message should be allowed or denied.
- * 
+ *
  * @param rsock The socket ready to be read.
  * @param ssock The other end of the connection that possible gets sent to.
  * @param domid The domain id from where the data is being sent.
  * @param is_client A flag to show if this is client end being recv'd from.
  *
- * @return The total number of bytes exchanged, -1 for failure (block) 
+ * @return The total number of bytes exchanged, -1 for failure (block)
  */
 int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
 {
