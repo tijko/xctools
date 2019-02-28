@@ -120,6 +120,10 @@ script:
 - kill $RPCBPID
 
 #
+# Test #6, this is a blanket to test to "allow all" *except* for a one specific
+# interface.  Setup is to show that all calls are initially blocked and then 
+# after all are allowed excepted for the blacklisted interface.
+#
 
 after_failure:
 # http://jsteemann.github.io/blog/2014/10/30/getting-core-dumps-of-failed-travisci-builds/
