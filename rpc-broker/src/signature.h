@@ -30,7 +30,7 @@ static const char XML_IN_FIELD[]           = "in";
 static const char XML_TYPE_FIELD[]         = "type";
 
 
-// src/signature.c
+/* src/signature.c */
 xmlNodePtr find_xml_property(const char *target, const xmlChar *property,
                              xmlNodePtr node);
 

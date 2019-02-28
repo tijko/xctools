@@ -80,7 +80,7 @@ int connect_to_system_bus(void)
         DBUS_BROKER_ERROR("socket");
 
     addr.sun_family = AF_UNIX;
-    // could have bus-path override (LEN would need checking)
+    /* could have bus-path override (LEN would need checking) */
     memcpy(addr.sun_path, DBUS_BUS_ADDR, strlen(DBUS_BUS_ADDR) + 1);
 
     if (connect(srv, (struct sockaddr *) &addr, sizeof(addr)) < 0)
@@ -276,7 +276,7 @@ char *get_uuid_from_domid(int domid)
         goto uuid_error;
 
     dbus_message_iter_init(msg, &iter);
-    // dbus message returns an "object-path"
+    /* dbus message returns an "object-path" */
     if (dbus_message_iter_get_arg_type(&iter) != DBUS_TYPE_OBJECT_PATH)
         goto uuid_error;
 
@@ -285,7 +285,7 @@ char *get_uuid_from_domid(int domid)
     if (!uuid)
         goto uuid_error;
 
-    // cut off the "/vm/" of the path
+    /* cut off the "/vm/" of the path */
     strncpy(uuid, path + 4, MAX_UUID - 1);
 
 uuid_error:
@@ -507,7 +507,7 @@ xml_error:
 
 static struct dbus_link *add_dbus_signal(void)
 {
-    // add extra field to show signals already subscribed to?
+    /* add extra field to show signals already subscribed to */
     struct dbus_link *head, *tail, *new_link;
 
     head = dlinks;

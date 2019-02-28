@@ -216,9 +216,9 @@ bool is_request_allowed(struct dbus_message *dmsg, int domid)
         return false;
     }
 
-    // deny by default
+    /* deny by default */
     allowed = false;
-    // sets the current-rule-policy to default
+    /* sets the current-rule-policy to default */
     current_rule_policy = 0;
 
     domain_etc_policy = dbus_broker_policy->domain_etc_policy;
