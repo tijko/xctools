@@ -22,6 +22,7 @@
 #define RULE_MAX_LENGTH  512
 
 struct rule {
+    uint8_t all:1;
     uint8_t out:1;
     uint8_t policy:1;
     uint8_t stubdom:1;

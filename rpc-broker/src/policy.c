@@ -35,8 +35,14 @@ static int create_rule(struct rule *current, char *rule)
     if (!token)
         return -1;
 
-    current->policy = token[0] == 'a';
+    /* The first field predicates the policy "allow" or "deny" */
+    current->policy = strcmp(token, "allow") == 0;
+
     token = strtok(NULL, delimiter);
+    if (!strcmp(token, "all")) {
+        current->all = 1;
+        return 0;
+    }
 
     while (token) {
 
