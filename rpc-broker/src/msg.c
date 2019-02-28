@@ -16,15 +16,30 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * @file msg.c
+ * @author Tim Konick <konickt@ainfosec.com>
+ * @date Thur Feb 28 13:50:30 2019
+ *
+ * @brief Function to determine if dbus request message is blocked or not.
+ *
+ * The code that filters messages passed off the policy rules lives here.
+ */
+
 #include "rpc-broker.h"
 
 
-/*
+/**
  * All requests are handled by this function whether they are raw requests
  * or Websocket requests.  For every policy rule listed either in the
  * /etc/rpc-broker.policy file or the domain-specific rules listed in the
  * xenclient database, each is passed to `filter` to determine whether or not
  * the message is dropped or passed through.
+ *
+ * @param dmsg The dbus request message fields.
+ * @param domid The domain id of the where the request is being made.
+ *
+ * @return 1 to allow 0 to deny
  */
 int broker(struct dbus_message *dmsg, int domid)
 {
@@ -121,7 +136,18 @@ void debug_raw_buffer(char *buf, int rbytes)
 
 /*
  * This is an opaque exchange reading off from the receiving end of a raw-dbus
- * connection.
+ * connection.  For rpc-broker sessions running "raw" mode, whenever a client
+ * connects, another connection is opened on the bus.  Each of these sockets
+ * are added to the event-loop.  Whenever a connection triggers the callback,
+ * this function is invocated to receive the data being sent and then determine
+ * (from the filter) if this message should be allowed or denied.
+ * 
+ * @param rsock The socket ready to be read.
+ * @param ssock The other end of the connection that possible gets sent to.
+ * @param domid The domain id from where the data is being sent.
+ * @param is_client A flag to show if this is client end being recv'd from.
+ *
+ * @return The total number of bytes exchanged, -1 for failure (block) 
  */
 int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
 {
@@ -227,6 +253,12 @@ static int filter_domtype(DBusConnection *conn, char *uuid,
 /*
  * The main policy filtering function, compares the policy-rule against the dbus
  * request being made.
+ *
+ * @param policy_rule One of the policy rules being compared against.
+ * @param dmsg Structure object of the request being made.
+ * @param domid Domain id from where the request came.
+ * 
+ * @return 0 policy is to deny, 1 policy is to allow, -1 the rule did not match
  */
 int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
 {
