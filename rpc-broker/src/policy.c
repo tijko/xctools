@@ -16,6 +16,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * @file policy.c
+ * @author Tim Konick <konickt@ainfosec.com>
+ * @date Thur Feb 28 14:13:45 2019
+ *
+ * @brief Function that builds the main policy-object.
+ *
+ * All the functions needed for parsing any rules files lives here.
+ */
+
 #include "rpc-broker.h"
 
 
@@ -158,6 +168,16 @@ static void build_etc_policy(struct etc_policy *etc, const char *rule_filepath)
     fclose(policy_fh);
 }
 
+/**
+ * Constructs a policy-object based off the currently enforced policy of the
+ * given system.  The policy file that resides in /etc/rpc-broker.file is 
+ * parsed first.  Then the per-vm policies that reside in the system database
+ * are parsed.
+ *
+ * @param rule_filename Overrides the location of the /etc policy.
+ *
+ * @return struct policy pointer of current policy.
+ */
 struct policy *build_policy(const char *rule_filename)
 {
     struct policy *dbus_policy;
