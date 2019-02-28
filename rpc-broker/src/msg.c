@@ -243,6 +243,9 @@ int filter(struct rule *policy_rule, struct dbus_message *dmsg, uint16_t domid)
     conn = NULL;
     uuid = NULL;
 
+    if (policy_rule->all)
+        return filter_policy;
+
     if ((policy_rule->stubdom && is_stubdom(domid) < 1)                  ||
         (policy_rule->destination && strcmp(policy_rule->destination,
                                                  dmsg->destination))     ||
