@@ -125,6 +125,7 @@ void print_usage(void);
 
 void sigint_handler(int signal);
 
+void free_uuids(void);
 
 // src/msg.c
 bool is_request_allowed(struct dbus_message *dmsg, int domid);

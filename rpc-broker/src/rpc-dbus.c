@@ -67,7 +67,7 @@ void dbus_default(struct dbus_message *dmsg)
     dmsg->interface = DBUS_DB_IFACE;
     dmsg->path = DBUS_BASE_PATH;
     dmsg->arg_number = 1;
-    memcpy(dmsg->arg_sig, "s", DBUS_MAX_ARG_LEN - 1);
+    memcpy(dmsg->arg_sig, "s", 2);
 }
 
 int connect_to_system_bus(void)
@@ -81,7 +81,7 @@ int connect_to_system_bus(void)
 
     addr.sun_family = AF_UNIX;
     // could have bus-path override (LEN would need checking)
-    memcpy(addr.sun_path, DBUS_BUS_ADDR, DBUS_BUS_ADDR_LEN);
+    memcpy(addr.sun_path, DBUS_BUS_ADDR, strlen(DBUS_BUS_ADDR) + 1);
 
     if (connect(srv, (struct sockaddr *) &addr, sizeof(addr)) < 0)
         DBUS_BROKER_ERROR("connect");
