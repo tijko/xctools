@@ -72,7 +72,7 @@ struct policy {
     size_t allowed_requests;
     size_t denied_requests;
     size_t total_requests;
-    struct etc_policy etc;
+    struct etc_policy domain_etc_policy;
     struct domain_policy domains[MAX_DOMAINS];
 };
 
