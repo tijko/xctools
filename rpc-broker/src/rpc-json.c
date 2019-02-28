@@ -27,7 +27,7 @@ struct json_response *init_jrsp(void)
         DBUS_BROKER_ERROR("Calloc Failed!");
 
     jrsp->args = json_object_new_array();
-    memcpy(jrsp->type, JSON_RESP, JSON_REQ_ID_MAX);
+    memcpy(jrsp->type, JSON_RESP, strlen(JSON_RESP) + 1);
 
     return jrsp;
 }
@@ -209,7 +209,7 @@ static signed int parse_json_args(struct json_object *jarray,
         return -1;
     }
 
-    strncpy(jreq->dmsg.arg_sig, signature, strlen(signature) + 1);
+    strncpy(jreq->dmsg.arg_sig, signature, DBUS_MAX_ARG_LEN - 1);
     array_length = json_object_array_length(jarray);
     jreq->dmsg.arg_number = array_length;
     sigptr = signature;
