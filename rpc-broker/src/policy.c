@@ -46,11 +46,14 @@ static int create_rule(struct rule *current, char *rule)
         return -1;
 
     /* The first field predicates the policy "allow" or "deny" */
-    current->policy = strcmp(token, "allow") == 0;
+    if (strcmp(token, "allow") == 0)
+        current->policy = true;
+    else
+        current->policy = false;
 
     token = strtok(NULL, delimiter);
     if (!strcmp(token, "all")) {
-        current->all = 1;
+        current->all = true;
         return 0;
     }
 
@@ -69,15 +72,18 @@ static int create_rule(struct rule *current, char *rule)
         } else if (strcmp("if-boolean", token) == 0) {
             current->if_bool = strdup(field);
             token = strtok(NULL, delimiter);
-            current->if_bool_flag = strcmp("true", token) == 0 ? 1 : 0;
+            if (strcmp("true", token) == 0)
+                current->if_bool_flag = true;
+            else
+                current->if_bool_flag = false;
         } else if (strcmp("stubdom", token) == 0) {
-            current->stubdom = 1;
+            current->stubdom = true;
         } else if (strcmp("path", token) == 0) {
             current->path = strdup(field);
         } else if (strcmp("member", token) == 0) {
             current->member = strdup(field);
         } else if (strcmp("out-any", token) == 0) {
-            current->out = 1;
+            current->out = true;
         } else {
             DBUS_BROKER_WARNING("Unrecognized Rule-Token: %s", token);
             free_rule(*current);

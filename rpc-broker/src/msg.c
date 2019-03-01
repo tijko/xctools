@@ -53,7 +53,7 @@ static inline char *get_db_vm_path(DBusConnection *conn, uint16_t domid)
 }
 
 static int filter_if_bool(DBusConnection *conn, char *uuid,
-                          char *bool_cond, int bool_flag)
+                          char *bool_cond, bool bool_flag)
 {
     char *arg, *attr_cond;
     int rc;
@@ -69,8 +69,8 @@ static int filter_if_bool(DBusConnection *conn, char *uuid,
     if (!attr_cond)
         return -1;
 
-    if ((!strcmp("true", attr_cond) && bool_flag == 0) ||
-        (!strcmp("false", attr_cond) && bool_flag == 1))
+    if ((!strcmp("true", attr_cond) && bool_flag == false) ||
+        (!strcmp("false", attr_cond) && bool_flag == true))
         rc = -1;
 
     free(attr_cond);
