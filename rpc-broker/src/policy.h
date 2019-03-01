@@ -21,11 +21,11 @@
 #define RULE_MAX_LENGTH  512
 
 struct rule {
-    uint8_t all:1;
-    uint8_t out:1;
-    uint8_t policy:1;
-    uint8_t stubdom:1;
-    uint8_t if_bool_flag:1;
+    bool all;
+    bool out;
+    bool policy;
+    bool stubdom;
+    bool if_bool_flag;
     const char *destination;
     const char *path;
     const char *interface;
