@@ -16,6 +16,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * @file websockets.h
+ * @author Tim Konick <konickt@ainfosec.com>
+ * @date March 4, 2019
+ * @brief Websocket declarations.
+ *
+ * Any global state variables and functions needed for Websocket handling.
+ */
+
 #include <libwebsockets.h>
 
 

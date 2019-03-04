@@ -19,9 +19,8 @@
 /**
  * @file msg.c
  * @author Tim Konick <konickt@ainfosec.com>
- * @date Thur Feb 28 13:50:30 2019
- *
- * @brief Function to determine if dbus request message is blocked or not.
+ * @date Thur Feb 28, 2019
+ * @brief DBus request message handling.
  *
  * The code that filters messages passed off the policy rules lives here.
  */
@@ -128,7 +127,7 @@ static int rule_matches_request(struct rule *policy_rule,
     if (policy_rule->all)
         return filter_policy;
 
-    if ((policy_rule->stubdom && is_stubdom(domid) < 1)                  ||
+    if ((policy_rule->stubdom && !is_stubdom(domid))                     ||
         (policy_rule->destination && strcmp(policy_rule->destination,
                                                  dmsg->destination))     ||
         (policy_rule->path && strcmp(policy_rule->path, dmsg->path))     ||

@@ -16,9 +16,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * @file rpc-json.h
+ * @author Tim Konick <konickt@ainfosec.com>
+ * @date March 4, 2019
+ * @brief JSON handling declarations.
+ *
+ * Functions, data structures, and global variables for handling any JSON
+ * requests being made.
+ */
 #include <json.h>
 
 
+/**
+ * @brief contains JSON request connection data.
+ */
 struct json_request {
     uint32_t id;
     DBusConnection *conn;
@@ -30,6 +42,9 @@ struct json_request {
 #define JSON_TYPE_MAX   16
 #define JSON_REQ_MAX   256
 
+/**
+ * @brief contains JSON response data.
+ */
 struct json_response {
     uint32_t id;
     const char *path;

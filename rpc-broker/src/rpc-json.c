@@ -16,9 +16,24 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * @file rpc-json.c
+ * @author Tim Konick
+ * @date March 4, 2019
+ * @brief JSON request handling
+ *
+ * All websocket requests are made using the JSON format.  All the loading
+ * and unloading of the JSON objects is done through the functions here.
+ * Then going the other way as well, the conversion from dbus api objects
+ * into websockets request objects.
+ */
+
 #include "rpc-broker.h"
 
 
+/**
+ * Initializes a JSON response object.
+ */
 struct json_response *init_jrsp(void)
 {
     struct json_response *jrsp;
@@ -32,6 +47,14 @@ struct json_response *init_jrsp(void)
     return jrsp;
 }
 
+/**
+ * Takes a JSON request object, makes a dbus request and converts into a 
+ * JSON response object.  
+ *
+ * @param jreq a tokenized object for the request being made.   
+ *
+ * @return a JSON response object or NULL.
+ */
 struct json_response *make_json_request(struct json_request *jreq)
 {
     struct json_response *jrsp;
@@ -148,6 +171,13 @@ static const char *get_json_str_obj(struct json_object *jobj, char *field)
     return strdup(json_object_get_string(jfield));
 }
 
+/**
+ * Loads a JSON response object based of a dbus api message object and its
+ * corresponding arguments. 
+ *
+ * @param msg a dbus api object with the reply message
+ * @param jrsp the JSON response object to be initialized
+ */
 void load_json_response(DBusMessage *msg, struct json_response *jrsp)
 {
     DBusMessageIter iter, sub;
@@ -238,6 +268,14 @@ static signed int parse_json_args(struct json_object *jarray,
     return 0;
 }
 
+/**
+ * Takes raw bytes provided by a websockets request and load them into a JSON
+ * request object.
+ *
+ * @param raw_json_req raw bytes from a websockets request.
+ * 
+ * @return a JSON request object or NULL.
+ */
 struct json_request *convert_json_request(char *raw_json_req)
 {
     struct json_request *jreq;
@@ -295,6 +333,11 @@ request_error:
     return NULL;
 }
 
+/**
+ * Frees JSON request objects.
+ *
+ * @param jreq the request to be freed.
+ */
 void free_json_request(struct json_request *jreq)
 {
     int i;
@@ -318,6 +361,14 @@ void free_json_request(struct json_request *jreq)
     free(jreq);
 }
 
+/**
+ * Takes a JSON response object and converts it into a JSON api response
+ * object.
+ *
+ * @param jrsp the JSON response object 
+ *
+ * @return JSON api `json_object`
+ */ 
 struct json_object *convert_dbus_response(struct json_response *jrsp)
 {
     struct json_object *jobj;
@@ -342,6 +393,13 @@ struct json_object *convert_dbus_response(struct json_response *jrsp)
     return jobj;
 }
 
+/**
+ * Utility function to add fields to JSON api object.
+ *
+ * @param args JSON api object to add.
+ * @param key JSON api field identifier to add to.
+ * @param jobj JSON api main object receiving the arguments. 
+ */
 void add_jobj(struct json_object *args, char *key, struct json_object *jobj)
 {
     if (!key)

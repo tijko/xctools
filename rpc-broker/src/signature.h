@@ -16,6 +16,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * @file signature.h
+ * @author Tim Konick <konickt@ainfosec.com>
+ * @date March 4, 2019
+ * @brief signature handling declarations.
+ *
+ * All global variables and function declarations needed for parsing dbus
+ * signatures. 
+ */
+
 #include <dbus/dbus.h>
 #include <json.h>
 #include <libxml/parser.h>

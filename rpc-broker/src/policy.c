@@ -19,11 +19,10 @@
 /**
  * @file policy.c
  * @author Tim Konick <konickt@ainfosec.com>
- * @date Thur Feb 28 14:13:45 2019
+ * @date Thur Feb 28, 2019
+ * @brief The policy handling.
  *
- * @brief Function that builds the main policy-object.
- *
- * All the functions needed for parsing any rules files lives here.
+ * All the functions needed for parsing any rules from policy files.
  */
 
 #include "rpc-broker.h"
@@ -267,6 +266,11 @@ void free_rule(struct rule r)
         free((char *) (r.rule_string));
 }
 
+/**
+ * Free's the policy structure object.  Iterating over all domain-specific
+ * database policies and also free'ing the policy structure created from the
+ * etc file.
+ */
 void free_policy(void)
 {
     int count;
