@@ -16,10 +16,26 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * @file policy.h
+ * @author Tim Konick <konickt@ainfosec.com>
+ * @date March 4, 2019 
+ * @brief Policy header 
+ *
+ * Header for building and interacting with policy objects. 
+ */
+
 #define RULES_FILENAME "/etc/rpc-broker.rules"
 #define RULES_MAX_LENGTH 256
 #define RULE_MAX_LENGTH  512
 
+/**
+ * @brief Rule structure
+ *
+ * Used to tokenize an single policy rule.  Separating into policy fields,
+ * that later are checked against a request that is similarly broken down
+ * into tokens to compare.
+ */
 struct rule {
     bool all;
     bool out;
@@ -53,11 +69,24 @@ struct rule {
         uuid_buf[uuid_len] = '\0';                \
 })                                                \
 
+/**
+ * @brief Etc policy structure
+ *
+ * Contains an array of `rule` objects created from a given policy file
+ * found under /etc  (usually rpc-broker.rules)
+ */
 struct etc_policy {
     size_t count;
     struct rule rules[MAX_RULES];
 };
 
+/**
+ * @brief Domain policy structure
+ *
+ * Contains the policy information based of a domain specific policy.  The
+ * domain id is listed along with the uuid in order to identify and associate
+ * the policy with any requests coming from the matching domain.
+ */
 struct domain_policy {
     uint16_t domid;
     size_t count;
@@ -66,6 +95,13 @@ struct domain_policy {
     struct rule rules[MAX_RULES];
 };
 
+/**
+ * @brief Main policy structure
+ *
+ * The main policy object that holds the etc-policy and all other domain-policy
+ * objects.  This object also has fields to track meta data that arises from
+ * any requests made on rpc-broker.
+ */ 
 struct policy {
     size_t domain_count;
     time_t policy_load_time;

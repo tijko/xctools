@@ -16,6 +16,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * @file rpc-dbus.h
+ * @author Tim Konick <konickt@ainfosec.com>
+ * @date March 4, 2019
+ * @brief DBus function handling declarations.
+ *
+ * All globals state variables for handling dbus communications and data
+ * structures dbus functions need.
+ */
+
 #define DBUS_BROKER_CLIENT_TIMEOUT  100
 #define DBUS_BROKER_MSG_TIMEOUT     100
 
@@ -28,6 +38,9 @@
 
 #define DBUS_MAX_ARG_LEN    16
 
+/**
+ * @brief A structure containing the tokenized fields of a dbus reqest.
+ */
 struct dbus_message {
     const char *destination;
     const char *interface;
@@ -53,6 +66,9 @@ struct dbus_message {
 #define XENSTORE_TARGET_LEN 8
 #define XENSTORE_TARGET "/target"
 
+/**
+ * @brief a dbus signal object kept in a doubly linked-list fashion.
+ */
 struct dbus_link {
     /* add identifier */
     DBusConnection *dconn;

@@ -16,6 +16,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * @file header for main source file.
+ * @author Tim Konick <konickt@ainfosec.com>
+ * @date March 4, 2019
+ * @brief Main header declarations 
+ *
+ * Functions, state variables, and objects for running the event loops.  There
+ * are also definitions for misc. utility functions. 
+ */
+
 #define _GNU_SOURCE
 #include <ctype.h>
 #include <dbus/dbus.h>
@@ -84,7 +94,9 @@
         cache[i] = NULL;                \
 })                                      \
 
-
+/**
+ * @brief object that holds the main dbus server connection state.
+ */
 struct dbus_broker_server {
     int dbus_socket;
     int port;
@@ -99,6 +111,9 @@ int dbus_broker_running;
 
 char *domain_uuids[UUID_CACHE_LIMIT];
 
+/**
+ * @brief contains the command line arguments passed upon invocation.
+ */
 struct dbus_broker_args {
     bool logging;
     bool verbose;
@@ -108,6 +123,10 @@ struct dbus_broker_args {
     const char *rule_file;
 };
 
+/**
+ * @brief object that created upon each request made to connect to the actaul
+ * dbus.   
+ */
 struct raw_dbus_conn {
     int receiver;
     int sender;
@@ -117,13 +136,9 @@ struct raw_dbus_conn {
 };
 
 /* rpc-broker.c */
-signed int is_stubdom(uint16_t domid);
+bool is_stubdom(uint16_t domid);
 
 int get_domid(int client);
-
-void print_usage(void);
-
-void sigint_handler(int signal);
 
 void free_uuids(void);
 

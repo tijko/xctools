@@ -16,6 +16,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * @file rpc-broker.c
+ * @author Tim Konick <konickt@ainfosec.com>
+ * @date March 4, 2019
+ * @brief The main project file.
+ *
+ * All global data structures, event loops, and global state variables are
+ * initialized here.
+ */
+
 #define _GNU_SOURCE
 #include <errno.h>
 #include <getopt.h>
@@ -49,10 +59,21 @@ static int broker_message(struct raw_dbus_conn *conn)
     return total;
 }
 
-signed int is_stubdom(uint16_t domid)
+/**
+ * Queries xenstore about whether a domain is a stubdom or not.
+ *
+ * @param domid the domain id to make query on.
+ * 
+ * @return the return boolean indicating whether the domain is a stubdom.
+ */
+bool is_stubdom(uint16_t domid)
 {
     size_t len;
+    bool domain_is_stubdom;
+
     len = 0;
+    domain_is_stubdom = false;
+     
 #ifdef HAVE_XENSTORE
     struct xs_handle *xsh;
     char *path;
@@ -75,9 +96,19 @@ signed int is_stubdom(uint16_t domid)
     free(path);
     xs_close(xsh);
 #endif
-    return len;
+    if (len > 0)
+        domain_is_stubdom = true;
+    return domain_is_stubdom;
 }
 
+/**
+ * Calculates the domain id for a given client.
+ *
+ * @param client is the file descriptor from the connection to get the domain
+ * id from
+ *
+ * @return the domid.
+ */
 int get_domid(int client)
 {
     int domain;
@@ -105,7 +136,7 @@ int get_domid(int client)
     return domain;
 }
 
-void print_usage(void)
+static void print_usage(void)
 {
     printf("rpc-broker <flag> <argument>\n");
     printf("\t-b  [--bus-name=BUS]                    ");
@@ -124,7 +155,7 @@ void print_usage(void)
     printf("Sets rpc-broker to run on given address/port as websockets.\n");
 }
 
-void sigint_handler(int signal)
+static void sigint_handler(int signal)
 {
     DBUS_BROKER_WARNING("<received signal interrupt> %s", "");
     free_dlinks();
@@ -142,7 +173,7 @@ void sigint_handler(int signal)
     exit(0);
 }
 
-void sighup_handler(int signal)
+static void sighup_handler(int signal)
 {
     reload_policy = true;
     DBUS_BROKER_EVENT("Re-loading policy %s", "");

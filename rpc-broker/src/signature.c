@@ -16,13 +16,29 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * @file signature.c
+ * @author Tim Konick <konickt@ainfosec.com>
+ * @date March 4, 2019
+ * @brief retrieve and parse dbus request method signatures.
+ *
+ * Requests being made to the DBus server need to have their argument types
+ * explicitly stating because of insufficient api conversions.
+ */
+
 #include "rpc-broker.h"
 
 
-/*
+/**
  * Recursively traverse the XML DocTree of a given dbus destination to find the
  * target property.  This function is arranged in a generic/opaque manner where
  * you can use it for any xml-property you want.
+ *
+ * @param target the name of the xml key being searching for.
+ * @param property the xml api nest of nodes.
+ * @param node the xml api top level node.
+ *
+ * @return xml api node of the property being searched
  */
 xmlNodePtr find_xml_property(const char *target, const xmlChar *property,
                              xmlNodePtr node)
@@ -48,12 +64,19 @@ xmlNodePtr find_xml_property(const char *target, const xmlChar *property,
     return node;
 }
 
-/*
+/**
  * The main function for handling the dbus XML signature parsing.  Parsing XML
  * schema for each dbus request is necessary because there is no way to rely
  * on the JSON object returning the correct argument type required for each
  * request.  The libjson-c doesn't handle signedness, thus dbus will fail if
  * adding a request argument based solely on `json_object_get_type`
+ *
+ * @param xml_dump the xml api main object.
+ * @param args an array to store the return types. 
+ * @param interface the name of the dbus interface being queried.
+ * @param member the name of the dbus method being queried.
+ *
+ * @return the number of types in a signature.
  */
 int retrieve_xml_signature(const xmlChar *xml_dump, char *args,
                            const char *interface, const char *member)
@@ -150,6 +173,13 @@ static inline void add_json_array(struct json_object *args, char *key,
     parse_signature(args, key, &sub);
 }
 
+/**
+ * Parsing of a DBus dictionary object.
+ *
+ * @args an array to store the returned dbus objects.
+ * @key an identifier for the JSON api object.
+ * @iter the DBus api object containing the dict.
+ */
 void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter)
 {
     struct json_object *dbus_dict;
@@ -168,6 +198,13 @@ void parse_dbus_dict(struct json_object *args, char *key, DBusMessageIter *iter)
     }
 }
 
+/**
+ * Main parsing function for DBus signature retrieval.
+ *
+ * @param args the JSON api object to search.
+ * @param key the JSON api field identifier.
+ * @param iter the main DBus api object to parse.
+ */
 void parse_signature(struct json_object *args, char *key, DBusMessageIter *iter)
 {
     int type;

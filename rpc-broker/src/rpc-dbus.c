@@ -16,9 +16,23 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * @file rpc-dbus.c
+ * @author Tim Konick <konickt@ainfosec.com>
+ * @date March 4, 2019
+ * @brief DBus functions.
+ *
+ * Any dbus connections being made are created through these functions.  Along
+ * with any corresponding message handling that is needed aswell.
+ */
+
 #include "rpc-broker.h"
 
 
+/**
+ * Makes a dbus connection directly on the bus.
+ *
+ */
 DBusConnection *create_dbus_connection(void)
 {
     DBusError error;
@@ -31,15 +45,28 @@ DBusConnection *create_dbus_connection(void)
     return conn;
 }
 
+/**
+ * Initializes a dbus server connection on a given port. 
+ *
+ * @param server the server object being initialized.
+ * @param port the port being bound to.
+ *
+ * @return 0 on success error code otherwise. 
+ */
 int start_server(struct dbus_broker_server *server, int port)
 {
+    int ret;
     int optval;
+
     memset(&server->peer, 0, sizeof(server->peer));
 
-    server->dbus_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (server->dbus_socket < 0)
-        DBUS_BROKER_ERROR("socket");
+    ret = socket(AF_INET, SOCK_STREAM, 0);
+    if (ret < 0) {
+        DBUS_BROKER_WARNING("socket: %s", strerror(errno));
+        goto done;
+    }
 
+    server->dbus_socket = ret; 
     optval = 1;
     setsockopt(server->dbus_socket, SOL_SOCKET, SO_REUSEPORT,
               &optval, sizeof(optval));
@@ -52,15 +79,26 @@ int start_server(struct dbus_broker_server *server, int port)
     server->peer.sin_addr.s_addr = INADDR_ANY;
     server->peer.sin_port = 0;
 
-    if (bind(server->dbus_socket, &server->addr, sizeof(server->addr)) < 0)
-        DBUS_BROKER_ERROR("bind");
+    ret = bind(server->dbus_socket, &server->addr, sizeof(server->addr));
+    if (ret < 0) {
+        DBUS_BROKER_WARNING("bind: %s", strerror(errno));
+        goto done;
+    }
 
-    if (listen(server->dbus_socket, 1))
-        DBUS_BROKER_ERROR("listen");
+    ret = listen(server->dbus_socket, 1);
+    if (ret < 0) 
+        DBUS_BROKER_WARNING("listen: %s", strerror(errno));
 
-    return 0;
+done:
+
+    return ret;
 }
 
+/**
+ * Sets up default fields for a generic dbus reqeuset.
+ *
+ * @param dmsg the dbus message object being set.
+ */
 void dbus_default(struct dbus_message *dmsg)
 {
     dmsg->destination = DBUS_DB_DEST;
@@ -70,6 +108,9 @@ void dbus_default(struct dbus_message *dmsg)
     memcpy(dmsg->arg_sig, "s", 2);
 }
 
+/**
+ * Makes a connection directly to the main running dbus server.
+ */
 int connect_to_system_bus(void)
 {
     int srv;
@@ -89,6 +130,12 @@ int connect_to_system_bus(void)
     return srv;
 }
 
+/**
+ * Debugging function for requests made over a raw dbus connection.
+ *
+ * @param dmsg the dbus message request being made.
+ * @dbus_msg the dbus api message object.
+ */
 void debug_raw_msg(struct dbus_message *dmsg, DBusMessage *dbus_msg)
 {
     int type;
@@ -139,10 +186,16 @@ void debug_raw_msg(struct dbus_message *dmsg, DBusMessage *dbus_msg)
     }
 }
 
-/*
+/**
  * Used by client communications over port-5555 where, the raw-bytes are being
  * read directly from the client file-descriptor.  The `char` buffer is
  * de-marshalled into a dbus-protocol object `DBusMessage`
+ *
+ * @param dmsg the dbus message object.
+ * @param msg the raw bytes of the request.
+ * @param len the number of bytes contained in msg
+ *
+ * @return 0 on success, error code otherwise
  */
 signed int convert_raw_dbus(struct dbus_message *dmsg,
                             const char *msg, size_t len)
@@ -241,11 +294,15 @@ static inline void append_variant(DBusMessageIter *iter, int type, void *data)
     dbus_message_iter_close_container(iter, &sub);
 }
 
-/*
+/**
  * For every request being made to the dom0 dbus-server the domid needs to be
  * mapped to its corresponding UUID.  This is needed in order to find the VM
  * database policy to a given request.  The UUID's mapping to the domid can be
  * hashed but this function has to run once for each domain.
+ *
+ * @param domid the domain id to retrieve the uuid for.
+ *
+ * @return the uuid associated with the domain id or NULL
  */
 char *get_uuid_from_domid(int domid)
 {
@@ -296,6 +353,14 @@ conn_error:
     return uuid;
 }
 
+/**
+ * Facilitates in making raw dbus requests to the main dbus server.
+ *
+ * @param conn the dbus api connection object.
+ * @param dmsg the dbus message object for the current message.
+ *
+ * @return the dbus api message object containing the reply.
+ */
 DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
 {
     int i;
@@ -362,8 +427,14 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
     return reply;
 }
 
-/*
+/**
  * Helper function to facilitate requests to the xenclient database.
+ *
+ * @param conn the dbus api connection object.
+ * @param arg a string associated with a field in the database.
+ *
+ * @return a null-terminated string associated for the database information
+ * being requested or NULL 
  */
 char *db_query(DBusConnection *conn, char *arg)
 {
@@ -405,6 +476,11 @@ free_msg:
     return reply;
 }
 
+/**
+ * Requests all currently install virtual machines on a given host.
+ *
+ * @return the dbus api message object.
+ */
 DBusMessage *db_list(void)
 {
     DBusConnection *conn;
@@ -434,7 +510,7 @@ DBusMessage *db_list(void)
     return vms;
 }
 
-/*
+/**
  * For any given dbus request, this function will retrieve its corresponding
  * introspection information.
  *
@@ -443,6 +519,10 @@ DBusMessage *db_list(void)
  * service is expecting. Where as before relying on JSON to infer the type,
  * for instance JSON doesn't have uint32_t and would return int and the
  * method would fail expecting the former.
+ *
+ * @param jreq the json request object.
+ *
+ * @return the signature string for the json request or NULL.
  */
 char *dbus_introspect(struct json_request *jreq)
 {
@@ -528,6 +608,12 @@ static struct dbus_link *add_dbus_signal(void)
     return new_link;
 }
 
+/**
+ * Add a websockets signal to the running list.
+ *
+ * @param conn the dbus api connection object.
+ * @param wsi the websockets api context object.
+ */
 void add_ws_signal(DBusConnection *conn, struct lws *wsi)
 {
     struct dbus_link *curr;
@@ -536,6 +622,11 @@ void add_ws_signal(DBusConnection *conn, struct lws *wsi)
     curr->dconn = conn;
 }
 
+/**
+ * Remove a websockets signal from the running list.
+ *
+ * @param link the current link to which remove from the list.
+ */
 void remove_dlink(struct dbus_link *link)
 {
     if (link == dlinks) {
@@ -548,6 +639,9 @@ void remove_dlink(struct dbus_link *link)
     }
 }
 
+/**
+ * Free's any UUID's from the uuid cache.
+ */
 void free_uuids(void)
 {
     int i;
@@ -557,6 +651,9 @@ void free_uuids(void)
     }
 }
 
+/**
+ * Free's all websockets signal links from the running list.
+ */
 void free_dlinks(void)
 {
     struct dbus_link *head, *curr;

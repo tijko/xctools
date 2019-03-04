@@ -16,9 +16,26 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/**
+ * @file websockets.c
+ * @author Tim Konick <konickt@ainfosec.com>
+ * @date March 4, 2019
+ * @brief Websocket connection handling.
+ *
+ * Websocket connection handling, message parsing, message conversion is
+ * handled through this file.
+ */ 
 #include "rpc-broker.h"
 
 
+/**
+ * Converts a JSON response object into raw bytes to send back over a
+ * websockets connection.
+ *
+ * @param jrsp the JSON response to convert.
+ * 
+ * @return the raw bytes to send back or NULL.
+ */
 char *prepare_json_reply(struct json_response *jrsp)
 {
     char *reply;
@@ -94,6 +111,13 @@ static struct lws_protocols server_protos[] = {
 
 };
 
+/**
+ * Initialize a Websockets connection object.
+ *
+ * @param port the port to bind to.
+ *
+ * @return the Websockets api context object
+ */
 struct lws_context *create_ws_context(int port)
 {
     struct lws_context_creation_info info;
@@ -112,6 +136,14 @@ struct lws_context *create_ws_context(int port)
     return context;
 }
 
+/**
+ * Callback function made for any pending Websocket requests.
+ *
+ * @param wsi the main Websockets api context object.
+ * @param raw_req the raw bytes read from the pending request.
+ *
+ * @return 0 on success -1 otherwise 
+ */
 int ws_request_handler(struct lws *wsi, char *raw_req)
 {
     int client, domain;
