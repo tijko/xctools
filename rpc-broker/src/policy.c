@@ -203,8 +203,12 @@ struct policy *build_policy(const char *rule_filename)
 
     dom_idx = 0;
     vms = db_list();
-    if (!vms)
+    if (!vms) { 
+        dbus_policy->database = false;
         return dbus_policy;
+    }
+
+    dbus_policy->database = true;
     conn = create_dbus_connection();
 
     dbus_message_iter_init(vms, &iter);

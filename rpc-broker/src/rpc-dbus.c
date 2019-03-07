@@ -440,16 +440,16 @@ char *db_query(DBusConnection *conn, char *arg)
 {
     char *reply;
     const char *buf;
-    struct dbus_message dmsg;
+    struct dbus_message db_msg;
     DBusMessage *msg;
     DBusMessageIter iter;
 
     reply = NULL;
-    dbus_default(&dmsg);
-    dmsg.member = DBUS_READ;
-    dmsg.args[0] = arg;
+    dbus_default(&db_msg);
+    db_msg.member = DBUS_READ;
+    db_msg.args[0] = arg;
 
-    msg = make_dbus_call(conn, &dmsg);
+    msg = make_dbus_call(conn, &db_msg);
     if (!msg)
         return NULL;
 
@@ -464,11 +464,9 @@ char *db_query(DBusConnection *conn, char *arg)
     if (buf[0] == '\0')
         goto free_msg;
 
-    reply = calloc(1, RULE_MAX_LENGTH);
+    reply = strdup(buf);
     if (!reply)
-        DBUS_BROKER_ERROR("Calloc Failed!");
-
-    strcpy(reply, buf);
+        DBUS_BROKER_WARNING("DBus Query Failed! %s", "");
 
 free_msg:
     dbus_message_unref(msg);

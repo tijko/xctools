@@ -308,15 +308,17 @@ struct json_request *convert_json_request(char *raw_json_req)
         goto request_error;
 
     jreq->conn = create_dbus_connection();
-    json_object_object_get_ex(jobj, "args", &jarray);
-
-    if (!jarray)
+    jarray = NULL;
+    if (!json_object_object_get_ex(jobj, "args", &jarray))
         goto request_error;
 
     if (parse_json_args(jarray, jreq) < 0)
         goto request_error;
 
-    json_object_object_get_ex(jobj, "id", &jint);
+    jint = NULL;
+    if (!json_object_object_get_ex(jobj, "id", &jint))
+        goto request_error;
+
     jreq->id = json_object_get_int(jint);
 
     /* json free's recursively on objects */
