@@ -87,12 +87,14 @@ static int filter_domtype(DBusConnection *conn, char *uuid,
     dom_type = db_query(conn, arg);
     free(arg);
 
+    if (!dom_type)
+        return -1;
+
     ret = 0;
-    if (dom_type && strcmp(policy_domtype, dom_type))
+    if (strcmp(policy_domtype, dom_type))
         ret = -1;
 
-    if (dom_type)
-        free(dom_type);
+    free(dom_type);
 
     return ret;
 }
@@ -138,6 +140,9 @@ static int rule_matches_request(struct rule *policy_rule,
         goto policy_set;
     }
 
+    if (!dbus_broker_policy->database)
+        goto policy_set;
+
     if (policy_rule->if_bool || policy_rule->domtype) {
         conn = create_dbus_connection();
         uuid = get_db_vm_path(conn, domid);
@@ -156,7 +161,6 @@ static int rule_matches_request(struct rule *policy_rule,
         if (policy_rule->domtype &&
             filter_domtype(conn, uuid, (char *) policy_rule->domtype) < 0) {
             filter_policy = -1;
-            goto policy_set;
         }
     }
 
@@ -242,6 +246,9 @@ bool is_request_allowed(struct dbus_message *dmsg, int domid)
 
         allowed = current_rule_policy == 0 ? false : true;
     }
+
+    if (!dbus_broker_policy->database || domid >= UUID_CACHE_LIMIT)
+        goto filtering_done;
 
     if (domain_uuids[domid])
         uuid = domain_uuids[domid];

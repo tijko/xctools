@@ -103,6 +103,7 @@ struct domain_policy {
  * any requests made on rpc-broker.
  */ 
 struct policy {
+    bool database;
     size_t domain_count;
     time_t policy_load_time;
     size_t allowed_requests;
