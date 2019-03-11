@@ -39,25 +39,6 @@
 uv_loop_t *rawdbus_loop;
 bool reload_policy;
 
-static int broker_message(struct raw_dbus_conn *conn)
-{
-    int domid;
-    int ret, total;
-
-    bool is_client;
-    int receiver, sender;
-
-    total = 0;
-    domid = conn->client_domain;
-    is_client = conn->is_client;
-    receiver = conn->receiver;
-    sender = conn->sender;
-    while ((ret = exchange(receiver, sender, domid, is_client)) != 0) {
-        total += ret;
-    }
-
-    return total;
-}
 
 /**
  * Queries xenstore about whether a domain is a stubdom or not.
@@ -306,15 +287,18 @@ static void close_server_rawdbus(uv_handle_t *handle)
 
 static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
 {
-    int ret;
+    int ret, total;
     struct raw_dbus_conn *conn;
 
     conn = (struct raw_dbus_conn *) handle->data;
     ret = 0;
+    total = 0;
 
     if (events & UV_READABLE) {
-        ret = broker_message(conn);
-        if (ret <= 0)
+        while ((ret = exchange(conn->receiver, conn->sender, 
+                               conn->client_domain, conn->is_client)) != 0) 
+            total += ret;
+        if (total <= 0)
             uv_close((uv_handle_t *) handle, close_client_rawdbus);
     }
 }

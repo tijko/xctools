@@ -91,7 +91,7 @@ DBusConnection *create_dbus_connection(void);
 
 int start_server(struct dbus_broker_server *server, int port);
 
-void dbus_default(struct dbus_message *dmsg);
+void dbus_default(struct dbus_message *dmsg, char *member, void *arg);
 
 int connect_to_system_bus(void);
 
