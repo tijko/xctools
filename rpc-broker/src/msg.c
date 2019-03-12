@@ -28,7 +28,7 @@
 #include "rpc-broker.h"
 
 
-static inline char *get_db_vm_path(DBusConnection *conn, uint16_t domid)
+static inline char *get_db_vm_path(uint16_t domid)
 {
 #ifdef HAVE_XENSTORE
     size_t len;
@@ -145,7 +145,7 @@ static int rule_matches_request(struct rule *policy_rule,
 
     if (policy_rule->if_bool || policy_rule->domtype) {
         conn = create_dbus_connection();
-        uuid = get_db_vm_path(conn, domid);
+        uuid = get_db_vm_path(domid);
         if (uuid == NULL) {
             filter_policy = -1;
             goto policy_set;

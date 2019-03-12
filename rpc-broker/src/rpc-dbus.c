@@ -99,11 +99,13 @@ done:
  *
  * @param dmsg the dbus message object being set.
  */
-void dbus_default(struct dbus_message *dmsg)
+void dbus_default(struct dbus_message *dmsg, char *member, void *arg)
 {
     dmsg->destination = DBUS_DB_DEST;
     dmsg->interface = DBUS_DB_IFACE;
     dmsg->path = DBUS_BASE_PATH;
+    dmsg->member = member;
+    dmsg->args[0] = arg;
     dmsg->arg_number = 1;
     memcpy(dmsg->arg_sig, "s", 2);
 }
@@ -445,10 +447,7 @@ char *db_query(DBusConnection *conn, char *arg)
     DBusMessageIter iter;
 
     reply = NULL;
-    dbus_default(&db_msg);
-    db_msg.member = DBUS_READ;
-    db_msg.args[0] = arg;
-
+    dbus_default(&db_msg, DBUS_READ, arg);
     msg = make_dbus_call(conn, &db_msg);
     if (!msg)
         return NULL;
@@ -489,10 +488,7 @@ DBusMessage *db_list(void)
     if (!conn)
         return NULL;
 
-    dbus_default(&dmsg);
-    dmsg.member = DBUS_LIST;
-    dmsg.args[0] = (void *) DBUS_VM_PATH;
-
+    dbus_default(&dmsg, DBUS_LIST, DBUS_VM_PATH);
     vms = make_dbus_call(conn, &dmsg);
     if (!vms && verbose_logging) {
         DBUS_BROKER_WARNING("DBus message return error <db-list> %s", "");
