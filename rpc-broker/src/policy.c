@@ -54,6 +54,9 @@ static int create_rule(struct rule *current, char *rule)
     if (!strcmp(token, "all")) {
         current->all = true;
         return 0;
+    } else if (!strcmp(token, "out-any")) {
+        current->out = true;
+        return 0;
     }
 
     while (token) {
@@ -81,8 +84,6 @@ static int create_rule(struct rule *current, char *rule)
             current->path = strdup(field);
         } else if (strcmp("member", token) == 0) {
             current->member = strdup(field);
-        } else if (strcmp("out-any", token) == 0) {
-            current->out = true;
         } else {
             DBUS_BROKER_WARNING("Unrecognized Rule-Token: %s", token);
             free_rule(*current);
