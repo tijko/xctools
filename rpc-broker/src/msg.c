@@ -110,6 +110,7 @@ static int filter_domtype(DBusConnection *conn, char *uuid,
  * @return 0 policy is to deny, 1 policy is to allow, -1 the rule did not match
  */
 static int rule_matches_request(struct rule *policy_rule,
+                                bool is_client,
                                 struct dbus_message *dmsg,
                                 uint16_t domid)
 {
@@ -128,6 +129,11 @@ static int rule_matches_request(struct rule *policy_rule,
 
     if (policy_rule->all)
         return filter_policy;
+
+    if (!is_client && policy_rule->out)
+        return filter_policy;
+    else if (is_client && policy_rule->out)
+        return -1;
 
     if ((policy_rule->stubdom && !is_stubdom(domid))                     ||
         (policy_rule->destination && strcmp(policy_rule->destination,
@@ -199,7 +205,7 @@ static struct domain_policy *get_domain_policy(char *uuid)
  *
  * @return true to allow false to deny
  */
-bool is_request_allowed(struct dbus_message *dmsg, int domid)
+bool is_request_allowed(struct dbus_message *dmsg, bool is_client, int domid)
 {
     bool allowed;
     int current_rule_policy;
@@ -228,7 +234,7 @@ bool is_request_allowed(struct dbus_message *dmsg, int domid)
 
     for (i=0; i < domain_etc_policy.count; i++) {
         current_rule_policy = rule_matches_request(&(domain_etc_policy.rules[i]),
-                                                   dmsg, domid);
+                                                   is_client, dmsg, domid);
         /*
          *  1 = the rule matched the request and rule's policy is allow
          *  0 = the rule matched the request and rule's policy is deny
@@ -267,7 +273,7 @@ bool is_request_allowed(struct dbus_message *dmsg, int domid)
 
     for (i=0; i < domain->count; i++) {
         current_rule_policy = rule_matches_request(&(domain->rules[i]),
-                                                   dmsg, domid);
+                                                   is_client, dmsg, domid);
         if (current_rule_policy == -1)
             continue;
         allowed = current_rule_policy == 0 ? false : true;
@@ -329,14 +335,14 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
     rbytes = 0;
 
     while ((rbytes = recv(rsock, buf, DBUS_MSG_LEN, 0)) > 0) {
-        if (rbytes > DBUS_COMM_MIN && is_client) {
+        if (rbytes > DBUS_COMM_MIN) {
 
             len = dbus_message_demarshal_bytes_needed(buf, rbytes);
 
             if (len == rbytes) {
                 if (convert_raw_dbus(&dmsg, buf, len) < 1)
                     return -1;
-                if (is_request_allowed(&dmsg, domid) == false)
+                if (is_request_allowed(&dmsg, is_client, domid) == false)
                     return -1;
             }
 #ifdef DEBUG
