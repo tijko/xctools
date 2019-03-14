@@ -108,7 +108,6 @@ struct dbus_broker_server {
 
 bool verbose_logging;
 int dbus_broker_running;
-
 char *domain_uuids[UUID_CACHE_LIMIT];
 
 /**
@@ -124,7 +123,7 @@ struct dbus_broker_args {
 };
 
 /**
- * @brief object that created upon each request made to connect to the actaul
+ * @brief object that's created upon each request made to connect to the actaul
  * dbus.   
  */
 struct raw_dbus_conn {
@@ -132,6 +131,15 @@ struct raw_dbus_conn {
     int sender;
     bool is_client;
     uint32_t client_domain;
+    uv_poll_t handle;
+};
+
+/**
+ * @brief object to encapsulate data thats used to track xenmgr service signals
+ */
+struct xenmgr_signal {
+    DBusConnection *conn;
+    int signal_fd;
     uv_poll_t handle;
 };
 

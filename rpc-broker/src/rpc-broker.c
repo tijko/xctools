@@ -156,8 +156,66 @@ static void sigint_handler(int signal)
 
 static void sighup_handler(int signal)
 {
-    reload_policy = true;
     DBUS_BROKER_EVENT("Re-loading policy %s", "");
+    reload_policy = true;
+}
+
+static void parse_server_signal(DBusMessage *msg)
+{
+    char *str;
+    int msgtype;
+    int current_type;
+    DBusMessageIter iter;
+
+    msgtype = dbus_message_get_type(msg);
+    if (msgtype == DBUS_MESSAGE_TYPE_ERROR)
+        return;
+
+    dbus_message_iter_init(msg, &iter);
+    while ((current_type = dbus_message_iter_get_arg_type (&iter)) != DBUS_TYPE_INVALID) {
+        if (current_type == DBUS_TYPE_STRING) {
+            dbus_message_iter_get_basic(&iter, &str);
+            if (verbose_logging)
+                DBUS_BROKER_EVENT("Xenmgr msg: (%s)", str); 
+            reload_policy = true;
+        } 
+        dbus_message_iter_next (&iter);
+    }
+}
+
+static void dbus_server_signal_cb(DBusMessage *msg)
+{
+    if (verbose_logging)
+        DBUS_BROKER_EVENT("Xenmgr Server Signal%s", "");
+    parse_server_signal(msg);
+}
+
+static void dbus_client_signal_cb(DBusMessage *msg, struct lws *wsi)
+{
+    char *reply;
+    struct json_response *jrsp;
+
+    jrsp = init_jrsp();
+    jrsp->response_to[0] = '\0';
+    snprintf(jrsp->type, JSON_REQ_ID_MAX - 1, "%s", JSON_SIG);
+
+    load_json_response(msg, jrsp);
+
+    jrsp->interface = dbus_message_get_interface(msg);
+    jrsp->member = dbus_message_get_member(msg);
+    jrsp->path = dbus_message_get_path(msg);
+
+    reply = prepare_json_reply(jrsp);
+
+    if (!reply)
+        goto free_jrsp;
+
+    lws_callback_on_writable(wsi);
+    lws_ring_insert(ring, reply, 1);
+    free(reply);
+
+free_jrsp:
+        free(jrsp);
 }
 
 /*
@@ -169,8 +227,6 @@ static void service_ws_signals(void)
     bool remove_link;
     struct dbus_link *curr;
     DBusMessage *msg;
-    struct json_response *jrsp;
-    char *reply;
 
     if (!dlinks)
         return;
@@ -193,27 +249,21 @@ static void service_ws_signals(void)
         if (dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
             goto unref_msg;
 
-        jrsp = init_jrsp();
-        jrsp->response_to[0] = '\0';
-        snprintf(jrsp->type, JSON_REQ_ID_MAX - 1, "%s", JSON_SIG);
+        switch (curr->signal_type) {
 
-        load_json_response(msg, jrsp);
+            case (DBUS_SIGNAL_TYPE_SERVER):
+                dbus_server_signal_cb(msg);
+                break;
 
-        jrsp->interface = dbus_message_get_interface(msg);
-        jrsp->member = dbus_message_get_member(msg);
-        jrsp->path = dbus_message_get_path(msg);
+            case (DBUS_SIGNAL_TYPE_CLIENT):
+                dbus_client_signal_cb(msg, curr->wsi);
+                break;
 
-        reply = prepare_json_reply(jrsp);
-
-        if (!reply)
-            goto free_msg;
-
-        lws_callback_on_writable(curr->wsi);
-        lws_ring_insert(ring, reply, 1);
-        free(reply);
-
-free_msg:
-        free(jrsp);
+            default:
+                if (verbose_logging)
+                    DBUS_BROKER_WARNING("Unknown dbus-signal type %s", "");
+                break;
+        }
 
 unref_msg:
         dbus_message_unref(msg);
@@ -233,27 +283,33 @@ next_link:
 static void run_websockets(struct dbus_broker_args *args)
 {
     struct lws_context *ws_context;
+    struct dbus_link *xenmgr_signal;
 
     ws_context = NULL;
     signal_subscribers = 0;
     if ((ws_context = create_ws_context(args->port)) == NULL)
         DBUS_BROKER_ERROR("WebSockets-Server");
 
-    dbus_broker_policy = build_policy(args->rule_file);
+    xenmgr_signal = add_dbus_signal();
+    xenmgr_signal->dconn = create_dbus_connection();
+    dbus_bus_add_match(xenmgr_signal->dconn, XENMGR_SIGNAL_SERVICE, NULL); 
+    xenmgr_signal->signal_type = DBUS_SIGNAL_TYPE_SERVER;
+    DBUS_BROKER_EVENT("Websockets building policy...%s", "");
 
+    dbus_broker_policy = build_policy(args->rule_file);
     DBUS_BROKER_EVENT("<WebSockets-Server has started listening> [Port: %d]",
                         args->port);
 
     while (dbus_broker_running) {
-
-        lws_service(ws_context, WS_LOOP_TIMEOUT);
-        service_ws_signals();
 
         if (reload_policy) {
             free_policy();
             dbus_broker_policy = build_policy(args->rule_file);
             reload_policy = false;
         }
+
+        lws_service(ws_context, WS_LOOP_TIMEOUT);
+        service_ws_signals();
     }
 
     if (ring)
@@ -322,6 +378,43 @@ static void init_rawdbus_conn(uv_loop_t *rawdbus_loop, int sender,
                    service_rdconn_cb);
 }
 
+static void close_xenmgr_signal(uv_handle_t *handle)
+{
+    struct xenmgr_signal *xensig = (struct xenmgr_signal *) handle->data;
+    close(xensig->signal_fd);
+    uv_unref(handle);
+}
+
+static void xenmgr_signal(uv_poll_t *handle, int status, int events)
+{
+    struct xenmgr_signal *xensig = (struct xenmgr_signal *) handle->data;
+    DBusMessage *msg = dbus_connection_pop_message(xensig->conn);
+
+    if (!msg) {
+        uv_close((uv_handle_t *) handle, close_xenmgr_signal);
+        return;
+    }
+
+    parse_server_signal(msg);
+}
+
+static void init_xenmgr_signal(uv_loop_t *loop)
+{
+    struct xenmgr_signal *xensig = calloc(1, sizeof *xensig);
+    char *crt = "type='signal',interface='com.citrix.xenclient.xenmgr',member='vm_state_changed'";
+    xensig->conn = create_dbus_connection(); 
+    dbus_bus_add_match(xensig->conn, crt, NULL); 
+
+    if (!dbus_connection_get_socket(xensig->conn, &xensig->signal_fd))
+        DBUS_BROKER_WARNING("Xenmgr Signal Subscription Failed! %s", "");
+    else {
+        xensig->handle.data = xensig;
+        uv_poll_init(loop, &xensig->handle, xensig->signal_fd);
+        uv_poll_start(&xensig->handle, UV_READABLE | UV_DISCONNECT,
+                       xenmgr_signal);
+    }        
+}
+
 static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
 {
     struct dbus_broker_server *dbus_server;
@@ -330,7 +423,6 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
 
     dbus_server= (struct dbus_broker_server *) handle->data;
     loop = dbus_server->mainloop;
-
     if (events & UV_READABLE) {
 	        socklen_t clilen = sizeof(dbus_server->peer);
 	        client = accept(dbus_server->dbus_socket,
@@ -339,7 +431,6 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
             domain = get_domid(client);
             init_rawdbus_conn(loop, server, client, domain, true);
             init_rawdbus_conn(loop, client, server, domain, false);
-
     } else if (events & UV_DISCONNECT) {
         dbus_broker_running = 0;
         uv_close((uv_handle_t *) handle, close_server_rawdbus);
@@ -369,11 +460,10 @@ static void run_rawdbus(struct dbus_broker_args *args)
     server.mainloop = rawdbus_loop;
     server.port = args->port;
     server.handle.data = &server;
+    init_xenmgr_signal(rawdbus_loop);
 
     while (dbus_broker_running) {
-
         uv_run(rawdbus_loop, UV_RUN_ONCE);
-
         if (reload_policy) {
             free_policy();
             dbus_broker_policy = build_policy(args->rule_file);

@@ -66,17 +66,21 @@ struct dbus_message {
 #define XENSTORE_TARGET_LEN 8
 #define XENSTORE_TARGET "/target"
 
+#define XENMGR_SIGNAL_SERVICE "type='signal',interface='com.citrix.xenclient.xenmgr',member='vm_state_changed'"
+
+
 /**
  * @brief a dbus signal object kept in a doubly linked-list fashion.
  */
 struct dbus_link {
     /* add identifier */
-    DBusConnection *dconn;
-    struct lws *wsi;
+    int signal_type;
     int client_fd;
     int server_fd;
     struct dbus_link *next;
     struct dbus_link *prev;
+    struct lws *wsi;
+    DBusConnection *dconn;
 };
 
 struct dbus_link *dlinks;
@@ -85,6 +89,10 @@ size_t signal_subscribers;
 /* forward declarations */
 struct dbus_broker_server;
 struct json_request;
+
+#define DBUS_SIGNAL_TYPE_SERVER 0x1
+#define DBUS_SIGNAL_TYPE_CLIENT 0x2
+
 
 /* src/rpc-dbus.c */
 DBusConnection *create_dbus_connection(void);
@@ -115,6 +123,9 @@ void remove_dlink(struct dbus_link *link);
 void free_dlinks(void);
 
 char *get_uuid_from_domid(int domid);
+
+struct dbus_link *add_dbus_signal(void);
+
 
 #define DBUS_DB_DEST     "com.citrix.xenclient.db"
 #define DBUS_DB_IFACE    DBUS_DB_DEST
