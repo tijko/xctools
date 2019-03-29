@@ -198,6 +198,8 @@ struct policy *build_policy(const char *rule_filename)
     char uuid[64];
 
     dbus_policy = calloc(1, sizeof *dbus_policy);
+    if (!dbus_policy)
+        DBUS_BROKER_ERROR("Calloc failed");
     domain_etc_policy = &(dbus_policy->domain_etc_policy);
     build_etc_policy(domain_etc_policy, rule_filename);
     dbus_policy->domain_count = 0;

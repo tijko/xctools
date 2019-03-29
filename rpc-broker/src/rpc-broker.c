@@ -183,14 +183,7 @@ static void parse_server_signal(DBusMessage *msg)
     }
 }
 
-static void dbus_server_signal_cb(DBusMessage *msg)
-{
-    if (verbose_logging)
-        DBUS_BROKER_EVENT("Xenmgr Server Signal%s", "");
-    parse_server_signal(msg);
-}
-
-static void dbus_client_signal_cb(DBusMessage *msg, struct lws *wsi)
+static void parse_client_signal(DBusMessage *msg, struct lws *wsi)
 {
     char *reply;
     struct json_response *jrsp;
@@ -249,14 +242,17 @@ static void service_ws_signals(void)
         if (dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
             goto unref_msg;
 
+        if (verbose_logging)
+            DBUS_BROKER_EVENT("Xenmgr Server Signal%s", "");
+
         switch (curr->signal_type) {
 
             case (DBUS_SIGNAL_TYPE_SERVER):
-                dbus_server_signal_cb(msg);
+                parse_server_signal(msg);
                 break;
 
             case (DBUS_SIGNAL_TYPE_CLIENT):
-                dbus_client_signal_cb(msg, curr->wsi);
+                parse_client_signal(msg, curr->wsi);
                 break;
 
             default:
