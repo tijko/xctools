@@ -193,6 +193,28 @@ static struct domain_policy *get_domain_policy(char *uuid)
     return NULL;
 }
 
+bool filter_property_request(struct dbus_message *dmsg, int domid)
+{
+    struct dbus_message property_req;
+
+    if (strcmp(dmsg->member, "Set"))
+        return true;
+
+    property_req.destination = dmsg->destination;
+    property_req.interface = ((char **) dmsg->args)[0];
+    property_req.path = "/";
+
+    if (strcmp(dmsg->member, "GetAll")) 
+        property_req.member = ((char **) dmsg->args)[1];
+    else
+        property_req.member = "None";
+
+    if (verbose_logging)
+        DBUS_BROKER_EVENT("Filter Property: <%s> %s", property_req.destination, 
+                                                      property_req.interface);
+    return is_request_allowed(&property_req, true, domid);
+}
+
 /**
  * All requests are handled by this function whether they are raw requests
  * or Websocket requests.  For every policy rule listed either in the
@@ -278,6 +300,9 @@ bool is_request_allowed(struct dbus_message *dmsg, bool is_client, int domid)
             continue;
         allowed = current_rule_policy == 0 ? false : true;
     }
+
+    if (!strcmp("org.freedesktop.DBus.Properties", dmsg->interface)) 
+        allowed = filter_property_request(dmsg, domid);
 
 filtering_done:
 

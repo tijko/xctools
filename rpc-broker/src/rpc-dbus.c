@@ -203,13 +203,14 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
                             const char *msg, size_t len)
 {
     DBusError error;
+    DBusMessageIter iter;
     DBusMessage *dbus_msg;
-    int ret;
+
+    int ret, type, argnum;
     const char *destination, *path, *interface, *member;
 
     dbus_error_init(&error);
     dbus_msg = NULL;
-
     dbus_msg = dbus_message_demarshal(msg, len, &error);
 
     if (dbus_error_is_set(&error)) {
@@ -236,6 +237,34 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
     debug_raw_msg(dmsg, dbus_msg);
 #endif
 
+    argnum = 0;
+    dbus_message_iter_init(dbus_msg, &iter);
+
+    while ((type = dbus_message_iter_get_arg_type(&iter)) != DBUS_TYPE_INVALID) {
+
+        void *arg;
+
+        switch (type) {
+            case (DBUS_TYPE_INT32):
+                dmsg->arg_sig[argnum] = 'i';
+                dbus_message_iter_get_basic(&iter, arg);
+                dmsg->args[argnum++] = arg;
+                break;
+
+            case (DBUS_TYPE_STRING):
+                dmsg->arg_sig[argnum] = 's';
+                dbus_message_iter_get_basic(&iter, &arg);
+                dmsg->args[argnum++] = arg;
+                break; 
+
+            default:
+                break;
+        }
+
+        dbus_message_iter_next(&iter);
+    }
+    
+    dmsg->arg_number = argnum;
     dbus_message_unref(dbus_msg);
     return ret;
 }
