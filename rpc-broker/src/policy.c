@@ -198,13 +198,16 @@ struct policy *build_policy(const char *rule_filename)
     char uuid[64];
 
     dbus_policy = calloc(1, sizeof *dbus_policy);
+    if (!dbus_policy)
+        DBUS_BROKER_ERROR("Calloc failed");
     domain_etc_policy = &(dbus_policy->domain_etc_policy);
     build_etc_policy(domain_etc_policy, rule_filename);
-    dbus_policy->domain_count= 0;
+    dbus_policy->domain_count = 0;
 
     dom_idx = 0;
     vms = db_list();
     if (!vms) { 
+        DBUS_BROKER_EVENT("No database vms in policy!%s", "");
         dbus_policy->database = false;
         return dbus_policy;
     }
@@ -243,7 +246,6 @@ struct policy *build_policy(const char *rule_filename)
     dbus_policy->domain_count = dom_idx;
     dbus_message_unref(vms);
     dbus_connection_unref(conn);
-
     return dbus_policy;
 }
 

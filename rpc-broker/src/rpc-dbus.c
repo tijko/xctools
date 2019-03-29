@@ -579,7 +579,7 @@ xml_error:
     return signature;
 }
 
-static struct dbus_link *add_dbus_signal(void)
+struct dbus_link *add_dbus_signal(void)
 {
     /* add extra field to show signals already subscribed to */
     struct dbus_link *head, *tail, *new_link;
@@ -614,6 +614,7 @@ void add_ws_signal(DBusConnection *conn, struct lws *wsi)
     curr = add_dbus_signal();
     curr->wsi = wsi;
     curr->dconn = conn;
+    curr->signal_type = DBUS_SIGNAL_TYPE_CLIENT;
 }
 
 /**
