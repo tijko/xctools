@@ -358,7 +358,7 @@ int authentication_handshake(int sender, int receiver)
     begin = false;
     while (!begin) {
 
-        while (auth_buf[rbytes] != '\n') {
+        while (auth_buf[rbytes - 1] != '\n') {
             rbytes = recv(sender, auth_buf, 512, 0);
             if (rbytes < 0) {
                 rbytes = 0;
