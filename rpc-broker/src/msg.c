@@ -197,9 +197,6 @@ bool filter_property_request(struct dbus_message *dmsg, int domid)
 {
     struct dbus_message property_req;
 
-    if (strcmp(dmsg->member, "Set"))
-        return true;
-
     property_req.destination = dmsg->destination;
     property_req.interface = ((char **) dmsg->args)[0];
     property_req.path = "/";
