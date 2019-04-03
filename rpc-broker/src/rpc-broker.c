@@ -337,6 +337,26 @@ static void close_server_rawdbus(uv_handle_t *handle)
     uv_unref(handle);
 }
 
+/*
+ * To authenticate, invoke a recursive function that simply:
+ *      - makes a read on the receiver end
+ *      - checks if the last byte was a '\n' (double check)
+ *      - sends the data 
+ *      - BEGIN in message then return authenticated
+ *      - return into itself with either the sender or
+ *        receiver set... 
+ *
+ */
+int authentication_handshake(int sender, int receiver)
+{   
+    return 0; 
+}
+
+static void auth_handler(struct raw_dbus_conn *conn)
+{
+    return;
+}
+
 static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
 {
     int ret, total;
@@ -347,6 +367,13 @@ static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
     total = 0;
 
     if (events & UV_READABLE) {
+<<<<<<< HEAD
+=======
+        if (conn->is_client && !conn->is_auth) {
+            auth_handler(conn);
+            //return;
+        }
+>>>>>>> 4268b0733b36e0a29fa8853fc5bdb71af3aa46fe
         while ((ret = exchange(conn->receiver, conn->sender, 
                                conn->client_domain, conn->is_client)) != 0) 
             total += ret;
