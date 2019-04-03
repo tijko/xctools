@@ -486,7 +486,7 @@ int update_battery_status(unsigned int battery_index) {
     DIR *battery_dir;
     struct dirent * dp;
     FILE *file;
-    char filename[256];
+    char filename[295];
     char data[128];
     char *ptr;
 
@@ -522,8 +522,7 @@ int update_battery_status(unsigned int battery_index) {
         //Convert from dirent to file and read out the data.
         if (dp->d_type == DT_REG) {
 
-            memset(filename, 0, sizeof(filename));
-            snprintf(filename, 255, "%s/BAT%i/%s", BATTERY_DIR_PATH, battery_index, dp->d_name);
+            snprintf(filename, sizeof (filename), "%s/BAT%u/%s", BATTERY_DIR_PATH, battery_index, dp->d_name);
 
             file = fopen(filename, "r");
             if (file == NULL)
@@ -574,7 +573,7 @@ int update_battery_info(unsigned int battery_index) {
     DIR *battery_dir;
     struct dirent * dp;
     FILE *file;
-    char filename[256];
+    char filename[295];
     char data[128];
     char *ptr;
 
@@ -602,7 +601,7 @@ int update_battery_info(unsigned int battery_index) {
         if (dp->d_type == DT_REG) {
 
             memset(filename, 0, sizeof(filename));
-            snprintf(filename, 255, "%s/BAT%i/%s", BATTERY_DIR_PATH, battery_index, dp->d_name);
+            snprintf(filename, sizeof (filename), "%s/BAT%u/%s", BATTERY_DIR_PATH, battery_index, dp->d_name);
 
             file = fopen(filename, "r");
             if (file == NULL)
@@ -995,7 +994,7 @@ int get_num_batteries_present(void) {
     struct dirent * dp;
     FILE * file;
     char data[128];
-    char filename[256];
+    char filename[289];
 
     dir = opendir(BATTERY_DIR_PATH);
     if (!dir) {
@@ -1008,7 +1007,7 @@ int get_num_batteries_present(void) {
     while ((dp = readdir(dir)) != NULL) {
 
         if (!strncmp(dp->d_name, "BAT", 3)) {
-            snprintf(filename, 255, "%s/%s/present", BATTERY_DIR_PATH, dp->d_name);
+            snprintf(filename, sizeof (filename), "%s/%s/present", BATTERY_DIR_PATH, dp->d_name);
             file = fopen(filename, "r");
             if (file == NULL)
                 continue;
