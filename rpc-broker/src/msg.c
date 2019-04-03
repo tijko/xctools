@@ -359,25 +359,6 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
     total = 0;
     rbytes = 0;
 
-<<<<<<< HEAD
-    while ((rbytes = recv(rsock, buf, DBUS_MSG_LEN, 0)) > 0) {
-        if (rbytes > DBUS_COMM_MIN) {
-
-            len = dbus_message_demarshal_bytes_needed(buf, rbytes);
-
-            if (len == rbytes) {
-                if (convert_raw_dbus(&dmsg, buf, len) < 1)
-                    return -1;
-                if (is_request_allowed(&dmsg, is_client, domid) == false)
-                    return -1;
-            }
-#ifdef DEBUG
-        debug_raw_buffer(buf, rbytes);
-#endif
-        }
-
-        total += rbytes;
-        send(ssock, buf, rbytes, 0);
     // XXX if connection is authenticated, all that is needed here, is to move
     //     the `send` call inside the check (len == rbytes) block
     //     storing the buffer (add fields to indicate partially buffered msg)

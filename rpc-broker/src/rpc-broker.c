@@ -367,13 +367,10 @@ static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
     total = 0;
 
     if (events & UV_READABLE) {
-<<<<<<< HEAD
-=======
         if (conn->is_client && !conn->is_auth) {
             auth_handler(conn);
             //return;
         }
->>>>>>> 4268b0733b36e0a29fa8853fc5bdb71af3aa46fe
         while ((ret = exchange(conn->receiver, conn->sender, 
                                conn->client_domain, conn->is_client)) != 0) 
             total += ret;
