@@ -349,11 +349,49 @@ static void close_server_rawdbus(uv_handle_t *handle)
  */
 int authentication_handshake(int sender, int receiver)
 {   
+    int rbytes;
+    bool begin;
+    char auth_buf[512] = { '\0' };
+    char log[512] = { '\0' };
+
+    rbytes = 0;
+    begin = false;
+    while (!begin) {
+
+        while (auth_buf[rbytes] != '\n') {
+            rbytes = recv(sender, auth_buf, 512, 0);
+            if (rbytes < 0) {
+                rbytes = 0;
+                continue;
+            }
+
+            send(receiver, auth_buf, rbytes);
+            int i;
+            for (i=0; i < rbytes - 7; i++) {
+                if (auth_buf[i] == 'B' &&  auth_buf[i+1] == 'E' && 
+                    auth_buf[i+2] == 'G' &&  auth_buf[i+3] == 'I' &&
+                    auth_buf[i+4] == 'N')
+                    begin = true;
+                if (isalnum(auth_buf[i]))
+                    log[i] = auth_buf[i];
+                else
+                    log[i] = '-';
+            }
+
+            DBUS_BROKER_EVENT("%s", log);
+        }
+
+        int tmp = sender;
+        sender = receiver;
+        receiver = tmp;
+    }
+
     return 0; 
 }
 
 static void auth_handler(struct raw_dbus_conn *conn)
 {
+    authentication_handshake(conn->receiver, conn->sender); 
     return;
 }
 
@@ -369,7 +407,7 @@ static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
     if (events & UV_READABLE) {
         if (conn->is_client && !conn->is_auth) {
             auth_handler(conn);
-            //return;
+            return;
         }
         while ((ret = exchange(conn->receiver, conn->sender, 
                                conn->client_domain, conn->is_client)) != 0) 
