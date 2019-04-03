@@ -365,7 +365,7 @@ int authentication_handshake(int sender, int receiver)
                 continue;
             }
 
-            send(receiver, auth_buf, rbytes);
+            send(receiver, auth_buf, rbytes, 0);
             int i;
             for (i=0; i < rbytes - 7; i++) {
                 if (auth_buf[i] == 'B' &&  auth_buf[i+1] == 'E' && 
