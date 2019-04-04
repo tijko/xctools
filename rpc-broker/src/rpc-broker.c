@@ -367,11 +367,16 @@ int authentication_handshake(int sender, int receiver)
 
             send(receiver, auth_buf, rbytes, 0);
             int i;
-            for (i=0; i < rbytes - 7; i++) {
-                if (auth_buf[i] == 'B' &&  auth_buf[i+1] == 'E' && 
-                    auth_buf[i+2] == 'G' &&  auth_buf[i+3] == 'I' &&
-                    auth_buf[i+4] == 'N')
-                    begin = true;
+            if (rbytes > 6) {
+                for (i=0; i < rbytes - 7; i++) {
+                    if (auth_buf[i] == 'B' &&  auth_buf[i+1] == 'E' && 
+                        auth_buf[i+2] == 'G' &&  auth_buf[i+3] == 'I' &&
+                        auth_buf[i+4] == 'N')
+                        begin = true;
+                }
+            }
+
+            for (i=0; i < rbytes; i++) {
                 if (isalnum(auth_buf[i]))
                     log[i] = auth_buf[i];
                 else
