@@ -337,16 +337,6 @@ static void close_server_rawdbus(uv_handle_t *handle)
     uv_unref(handle);
 }
 
-/*
- * To authenticate, invoke a recursive function that simply:
- *      - makes a read on the receiver end
- *      - checks if the last byte was a '\n' (double check)
- *      - sends the data 
- *      - BEGIN in message then return authenticated
- *      - return into itself with either the sender or
- *        receiver set... 
- *
- */
 int authentication_handshake(int sender, int receiver)
 {   
     int rbytes;
