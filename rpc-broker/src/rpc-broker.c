@@ -351,7 +351,6 @@ int authentication_handshake(int sender, int receiver)
 {   
     int rbytes;
     char auth_buf[512] = { '\0' };
-    char log[512] = { '\0' };
 
     rbytes = 0;
     while (true) {
@@ -366,6 +365,7 @@ int authentication_handshake(int sender, int receiver)
 
             send(receiver, auth_buf, rbytes, 0);
             if (rbytes > 6) {
+                int i;
                 for (i=0; i < rbytes - 7; i++) {
                     if (auth_buf[i] == 'B' &&  auth_buf[i+1] == 'E' && 
                         auth_buf[i+2] == 'G' &&  auth_buf[i+3] == 'I' &&
