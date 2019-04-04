@@ -357,9 +357,9 @@ int authentication_handshake(int sender, int receiver)
             if (rbytes > 6) {
                 int i;
                 for (i=0; i < rbytes - 7; i++) {
-                    if (auth_buf[i] == 'B' &&  auth_buf[i+1] == 'E' && 
-                        auth_buf[i+2] == 'G' &&  auth_buf[i+3] == 'I' &&
-                        auth_buf[i+4] == 'N') {
+                    if (auth_buf[i] == 'N' &&  auth_buf[i+1] == 'a' && 
+                        auth_buf[i+2] == 'm' &&  auth_buf[i+3] == 'e' &&
+                        auth_buf[i+4] == 'A') {
                         return 0;
                     }
                 }
