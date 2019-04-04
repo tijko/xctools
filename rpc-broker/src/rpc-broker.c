@@ -359,6 +359,7 @@ int authentication_handshake(int sender, int receiver)
     while (!begin) {
 
         while (auth_buf[rbytes - 1] != '\n') {
+            DBUS_BROKER_EVENT("Receive Msg %c", auth_buf[rbytes - 1]);
             rbytes = recv(sender, auth_buf, 512, 0);
             if (rbytes < 0) {
                 rbytes = 0;
