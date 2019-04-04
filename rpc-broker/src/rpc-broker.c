@@ -350,26 +350,13 @@ static void close_server_rawdbus(uv_handle_t *handle)
 int authentication_handshake(int sender, int receiver)
 {   
     int rbytes;
-    bool begin;
     char auth_buf[512] = { '\0' };
     char log[512] = { '\0' };
 
     rbytes = 0;
-    begin = false;
-    while (!begin) {
+    while (true) {
 
         while (auth_buf[rbytes - 1] != '\n') {
-            if (!isalnum(auth_buf[rbytes - 1])) {
-                if (auth_buf[rbytes - 1] == '\0')
-                    DBUS_BROKER_EVENT("Receive End Char Null%s", "");
-                else if (auth_buf[rbytes - 1] == '\n')
-                    DBUS_BROKER_EVENT("Receive End Char Newline%s", "");
-                else if (auth_buf[rbytes - 1] == '\r')
-                    DBUS_BROKER_EVENT("Receive End Char Return%s", "");
-                else
-                    DBUS_BROKER_EVENT("Receive End Char Unknown%s", "");
-            } else 
-                DBUS_BROKER_EVENT("Receive Msg %c", auth_buf[rbytes - 1]);
             rbytes = recv(sender, auth_buf, 512, 0);
             if (rbytes < 0) {
                 rbytes = 0;
@@ -378,34 +365,21 @@ int authentication_handshake(int sender, int receiver)
             }
 
             send(receiver, auth_buf, rbytes, 0);
-            int i;
-            for (i=0; i < rbytes; i++) {
-                if (isalnum(auth_buf[i]))
-                    log[i] = auth_buf[i];
-                else
-                    log[i] = '-';
-            }
-
-            DBUS_BROKER_EVENT("%s", log);
             if (rbytes > 6) {
                 for (i=0; i < rbytes - 7; i++) {
                     if (auth_buf[i] == 'B' &&  auth_buf[i+1] == 'E' && 
                         auth_buf[i+2] == 'G' &&  auth_buf[i+3] == 'I' &&
                         auth_buf[i+4] == 'N') {
-                        begin = true;
                         return 0;
                     }
                 }
             }
-
-            memset(log, '\0', 512);
         }
 
         int tmp = sender;
         sender = receiver;
         receiver = tmp;
         memset(auth_buf, '\0', 512);
-        memset(log, '\0', 512);
     }
 
     return 0; 
