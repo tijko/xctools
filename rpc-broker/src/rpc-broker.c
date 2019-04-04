@@ -359,8 +359,7 @@ int authentication_handshake(int sender, int receiver)
     while (!begin) {
 
         while (auth_buf[rbytes - 1] != '\n') {
-            if (!isalnum(auth_buf[rbytes - 1]))
-            else {
+            if (!isalnum(auth_buf[rbytes - 1])) {
                 if (auth_buf[rbytes - 1] == '\0')
                     DBUS_BROKER_EVENT("Receive End Char Null%s", "");
                 else if (auth_buf[rbytes - 1] == '\n')
