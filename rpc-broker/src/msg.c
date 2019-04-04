@@ -359,9 +359,6 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
     total = 0;
     rbytes = 0;
 
-    // XXX if connection is authenticated, all that is needed here, is to move
-    //     the `send` call inside the check (len == rbytes) block
-    //     storing the buffer (add fields to indicate partially buffered msg)
     while ((rbytes = recv(rsock, buf, DBUS_MSG_LEN, 0)) > 0) {
 
         len = dbus_message_demarshal_bytes_needed(buf, rbytes);

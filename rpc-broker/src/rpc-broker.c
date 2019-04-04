@@ -353,7 +353,7 @@ int authentication_handshake(int sender, int receiver)
                 continue;
             }
 
-            send(receiver, auth_buf, rbytes, 0);
+            send(receiver, auth_buf, rbytes, MSG_NOSIGNAL);
             if (rbytes > 6) {
                 int i;
                 for (i=0; i < rbytes - 7; i++) {
