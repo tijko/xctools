@@ -373,6 +373,7 @@ int authentication_handshake(int sender, int receiver)
             rbytes = recv(sender, auth_buf, 512, 0);
             if (rbytes < 0) {
                 rbytes = 0;
+                memset(auth_buf, '\0', 512);
                 continue;
             }
 
@@ -396,7 +397,6 @@ int authentication_handshake(int sender, int receiver)
             }
 
             DBUS_BROKER_EVENT("%s", log);
-            memset(auth_buf, '\0', 512);
             memset(log, '\0', 512);
         }
 
