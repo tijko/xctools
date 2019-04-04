@@ -390,6 +390,7 @@ int authentication_handshake(int sender, int receiver)
         int tmp = sender;
         sender = receiver;
         receiver = tmp;
+        memset(auth_buf, '\0', 512);
     }
 
     return 0; 
