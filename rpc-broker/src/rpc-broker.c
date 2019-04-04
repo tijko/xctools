@@ -385,7 +385,7 @@ int authentication_handshake(int sender, int receiver)
                         auth_buf[i+2] == 'G' &&  auth_buf[i+3] == 'I' &&
                         auth_buf[i+4] == 'N')
                         begin = true;
-                        break;
+                        return 0;
                 }
             }
 
