@@ -356,7 +356,11 @@ int authentication_handshake(int sender, int receiver)
             send(receiver, auth_buf, rbytes, MSG_NOSIGNAL);
 
             switch (auth_buf[0]) {
+
                 case ('B'): 
+                    begin_byte = 1;
+                    break;
+
                 case ('E'): 
                 case ('G'): 
                 case ('I'): 
