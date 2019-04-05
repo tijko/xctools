@@ -343,29 +343,18 @@ int authentication_handshake(int sender, int receiver)
     char auth_buf[512] = { '\0' };
 
     rbytes = 0;
+    DBUS_BROKER_EVENT("Initiate Exchange %s", "");
     while (true) {
-
-        while (auth_buf[rbytes - 1] != '\n') {
-            rbytes = recv(sender, auth_buf, 512, 0);
-            if (rbytes < 0) {
-                rbytes = 0;
-                memset(auth_buf, '\0', 512);
+        while (auth_buf[0] != '\n') {
+            rbytes = recv(sender, auth_buf, 1, 0);
+            if (rbytes < 0) 
                 continue;
-            }
 
             send(receiver, auth_buf, rbytes, MSG_NOSIGNAL);
-            if (rbytes > 6) {
-                int i;
-                for (i=0; i < rbytes - 7; i++) {
-                    if (auth_buf[i] == 'N' &&  auth_buf[i+1] == 'a' && 
-                        auth_buf[i+2] == 'm' &&  auth_buf[i+3] == 'e' &&
-                        auth_buf[i+4] == 'A') {
-                        return 0;
-                    } else if (auth_buf[i] == 'B' && auth_buf[i+1] == 'E' && 
-                               auth_buf[i+2] == 'G' && auth_buf[i+3] == 'I' && auth_buf[i+4] == 'N') {
-                        auth_buf[rbytes - 1] = '\n';
-                    }
-                }
+
+            if (auth_buf[0] == 'B') { 
+                DBUS_BROKER_EVENT("Begin Message Sent %s", "");
+                return 0;
             }
         }
 
@@ -373,6 +362,7 @@ int authentication_handshake(int sender, int receiver)
         sender = receiver;
         receiver = tmp;
         memset(auth_buf, '\0', 512);
+        DBUS_BROKER_EVENT("Exchange-Switch %s", "");
     }
 
     return 0; 
