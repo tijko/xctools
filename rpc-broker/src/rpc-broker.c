@@ -376,6 +376,7 @@ int authentication_handshake(int sender, int receiver)
         sender = receiver;
         receiver = tmp;
         auth_buf[0] = '\0';
+        begin_byte = 0;
     }
 
     return 0; 
