@@ -342,7 +342,6 @@ int authentication_handshake(int sender, int receiver)
     int rbytes;
     char auth_buf[512] = { '\0' };
     uint8_t begin_byte;
-    char byte_char[9];
 
     rbytes = 0;
     begin_byte = 0;
@@ -363,9 +362,7 @@ int authentication_handshake(int sender, int receiver)
                 case ('I'): 
                 case ('N'): { 
                     begin_byte = (begin_byte << 1) | 1; 
-                    itoa(begin_byte, byte_char, 2);
-                    DBUS_BROKER_EVENT("Begin Char: %s", byte_char);
-                    memset(byte_char, '\0', 9);
+                    DBUS_BROKER_EVENT("Begin Char: %d", begin_byte);
                     break;
                 }
             }
