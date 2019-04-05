@@ -372,6 +372,7 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
         memcpy(&(partial[partial_head]), buf, rbytes); 
         partial_head += rbytes;
         len = dbus_message_demarshal_bytes_needed(partial, partial_head);
+        DBUS_BROKER_EVENT("De-Marshal %d", len);
         if (len == partial_head) {
             DBUS_BROKER_EVENT("Sending Msg %s", "");
             if (convert_raw_dbus(&dmsg, partial, len) < 1)
