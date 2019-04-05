@@ -332,7 +332,7 @@ void debug_raw_buffer(char *buf, int rbytes)
             tmp[i] = '-';
     }
 
-    DBUS_BROKER_EVENT("5555: %s", tmp);
+    DBUS_BROKER_EVENT("%s", tmp);
 }
 
 /*
@@ -364,13 +364,17 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
         len = dbus_message_demarshal_bytes_needed(buf, rbytes);
 
         if (len == rbytes) {
+            DBUS_BROKER_EVENT("Sending Msg %s", "");
             if (convert_raw_dbus(&dmsg, buf, len) < 1)
                 return -1;
             if (is_request_allowed(&dmsg, is_client, domid) == false)
                 return -1;
             total += rbytes;
             send(ssock, buf, rbytes, 0);
-        }
+            DBUS_BROKER_EVENT("Msg Sent %s", "");
+        } else
+            DBUS_BROKER_EVENT("De-Marshalling Failed %s", "");
+            
         debug_raw_buffer(buf, rbytes);
     }
 
