@@ -372,7 +372,7 @@ int authentication_handshake(int sender, int receiver)
             }
         }
 
-        if ((begin_byte & 0x11111) == 0x11111)
+        if (begin_byte == 31)
             break;
         DBUS_BROKER_EVENT("Exchange-Switch %s", "");
 
@@ -383,6 +383,7 @@ int authentication_handshake(int sender, int receiver)
         begin_byte = 0;
     }
 
+    DBUS_BROKER_EVENT("Exchange Completed %s", "");
     return 0; 
 }
 
