@@ -341,10 +341,11 @@ int authentication_handshake(int sender, int receiver)
 {   
     int rbytes;
     char auth_buf[512] = { '\0' };
-    bool begin;
+    uint8_t begin_byte;
+    char byte_char[9];
 
     rbytes = 0;
-    begin = false;
+    begin_byte = 0;
     DBUS_BROKER_EVENT("Initiate Exchange %s", "");
     
     while (true) {
@@ -355,16 +356,25 @@ int authentication_handshake(int sender, int receiver)
 
             send(receiver, auth_buf, rbytes, MSG_NOSIGNAL);
 
-            if (auth_buf[0] == 'N') { 
-                DBUS_BROKER_EVENT("Begin Message Sent %s", "");
-                begin = true;
+            switch (auth_buf[0]) {
+                case ('B'): 
+                case ('E'): 
+                case ('G'): 
+                case ('I'): 
+                case ('N'): { 
+                    begin_byte = (begin_byte << 1) | 1; 
+                    itoa(begin_byte, byte_char, 2);
+                    DBUS_BROKER_EVENT("Begin Char: %s", byte_char);
+                    memset(byte_char, '\0', 9);
+                    break;
+                }
             }
         }
 
         int tmp = sender;
         sender = receiver;
         receiver = tmp;
-        if (begin)
+        if (begin_byte & 0x11111)
             break;
         DBUS_BROKER_EVENT("Exchange-Switch %s", "");
     }
@@ -505,7 +515,7 @@ static void run_rawdbus(struct dbus_broker_args *args)
     init_xenmgr_signal(rawdbus_loop);
 
     while (dbus_broker_running) {
-        uv_run(rawdbus_loop, UV_RUN_ONCE);
+        uv_run(rawdbus_loop, UV_RUN_NOWAIT);
         if (reload_policy) {
             free_policy();
             dbus_broker_policy = build_policy(args->rule_file);
