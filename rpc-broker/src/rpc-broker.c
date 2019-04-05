@@ -368,12 +368,13 @@ int authentication_handshake(int sender, int receiver)
             }
         }
 
+        if ((begin_byte & 0x11111) == 0x11111)
+            break;
+        DBUS_BROKER_EVENT("Exchange-Switch %s", "");
+
         int tmp = sender;
         sender = receiver;
         receiver = tmp;
-        if (begin_byte & 0x11111)
-            break;
-        DBUS_BROKER_EVENT("Exchange-Switch %s", "");
     }
 
     return 0; 
