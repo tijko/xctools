@@ -355,15 +355,18 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
     struct dbus_message dmsg;
     int total, rbytes, len;
     char buf[DBUS_MSG_LEN] = { 0 };
+    char partial[DBUS_MSG_LEN] = { 0 };
+    int partial_head;
 
     total = 0;
     rbytes = 0;
+    partial_head = 0;
 
     while ((rbytes = recv(rsock, buf, DBUS_MSG_LEN, 0)) > 0) {
 
         len = dbus_message_demarshal_bytes_needed(buf, rbytes);
 
-    /*    if (len == rbytes) {
+        if (len == rbytes) {
             DBUS_BROKER_EVENT("Sending Msg %s", "");
             if (convert_raw_dbus(&dmsg, buf, len) < 1)
                 return -1;
@@ -371,21 +374,30 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
                 return -1;
             total += rbytes;
             send(ssock, buf, rbytes, 0);
-            DBUS_BROKER_EVENT("Msg Sent %s", "");
-        } else
-            DBUS_BROKER_EVENT("De-Marshalling Failed %s", "");
-    */
-            
-        DBUS_BROKER_EVENT("Sending Msg %s", "");
-        if (convert_raw_dbus(&dmsg, buf, len) < 1)
-            return -1;
-        if (is_request_allowed(&dmsg, is_client, domid) == false)
-            return -1;
-        total += rbytes;
-        send(ssock, buf, rbytes, 0);
-        DBUS_BROKER_EVENT("Msg Sent %s", "");
+            debug_raw_buffer(buf, rbytes);
+        } else {
+            if ((partial_head + rbytes) > DBUS_MSG_LEN) {
+                DBUS_BROKER_EVENT("Run on Message Error %s", "");
+                return -1;
+            }
 
-        debug_raw_buffer(buf, rbytes);
+            memcpy(&(partial[partial_head]), buf, rbytes); 
+            partial_head += rbytes;
+            // Could do in 1-iteration combining the two-cases
+            len = dbus_message_demarshal_bytes_needed(partial, partial_head);
+            if (len == partial_head) {
+                if (convert_raw_dbus(&dmsg, partial, len) < 1)
+                    return -1;
+                if (is_request_allowed(&dmsg, is_client, domid) == false)
+                    return -1;
+                total += rbytes;
+                send(ssock, partial, partial_head, 0);
+                DBUS_BROKER_EVENT("Sending Partial Buffer %s", "");
+                debug_raw_buffer(partial, partial_head);
+            } else {
+                DBUS_BROKER_EVENT("Buffering into Partial-Read %s", "");
+            }
+        }
     }
 
     return total;
