@@ -341,9 +341,12 @@ int authentication_handshake(int sender, int receiver)
 {   
     int rbytes;
     char auth_buf[512] = { '\0' };
+    bool begin;
 
     rbytes = 0;
+    begin = false;
     DBUS_BROKER_EVENT("Initiate Exchange %s", "");
+    
     while (true) {
         while (auth_buf[0] != '\n') {
             rbytes = recv(sender, auth_buf, 1, 0);
@@ -352,16 +355,17 @@ int authentication_handshake(int sender, int receiver)
 
             send(receiver, auth_buf, rbytes, MSG_NOSIGNAL);
 
-            if (auth_buf[0] == 'B') { 
+            if (auth_buf[0] == 'N') { 
                 DBUS_BROKER_EVENT("Begin Message Sent %s", "");
-                return 0;
+                begin = true;
             }
         }
 
         int tmp = sender;
         sender = receiver;
         receiver = tmp;
-        memset(auth_buf, '\0', 512);
+        if (begin)
+            break;
         DBUS_BROKER_EVENT("Exchange-Switch %s", "");
     }
 
