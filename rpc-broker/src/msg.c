@@ -370,9 +370,6 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
             return -1;
         }
 
-        if (rbytes < 0)
-            continue;
-
         memcpy(&(partial[partial_head]), buf, rbytes); 
         partial_head += rbytes;
         len = dbus_message_demarshal_bytes_needed(partial, partial_head);
