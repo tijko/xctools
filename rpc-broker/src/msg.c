@@ -369,9 +369,10 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
             debug_raw_buffer(buf, rbytes);
             DBUS_BROKER_EVENT("Run on Message Error %s", "");
             return -1;
-        }
-
-        if (rbytes > 0) {
+        } else if (rbytes < 64 && rbytes > 0) {
+            send(ssock, buf, rbytes, 0);
+            total += rbytes;
+        } else {
             memcpy(&(partial[partial_head]), buf, rbytes); 
             partial_head += rbytes;
         }
