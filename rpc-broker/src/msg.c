@@ -366,6 +366,7 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
         rbytes = recv(rsock, buf, DBUS_MSG_LEN, 0);
 
         if ((partial_head + rbytes) > DBUS_MSG_LEN) { 
+            debug_raw_buffer(buf, rbytes);
             DBUS_BROKER_EVENT("Run on Message Error %s", "");
             return -1;
         }
