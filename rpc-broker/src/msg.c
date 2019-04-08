@@ -373,16 +373,17 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
         partial_head += rbytes;
         len = dbus_message_demarshal_bytes_needed(partial, partial_head);
         DBUS_BROKER_EVENT("De-Marshal %d", len);
-        if (len == partial_head) {
+        if (len <= partial_head) {
             DBUS_BROKER_EVENT("Sending Msg %s", "");
             if (convert_raw_dbus(&dmsg, partial, len) < 1)
                 return -1;
             if (is_request_allowed(&dmsg, is_client, domid) == false)
                 return -1;
-            total += partial_head;
-            send(ssock, partial, partial_head, 0);
-            partial_head = 0;
-            memset(partial, 0, DBUS_MSG_LEN);
+            total += len;
+            send(ssock, partial, len, 0);
+            partial_head -= len;
+            // implement a circular buffer :D (wow how long ago, things have come full circle...no pun intended)
+            memmove(partial, &partial[len], partial_head);  
         } else
             DBUS_BROKER_EVENT("Partial %s", "");
 
