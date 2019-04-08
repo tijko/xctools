@@ -372,7 +372,7 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
         } else if (rbytes < 64 && rbytes > 0) {
             send(ssock, buf, rbytes, 0);
             total += rbytes;
-        } else {
+        } else if (rbytes > 64) {
             memcpy(&(partial[partial_head]), buf, rbytes); 
             partial_head += rbytes;
         }
