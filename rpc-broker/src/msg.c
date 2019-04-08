@@ -362,12 +362,16 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
     rbytes = 0;
     partial_head = 0;
 
-    while ((rbytes = recv(rsock, buf, DBUS_MSG_LEN, 0)) > 0) {
+    do {
+        rbytes = recv(rsock, buf, DBUS_MSG_LEN, 0);
 
         if ((partial_head + rbytes) > DBUS_MSG_LEN) { 
             DBUS_BROKER_EVENT("Run on Message Error %s", "");
             return -1;
         }
+
+        if (rbytes < 0)
+            continue;
 
         memcpy(&(partial[partial_head]), buf, rbytes); 
         partial_head += rbytes;
@@ -390,7 +394,7 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
             DBUS_BROKER_EVENT("Partial %s", "");
 
         debug_raw_buffer(partial, partial_head);
-    }
+    } while (partial_head > 0)
 
     return total;
 }
