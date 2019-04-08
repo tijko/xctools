@@ -380,9 +380,10 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
             break;
             
         DBUS_BROKER_EVENT("Read (%d) De-Marshal (%d) Partial (%d)", rbytes, len, partial_head);
-        if (len < 0)
+        if (len < 0) {
             DBUS_BROKER_EVENT("De-Marshal error %s", ""); 
-        else if (len <= partial_head) {
+            break;
+        } else if (len <= partial_head) {
             DBUS_BROKER_EVENT("Sending Msg %s", "");
             if (convert_raw_dbus(&dmsg, partial, len) < 1)
                 return -1;
