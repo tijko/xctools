@@ -386,7 +386,7 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
             DBUS_BROKER_EVENT("De-Marshal error %s", ""); 
             debug_raw_buffer(buf, rbytes);
             debug_raw_buffer(partial, partial_head);
-            send(ssock, partial, partial_head); 
+            send(ssock, partial, partial_head, 0); 
             break;
         } else if (len <= partial_head) {
             DBUS_BROKER_EVENT("Sending Msg %s", "");
