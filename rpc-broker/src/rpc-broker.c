@@ -410,9 +410,11 @@ static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
             conn->is_auth = true;
             return;
         }
+
         while ((ret = exchange(conn->receiver, conn->sender, 
                                conn->client_domain, conn->is_client)) != 0) 
             total += ret;
+
         if (total <= 0)
             uv_close((uv_handle_t *) handle, close_client_rawdbus);
     }
