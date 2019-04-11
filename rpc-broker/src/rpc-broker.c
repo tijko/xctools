@@ -347,6 +347,8 @@ int authentication_handshake(int sender, int receiver)
     begin_byte = 0;
     DBUS_BROKER_EVENT("Initiate Exchange %s", "");
     
+    /* Track the number of char's received in-each buffer */
+    
     while (true) {
         while (auth_buf[0] != '\n') {
             rbytes = recv(sender, auth_buf, 1, 0);
@@ -365,16 +367,16 @@ int authentication_handshake(int sender, int receiver)
                 case ('G'): 
                 case ('I'): 
                 case ('N'): { 
-                    begin_byte = (begin_byte << 1) | 1; 
                     DBUS_BROKER_EVENT("Begin Char: %d", begin_byte);
+                    begin_byte = (begin_byte << 1) | 1; 
                     break;
                 }
             }
         }
 
+        DBUS_BROKER_EVENT("Exchange-Switch %s", "");
         if (begin_byte == 31)
             break;
-        DBUS_BROKER_EVENT("Exchange-Switch %s", "");
 
         int tmp = sender;
         sender = receiver;
