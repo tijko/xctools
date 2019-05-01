@@ -163,11 +163,6 @@ static int rule_matches_request(struct rule *policy_rule,
             filter_policy = -1;
             goto policy_set;
         }
-
-        if (policy_rule->domtype &&
-            filter_domtype(conn, uuid, (char *) policy_rule->domtype) < 0) {
-            filter_policy = -1;
-        }
     }
 
 policy_set:
