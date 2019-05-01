@@ -149,7 +149,7 @@ static int rule_matches_request(struct rule *policy_rule,
     if (!dbus_broker_policy->database)
         goto policy_set;
 
-    if (policy_rule->if_bool || policy_rule->domtype) {
+    if (policy_rule->if_bool) {
         conn = create_dbus_connection();
         uuid = get_db_vm_path(domid);
         if (uuid == NULL) {
@@ -162,11 +162,6 @@ static int rule_matches_request(struct rule *policy_rule,
                                        policy_rule->if_bool_flag) < 0) {
             filter_policy = -1;
             goto policy_set;
-        }
-
-        if (policy_rule->domtype &&
-            filter_domtype(conn, uuid, (char *) policy_rule->domtype) < 0) {
-            filter_policy = -1;
         }
     }
 
@@ -329,7 +324,7 @@ void debug_raw_buffer(char *buf, int rbytes)
             tmp[i] = '-';
     }
 
-    DBUS_BROKER_EVENT("5555: %s", tmp);
+    DBUS_BROKER_EVENT("%s", tmp);
 }
 
 /*
