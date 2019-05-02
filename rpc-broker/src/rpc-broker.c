@@ -242,9 +242,6 @@ static void service_ws_signals(void)
         if (dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
             goto unref_msg;
 
-        if (verbose_logging)
-            DBUS_BROKER_EVENT("Xenmgr Server Signal%s", "");
-
         switch (curr->signal_type) {
 
             case (DBUS_SIGNAL_TYPE_SERVER):
