@@ -230,11 +230,13 @@ static void service_ws_signals(void)
     do {
         msg = NULL;
 
-        if (curr->dconn && dbus_connection_get_is_connected(curr->dconn)) {
-            dbus_connection_read_write(curr->dconn, 0);
-            msg = dbus_connection_pop_message(curr->dconn);
-        } else
+        if (!curr->dconn || !dbus_connection_get_is_connected(curr->dconn)) {
             remove_link = true;
+            goto next_link;
+        } 
+
+        dbus_connection_read_write(curr->dconn, 0);
+        msg = dbus_connection_pop_message(curr->dconn);
 
         if (!msg)
             goto next_link;
