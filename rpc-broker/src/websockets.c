@@ -179,6 +179,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
         add_ws_signal(jreq->conn, wsi);
         // add an interface field (jreq->dmsg.args[0])
         signal_subscribers++;
+        DBUS_BROKER_EVENT("WS add signal: <%d>", signal_subscribers);
     }
 
 free_req:
