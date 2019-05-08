@@ -644,6 +644,9 @@ void add_ws_signal(DBusConnection *conn, struct lws *wsi)
     curr->wsi = wsi;
     curr->dconn = conn;
     curr->signal_type = DBUS_SIGNAL_TYPE_CLIENT;
+    signal_subscribers++;
+    // XXX
+    curr->client_fd = signal_subscribers;
 }
 
 /**

@@ -241,7 +241,7 @@ static void service_ws_signals(void)
 
         dbus_connection_read_write(curr->dconn, 0);
         msg = dbus_connection_pop_message(curr->dconn);
-
+        DBUS_BROKER_EVENT("WS Signal <%d>", curr->client_fd);
         if (!msg)
             goto next_link;
 
