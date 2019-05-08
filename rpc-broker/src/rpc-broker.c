@@ -274,6 +274,10 @@ next_link:
         }
 
     } while (curr != dlinks);
+
+    struct timespec *t;
+    clock_gettime(CLOCK_REALTIME, &t);
+    DBUS_BROKER_EVENT("WS Service <%llu>", t.tv_nsec);
 }
 
 static void run_websockets(struct dbus_broker_args *args)
