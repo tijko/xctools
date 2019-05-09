@@ -280,7 +280,7 @@ next_link:
             DBUS_BROKER_EVENT("WS rm signal: <%d>", signal_subscribers);
         }
 
-    } while (curr != dlinks);
+    } while (curr && curr != dlinks);
 
     clock_gettime(CLOCK_REALTIME, &t);
     DBUS_BROKER_EVENT("WS Service Exit <%llu %llu>", t.tv_sec, t.tv_nsec);
