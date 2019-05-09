@@ -653,7 +653,7 @@ void add_ws_signal(DBusConnection *conn, char *signal, struct lws *wsi)
     curr->wsi = wsi;
     curr->dconn = conn;
     curr->signal_type = DBUS_SIGNAL_TYPE_CLIENT;
-    curr->name = strdump(signal);
+    curr->name = strdup(signal);
     signal_subscribers++;
     DBUS_BROKER_EVENT("WS add signal: <%d>", signal_subscribers);
     curr->client_fd = signal_subscribers;
