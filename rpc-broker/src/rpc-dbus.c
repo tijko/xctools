@@ -646,13 +646,14 @@ struct dbus_link *add_dbus_signal(void)
  * @param conn the dbus api connection object.
  * @param wsi the websockets api context object.
  */
-void add_ws_signal(DBusConnection *conn, struct lws *wsi)
+void add_ws_signal(DBusConnection *conn, char *signal, struct lws *wsi)
 {
     struct dbus_link *curr;
     curr = add_dbus_signal();
     curr->wsi = wsi;
     curr->dconn = conn;
     curr->signal_type = DBUS_SIGNAL_TYPE_CLIENT;
+    curr->name = strdump(signal);
     signal_subscribers++;
     DBUS_BROKER_EVENT("WS add signal: <%d>", signal_subscribers);
     curr->client_fd = signal_subscribers;

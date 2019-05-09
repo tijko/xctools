@@ -228,8 +228,8 @@ static void service_ws_signals(void)
     remove_link = false;
 
     struct timespec t;
-    clock_gettime(CLOCK_REALTIME, &t);
-    DBUS_BROKER_EVENT("WS Service Entry <%llu %llu>", t.tv_sec, t.tv_nsec);
+    //clock_gettime(CLOCK_REALTIME, &t);
+    //DBUS_BROKER_EVENT("WS Service Entry <%llu %llu>", t.tv_sec, t.tv_nsec);
 
     do {
         msg = NULL;
@@ -238,16 +238,37 @@ static void service_ws_signals(void)
             remove_link = true;
             goto next_link;
         } 
+        /*
+        int connfd;
+        if (!dbus_connection_get_socket(curr->dconn, &connfd)) {
+            DBUS_BROKER_WARNING("Websocket Signal Connection Failed %s", "")
+            goto next_link;
+        }
+        // set the FD to O_NONBLOCK?
+        */
+        switch (dbus_connection_get_dispatch_status(curr->dconn)) {
 
-        dbus_connection_read_write(curr->dconn, 0);
+            case (DBUS_DISPATCH_DATA_REMAINS):
+                DBUS_BROKER_EVENT("Message in Queue%s", "");
+                break;
+            case (DBUS_DISPATCH_COMPLETE):
+                DBUS_BROKER_EVENT("Complete%s", "");
+                break;
+            case (DBUS_DISPATCH_NEED_MEMORY):
+                DBUS_BROKER_EVENT("Need Memory%s", "");
+                break;
+            default:
+                break;
+        }
+
+        dbus_connection_read_write(curr->dconn, 1);
         msg = dbus_connection_pop_message(curr->dconn);
-        DBUS_BROKER_EVENT("WS Signal <%d>", curr->client_fd);
+        //DBUS_BROKER_EVENT("WS Signal <%d>", curr->client_fd);
         if (!msg)
             goto next_link;
-
+        
         if (dbus_message_get_type(msg) != DBUS_MESSAGE_TYPE_SIGNAL)
             goto unref_msg;
-
         switch (curr->signal_type) {
 
             case (DBUS_SIGNAL_TYPE_SERVER):
@@ -258,6 +279,7 @@ static void service_ws_signals(void)
                 parse_client_signal(msg, curr->wsi);
                 clock_gettime(CLOCK_REALTIME, &t);
                 DBUS_BROKER_EVENT("WS Service Msg <%llu %llu>", t.tv_sec, t.tv_nsec);
+                DBUS_BROKER_EVENT("%s (%d)", curr->name, curr->client_fd); 
             }
                 break;
 
@@ -282,8 +304,8 @@ next_link:
 
     } while (curr && curr != dlinks);
 
-    clock_gettime(CLOCK_REALTIME, &t);
-    DBUS_BROKER_EVENT("WS Service Exit <%llu %llu>", t.tv_sec, t.tv_nsec);
+    //clock_gettime(CLOCK_REALTIME, &t);
+    //DBUS_BROKER_EVENT("WS Service Exit <%llu %llu>", t.tv_sec, t.tv_nsec);
 }
 
 static void run_websockets(struct dbus_broker_args *args)

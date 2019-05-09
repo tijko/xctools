@@ -80,6 +80,7 @@ struct dbus_link {
     struct dbus_link *next;
     struct dbus_link *prev;
     struct lws *wsi;
+    char *name;
     DBusConnection *dconn;
 };
 
@@ -116,7 +117,7 @@ DBusMessage *db_list(void);
 
 char *dbus_introspect(struct json_request *jreq);
 
-void add_ws_signal(DBusConnection *conn, struct lws *wsi);
+void add_ws_signal(DBusConnection *conn, char *signal, struct lws *wsi);
 
 void remove_dlink(struct dbus_link *link);
 

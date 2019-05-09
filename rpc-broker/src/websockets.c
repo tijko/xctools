@@ -176,7 +176,7 @@ int ws_request_handler(struct lws *wsi, char *raw_req)
 
     if (signal_subscribers < MAX_SIGNALS &&
         strcmp("AddMatch", jreq->dmsg.member) == 0) {
-        add_ws_signal(jreq->conn, wsi);
+        add_ws_signal(jreq->conn, jreq->dmsg.args[0], wsi);
     }
 
 free_req:
