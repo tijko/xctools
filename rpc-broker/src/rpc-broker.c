@@ -228,8 +228,8 @@ static void service_ws_signals(void)
     remove_link = false;
 
     struct timespec t;
-    clock_gettime(CLOCK_REALTIME, &t);
-    DBUS_BROKER_EVENT("WS Service Entry <%llu %llu>", t.tv_sec, t.tv_nsec);
+    //clock_gettime(CLOCK_REALTIME, &t);
+    //DBUS_BROKER_EVENT("WS Service Entry <%llu %llu>", t.tv_sec, t.tv_nsec);
 
     do {
         msg = NULL;
@@ -241,7 +241,7 @@ static void service_ws_signals(void)
 
         dbus_connection_read_write(curr->dconn, 0);
         msg = dbus_connection_pop_message(curr->dconn);
-        DBUS_BROKER_EVENT("WS Signal <%d>", curr->client_fd);
+        //DBUS_BROKER_EVENT("WS Signal <%d>", curr->client_fd);
         if (!msg)
             goto next_link;
 
@@ -282,8 +282,8 @@ next_link:
 
     } while (curr != dlinks);
 
-    clock_gettime(CLOCK_REALTIME, &t);
-    DBUS_BROKER_EVENT("WS Service Exit <%llu %llu>", t.tv_sec, t.tv_nsec);
+    //clock_gettime(CLOCK_REALTIME, &t);
+    //DBUS_BROKER_EVENT("WS Service Exit <%llu %llu>", t.tv_sec, t.tv_nsec);
 }
 
 static void run_websockets(struct dbus_broker_args *args)

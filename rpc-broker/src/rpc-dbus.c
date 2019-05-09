@@ -615,17 +615,26 @@ struct dbus_link *add_dbus_signal(void)
 
     head = dlinks;
     new_link = malloc(sizeof *new_link);
+    if (!new_link)
+        DBUS_BROKER_ERROR("Malloc Failed!");
 
     if (!head) {
+        new_link->next = NULL;
+        new_link->prev = NULL;
         dlinks = new_link;
-        dlinks->prev = dlinks;
-        dlinks->next = dlinks;
     } else {
         tail = head->prev;
-        tail->next = new_link;
-        head->prev = new_link;
-        new_link->next = head;
-        new_link->prev = tail;
+        if (!tail) {
+            head->prev = new_link;
+            head->next = new_link;
+            new_link->next = head;
+            new_link->prev = head;
+        } else {
+            tail->next = new_link;
+            head->prev = new_link;
+            new_link->next = head;
+            new_link->prev = tail;
+        }
     }
 
     return new_link;
@@ -645,7 +654,7 @@ void add_ws_signal(DBusConnection *conn, struct lws *wsi)
     curr->dconn = conn;
     curr->signal_type = DBUS_SIGNAL_TYPE_CLIENT;
     signal_subscribers++;
-    // XXX
+    DBUS_BROKER_EVENT("WS add signal: <%d>", signal_subscribers);
     curr->client_fd = signal_subscribers;
 }
 
