@@ -252,7 +252,6 @@ static void service_ws_signals(void)
                 DBUS_BROKER_EVENT("Message in Queue%s", "");
                 break;
             case (DBUS_DISPATCH_COMPLETE):
-                DBUS_BROKER_EVENT("Complete%s", "");
                 remove_link = true;
                 break;
             case (DBUS_DISPATCH_NEED_MEMORY):
