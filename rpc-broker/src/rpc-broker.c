@@ -253,6 +253,7 @@ static void service_ws_signals(void)
                 break;
             case (DBUS_DISPATCH_COMPLETE):
                 DBUS_BROKER_EVENT("Complete%s", "");
+                remove_link = true;
                 break;
             case (DBUS_DISPATCH_NEED_MEMORY):
                 DBUS_BROKER_EVENT("Need Memory%s", "");
@@ -260,6 +261,9 @@ static void service_ws_signals(void)
             default:
                 break;
         }
+
+        if (remove_link)
+            goto next_link;
 
         dbus_connection_read_write(curr->dconn, 1);
         msg = dbus_connection_pop_message(curr->dconn);
