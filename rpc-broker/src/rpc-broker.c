@@ -235,7 +235,7 @@ static void service_ws_signals(void)
         msg = NULL;
 
         if (!curr->dconn || !dbus_connection_get_is_connected(curr->dconn)) {
-            remove_link = true;
+//            remove_link = true;
             goto next_link;
         } 
         /*
