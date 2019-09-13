@@ -252,7 +252,6 @@ static void service_ws_signals(void)
                 DBUS_BROKER_EVENT("Message in Queue%s", "");
                 break;
             case (DBUS_DISPATCH_COMPLETE):
-                remove_link = true;
                 break;
             case (DBUS_DISPATCH_NEED_MEMORY):
                 DBUS_BROKER_EVENT("Need Memory%s", "");
@@ -260,9 +259,6 @@ static void service_ws_signals(void)
             default:
                 break;
         }
-
-        if (remove_link)
-            goto next_link;
 
         dbus_connection_read_write(curr->dconn, 1);
         msg = dbus_connection_pop_message(curr->dconn);
@@ -281,7 +277,6 @@ static void service_ws_signals(void)
             case (DBUS_SIGNAL_TYPE_CLIENT): {
                 parse_client_signal(msg, curr->wsi);
                 clock_gettime(CLOCK_REALTIME, &t);
-                DBUS_BROKER_EVENT("WS Service Msg <%llu %llu>", t.tv_sec, t.tv_nsec);
                 DBUS_BROKER_EVENT("%s (%d)", curr->name, curr->client_fd); 
             }
                 break;
