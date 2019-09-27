@@ -44,6 +44,11 @@ static inline char *get_db_vm_path(uint16_t domid)
     snprintf(path, 255, "/local/domain/%d/vm", domid);
 
     uuid = (char *) xs_read(xsh, XBT_NULL, path, &len);
+    if (uuid != NULL)
+        DBUS_BROKER_EVENT("Find Domid Failed: %d", domid); 
+    else
+        DBUS_BROKER_EVENT("Found DOMID: %d", domid); 
+
     xs_close(xsh);
 
     return uuid;
