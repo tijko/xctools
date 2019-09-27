@@ -119,6 +119,10 @@ static int rule_matches_request(struct rule *policy_rule,
                                 struct dbus_message *dmsg,
                                 uint16_t domid)
 {
+    //
+    if (domid == 0)
+        return 1;
+    //
     DBusConnection *conn;
     char *uuid;
     int filter_policy;
