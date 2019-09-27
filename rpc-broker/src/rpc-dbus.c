@@ -234,7 +234,7 @@ signed int convert_raw_dbus(struct dbus_message *dmsg,
     ret = dbus_message_get_type(dbus_msg);
 
 #ifdef DEBUG
-    debug_raw_msg(dmsg, dbus_msg);
+//    debug_raw_msg(dmsg, dbus_msg);
 #endif
 
     argnum = 0;
