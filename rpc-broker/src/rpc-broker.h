@@ -54,7 +54,9 @@
 #include "signature.h"
 #include "websockets.h"
 
-
+//
+#define DEBUG 1
+//
 #define DBUS_BROKER_ERROR(call)                                       \
     do {                                                              \
         openlog(NULL, LOG_PERROR, 0);                                 \
