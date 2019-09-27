@@ -202,6 +202,19 @@ void debug_raw_msg(struct dbus_message *dmsg, DBusMessage *dbus_msg)
 signed int convert_raw_dbus(struct dbus_message *dmsg,
                             const char *msg, size_t len)
 {
+    // XXX debug
+    int i;
+    char buf[512];
+    for (i=0; i < len; i++) {
+       if (msg[i] != '\0' && msg[i] != '\n')
+           buf[i] = msg[i];
+       else
+           buf[i] = '-';
+    }
+    buf[len - 1] = '\0';
+    DBUS_BROKER_WARNING("MSG: %s", buf);
+    //
+     
     DBusError error;
     DBusMessageIter iter;
     DBusMessage *dbus_msg;

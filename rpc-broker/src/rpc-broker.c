@@ -447,7 +447,7 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
     uv_loop_t *loop;
     int client, server, domain;
 
-    dbus_server= (struct dbus_broker_server *) handle->data;
+    dbus_server = (struct dbus_broker_server *) handle->data;
     loop = dbus_server->mainloop;
     if (events & UV_READABLE) {
 	        socklen_t clilen = sizeof(dbus_server->peer);
