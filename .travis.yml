@@ -78,6 +78,7 @@ script:
 - test $RES -eq 0
 - DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.GetId 2>second-still-fails.txt || true 
 - diff -u test-policies/blocked-interface-reply.txt second-still-fails.txt ; RES=$?
+- cat second-still-fails.txt
 - test $RES -eq 0
 
 #
