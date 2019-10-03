@@ -451,7 +451,7 @@ DBusMessage *make_dbus_call(DBusConnection *conn, struct dbus_message *dmsg)
     dbus_message_unref(msg);
 
     if (reply == NULL) {
-        DBUS_BROKER_WARNING("Failed Request <%s>", error.message);
+        //DBUS_BROKER_WARNING("Failed Request <%s>", error.message);
         return NULL;
     }
 

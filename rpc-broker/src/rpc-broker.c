@@ -96,13 +96,13 @@ int get_domid(int client)
 
     domain = 0;
     /*
-     * When using rpc-broker over V4V, we want to be able to
-     * firewall against domids. The V4V interposer stores the
+     * When using rpc-broker over ARGO, we want to be able to
+     * firewall against domids. The ARGO interposer stores the
      * domid as follows:
      * sin.sin_addr.s_addr = htonl ((uint32_t) peer->domain | 0x1000000);
-     * If we're not using V4V, just return 0 for the domid.
+     * If we're not using ARGO, just return 0 for the domid.
      */
-#ifdef HAVE_V4V
+#ifdef HAVE_ARGO
     struct sockaddr_in client_addr;
     socklen_t client_addr_len;
 
