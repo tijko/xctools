@@ -73,6 +73,7 @@ script:
 - test $RES -eq 0
 
 # XXX
+#
 - sudo cp test-policies/test_2.rules /etc/rpc-broker.rules
 - kill -1 $RPCBPID
 - DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames ; RES=$?
