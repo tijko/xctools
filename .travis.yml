@@ -17,7 +17,7 @@ before_install:
 - cd libuv-1.11.0
 - mkdir -p m4
 - touch m4/libuv-extra-automake-flags.m4
-#- autoreconf --verbose --install --force
+  #- autoreconf --verbose --install --force
 - ./autogen.sh
 - ./configure
 - make
@@ -68,19 +68,21 @@ script:
 - DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames 2>first-fail.txt || true 
 - diff -u first-fail.txt test-policies/dbus-connection-failure.txt ; RES=$? 
 - test $RES -eq 0
-- DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.GetId 2>second-fail.txt || true
-- diff -u second-fail.txt test-policies/dbus-connection-failure.txt ; RES=$? 
+- DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.GetId 2>fail.txt || true
+- diff -u fail.txt test-policies/dbus-connection-failure.txt ; RES=$? 
 - test $RES -eq 0
 
+<<<<<<< HEAD
 # XXX
 #
+=======
+>>>>>>> tijko/debug-msg
 - sudo cp test-policies/test_2.rules /etc/rpc-broker.rules
 - kill -1 $RPCBPID
 - DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames ; RES=$?
 - test $RES -eq 0
-  #- DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.GetId 2>second-still-fails.txt || true 
-  - DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.GetId || true 
-- diff -u test-policies/blocked-interface-reply.txt second-still-fails.txt ; RES=$?
+- DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.GetId 2>fails.txt || true 
+- diff -u test-policies/blocked-interface-reply.txt fails.txt ; RES=$?
 - test $RES -eq 0
 
 #
@@ -109,16 +111,16 @@ script:
 - test $RES -eq 0
 - DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.Introspectable.Introspect 2>first-fail.txt || true 
 - diff -u first-fail.txt test-policies/blocked-interface-reply.txt ; RES=$? 
-- DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames 2>second-fail.txt || true 
-- diff -u second-fail.txt test-policies/blocked-interface-reply.txt ; RES=$? 
+- DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames 2>fail.txt || true 
+- diff -u fail.txt test-policies/blocked-interface-reply.txt ; RES=$? 
 - test $RES -eq 0
 
 - sudo cp test-policies/test_4.rules /etc/rpc-broker.rules
 - kill -1 $RPCBPID
 - DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.Introspectable.Introspect; RES=$?
 - test $RES -eq 0
-- DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames 2>second-still-fail.txt || true 
-- diff -u test-policies/blocked-interface-reply.txt second-still-fails.txt ; RES=$?
+- DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames 2>fail.txt || true 
+- diff -u test-policies/blocked-interface-reply.txt fails.txt ; RES=$?
 - test $RES -eq 0
 
 #
@@ -130,8 +132,8 @@ script:
 - test $RES -eq 0
 - DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.Introspectable.Introspect 2>first-fail.txt || true 
 - diff -u first-fail.txt test-policies/blocked-interface-reply.txt ; RES=$? 
-- DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames 2>second-fail.txt || true 
-- diff -u second-fail.txt test-policies/blocked-interface-reply.txt ; RES=$? 
+- DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames 2>fail.txt || true 
+- diff -u fail.txt test-policies/blocked-interface-reply.txt ; RES=$? 
 - test $RES -eq 0
 
 - sudo cp test-policies/test_5.rules /etc/rpc-broker.rules
@@ -165,8 +167,8 @@ script:
 - kill -1 $RPCBPID
 - DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.Introspectable.Introspect
 - test $RES -eq 0 
-- DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames 2>second-fail.txt || true
-- diff -u second-fail.txt test-policies/blocked-interface-reply.txt ; RES=$? 
+- DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.ListNames 2>fail.txt || true
+- diff -u fail.txt test-policies/blocked-interface-reply.txt ; RES=$? 
 - DBUS_SYSTEM_BUS_ADDRESS=tcp:host=127.0.0.1,port=5555 dbus-send --system --dest=org.freedesktop.DBus --type=method_call --print-reply /org/freedesktop/DBus org.freedesktop.DBus.GetId 2>third-fail.txt || true 
 - diff -u third-fail.txt test-policies/blocked-interface-reply.txt ; RES=$? 
 - test $RES -eq 0 
