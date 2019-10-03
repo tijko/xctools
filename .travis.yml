@@ -17,7 +17,7 @@ before_install:
 - cd libuv-1.11.0
 - mkdir -p m4
 - touch m4/libuv-extra-automake-flags.m4
-- autoreconf --verbose --install --force
+  #- autoreconf --verbose --install --force
 - ./autogen.sh
 - ./configure
 - make
