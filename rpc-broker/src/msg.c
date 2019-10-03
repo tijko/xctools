@@ -82,6 +82,7 @@ static int filter_if_bool(DBusConnection *conn, char *uuid,
     return rc;
 }
 
+/*
 static int filter_domtype(DBusConnection *conn, char *uuid,
                                                 char *policy_domtype)
 {
@@ -103,6 +104,7 @@ static int filter_domtype(DBusConnection *conn, char *uuid,
 
     return ret;
 }
+*/
 
 /*
  * Checks a rule for any given request, compares the policy-rule against

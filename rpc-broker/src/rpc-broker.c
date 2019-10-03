@@ -297,7 +297,7 @@ next_link:
             remove_dlink(curr->prev);
             remove_link = false;
             signal_subscribers--;
-            DBUS_BROKER_EVENT("WS rm signal: <%d>", signal_subscribers);
+            DBUS_BROKER_EVENT("WS rm signal: <%zd>", signal_subscribers);
         }
 
     } while (curr && curr != dlinks);
