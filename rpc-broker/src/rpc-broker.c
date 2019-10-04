@@ -277,7 +277,6 @@ static void service_ws_signals(void)
             case (DBUS_SIGNAL_TYPE_CLIENT): {
                 parse_client_signal(msg, curr->wsi);
                 clock_gettime(CLOCK_REALTIME, &t);
-                DBUS_BROKER_EVENT("%s (%d)", curr->name, curr->client_fd); 
             }
                 break;
 
