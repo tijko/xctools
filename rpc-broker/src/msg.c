@@ -281,7 +281,9 @@ bool is_request_allowed(struct dbus_message *dmsg, bool is_client, int domid)
     if (!dbus_broker_policy->database || domid >= UUID_CACHE_LIMIT)
         goto filtering_done;
 
-    if (domain_uuids[domid])
+    if (domid == 0)
+        uuid = "00000000_0000_0000_0000_000000000000";
+    else if (domain_uuids[domid])
         uuid = domain_uuids[domid];
     else {
         uuid = get_uuid_from_domid(domid);
