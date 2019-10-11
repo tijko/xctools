@@ -1,6 +1,8 @@
-AM_CFLAGS = -g -Wall -lpthread \
+AM_CFLAGS = -g -Wall \
  $(DBUS_CFLAGS) $(LIBWEBSOCKETS_CFLAGS) \
  $(JSON_C_CFLAGS) $(LIBXML_CFLAGS)
+
+AM_LDFLAGS = -lpthread
 
 sbin_PROGRAMS = rpc-broker
 
