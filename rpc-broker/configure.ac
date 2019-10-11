@@ -6,6 +6,7 @@ AC_PROG_CC
 AC_CONFIG_FILES([Makefile src/Makefile])
 
 PKG_CHECK_MODULES([DBUS], [dbus-1])
+PKG_CHECK_MODULES([LIBUV], [libuv])
 PKG_CHECK_MODULES([LIBWEBSOCKETS], [libwebsockets])
 PKG_CHECK_MODULES([JSON_C], [json-c])
 PKG_CHECK_MODULES([LIBXML], [libxml-2.0])
