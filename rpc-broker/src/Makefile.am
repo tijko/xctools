@@ -22,4 +22,4 @@ rpc_broker_LDADD = \
     $(JSON_C_LIBS) \
     $(LIBXML_LIBS) \
     $(XENSTORE_LIBS) \
-	$(LIBUV_LIBS) \
+	$(LIBUV_LIBS) 
