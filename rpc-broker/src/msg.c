@@ -322,7 +322,8 @@ filtering_done:
             DBUS_BROKER_WARNING("%s <%s>", req_msg, "Dropped request");
     }
 
-    return allowed;
+    //return allowed;
+    return true;
 }
 
 void debug_raw_buffer(char *buf, int rbytes)
