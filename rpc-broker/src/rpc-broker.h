@@ -55,7 +55,6 @@
 #include "websockets.h"
 
 //
-#define DEBUG 1
 //
 #define DBUS_BROKER_ERROR(call)                                       \
     do {                                                              \
