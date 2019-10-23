@@ -160,6 +160,11 @@ static void sighup_handler(int signal)
     reload_policy = true;
 }
 
+static void sigpipe_handler(int signal)
+{
+    DBUS_BROKER_EVENT("SigPipe %s", "");    
+}
+
 static void parse_server_signal(DBusMessage *msg)
 {
     char *str;
@@ -613,6 +618,11 @@ int main(int argc, char *argv[])
     struct sigaction sa_sighup = { .sa_handler=sighup_handler };
 
     if (sigaction(SIGHUP, &sa_sighup, NULL) < 0)
+        DBUS_BROKER_ERROR("sigaction");
+
+    struct sigaction sa_sigpipe = { .sa_handler=sigpipe_handler };
+
+    if (sigaction(SIGPIPE, &sa_sigpipe, NULL) < 0)
         DBUS_BROKER_ERROR("sigaction");
 
     dbus_broker_running = 1;
