@@ -384,8 +384,8 @@ static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
         while ((ret = exchange(conn->receiver, conn->sender, 
                                conn->client_domain, conn->is_client)) != 0) 
             total += ret;
-        //if (total <= 0)
-        //    uv_close((uv_handle_t *) handle, close_client_rawdbus);
+        if (total <= 0)
+            uv_close((uv_handle_t *) handle, close_client_rawdbus);
     }
 }
 
@@ -421,7 +421,7 @@ static void xenmgr_signal(uv_poll_t *handle, int status, int events)
     DBusMessage *msg = dbus_connection_pop_message(xensig->conn);
 
     if (!msg) {
-        //uv_close((uv_handle_t *) handle, close_xenmgr_signal);
+        uv_close((uv_handle_t *) handle, close_xenmgr_signal);
         return;
     }
 
@@ -463,7 +463,7 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
             init_rawdbus_conn(loop, client, server, domain, false);
     } else if (events & UV_DISCONNECT) {
         dbus_broker_running = 0;
-        //uv_close((uv_handle_t *) handle, close_server_rawdbus);
+        uv_close((uv_handle_t *) handle, close_server_rawdbus);
     }
 }
 
