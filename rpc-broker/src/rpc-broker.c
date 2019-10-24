@@ -354,7 +354,7 @@ static void close_client_rawdbus(uv_handle_t *handle)
     struct raw_dbus_conn *conn;
 
     conn = (struct raw_dbus_conn *) handle->data;
-    //close(conn->receiver);
+    close(conn->receiver);
     uv_unref(handle);
 
     if (conn)
@@ -381,11 +381,17 @@ static void service_rdconn_cb(uv_poll_t *handle, int status, int events)
     total = 0;
 
     if (events & UV_READABLE) {
+
         while ((ret = exchange(conn->receiver, conn->sender, 
                                conn->client_domain, conn->is_client)) != 0) 
             total += ret;
-        if (total <= 0)
+        if (total <= 0) {
+            if (conn->is_client)
+                DBUS_BROKER_EVENT("Closing Client: %d", conn->receiver);
+            else
+                DBUS_BROKER_EVENT("Closing Server: %d", conn->receiver);
             uv_close((uv_handle_t *) handle, close_client_rawdbus);
+        }
     }
 }
 
@@ -459,6 +465,8 @@ static void service_rawdbus_server(uv_poll_t *handle, int status, int events)
                            (struct sockaddr *) &dbus_server->peer, &clilen);
             server = connect_to_system_bus();
             domain = get_domid(client);
+            DBUS_BROKER_EVENT("Client Connect: %d", client);
+            DBUS_BROKER_EVENT("Server Connect: %d", server);
             init_rawdbus_conn(loop, server, client, domain, true);
             init_rawdbus_conn(loop, client, server, domain, false);
     } else if (events & UV_DISCONNECT) {

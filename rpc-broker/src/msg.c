@@ -362,10 +362,22 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
     int total, rbytes, len;
     char buf[DBUS_MSG_LEN] = { 0 };
 
+    struct pollfd poller = { .fd=ssock, .events=POLLHUP | POLLERR | POLLNVAL }; 
+
     total = 0;
     rbytes = 0;
 
     while ((rbytes = recv(rsock, buf, DBUS_MSG_LEN, 0)) > 0) {
+
+        int ret = poll(&poller, ssock + 1, 0);
+        if (ret < 0) {
+           DBUS_BROKER_EVENT("Poll on exchage: %d", ssock);
+           return -1;
+        }
+
+        if (fcntl(ssock, F_GETFL) < 0)
+            return -1;
+
         if (rbytes > DBUS_COMM_MIN) {
 
             len = dbus_message_demarshal_bytes_needed(buf, rbytes);
@@ -376,11 +388,11 @@ int exchange(int rsock, int ssock, uint16_t domid, bool is_client)
                 if (is_request_allowed(&dmsg, is_client, domid) == false)
                     return -1;
             }
+        }
+
 #ifdef DEBUG
         debug_raw_buffer(buf, rbytes);
 #endif
-        }
-
         total += rbytes;
         send(ssock, buf, rbytes, 0);
     }

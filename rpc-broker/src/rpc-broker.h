@@ -30,6 +30,7 @@
 #include <ctype.h>
 #include <dbus/dbus.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <netinet/in.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -55,6 +56,7 @@
 #include "websockets.h"
 
 //
+#define DEBUG 1
 //
 #define DBUS_BROKER_ERROR(call)                                       \
     do {                                                              \
